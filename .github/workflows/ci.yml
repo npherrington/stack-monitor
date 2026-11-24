@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # Per-commit off PRs: a shared group would cancel the run of one push to main with the next.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Installs node, actionlint and shellcheck at the builds mise.lock pins.
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          install_args: --locked
+
+      # The same as a local `mise run check`: lint, lint:workflows, test, build.
+      - name: Check
+        run: mise run check

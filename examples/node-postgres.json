@@ -1,0 +1,54 @@
+{
+  "$schema": "../schema/stack-monitor.schema.json",
+  "mainline": "origin/main",
+  "worktrees": {
+    "index": { "file": ".env.worktree", "key": "WORKTREE_INDEX", "max": 99 },
+    "setup": "./scripts/setup-worktree.sh",
+    "install": "npm ci",
+    "teardown": "docker compose -p myapp_wt{index} down --volumes"
+  },
+  "stack": {
+    "services": {
+      "db": {
+        "start": "docker compose up -d --wait",
+        "oneShot": true,
+        "status": {
+          "compose": {
+            "project": "myapp_wt{index}",
+            "parts": ["postgres", "redis"]
+          }
+        }
+      },
+      "api": {
+        "start": "npm run dev:api",
+        "needs": ["db"],
+        "status": {
+          "port": { "file": ".env", "key": "API_PORT", "base": 3000 }
+        }
+      },
+      "worker": {
+        "start": "npm run dev:worker",
+        "needs": ["db"],
+        "ready": "worker ready",
+        "status": { "process": { "match": "node dist/worker.js" } }
+      },
+      "web": {
+        "start": "npm run dev:web",
+        "status": {
+          "port": { "file": ".env", "key": "WEB_PORT", "base": 5173 }
+        }
+      }
+    },
+    "startAll": ["db", "api", "worker", "web"],
+    "shared": [
+      { "name": "Ollama", "url": "http://127.0.0.1:11434/api/version" }
+    ]
+  },
+  "agents": {
+    "default": "claude",
+    "env": { "MYAPP_UNATTENDED": "1" },
+    "arguments": { "ticket": "^[A-Z]+-\\d+$" },
+    "workflows": ".claude/workflows"
+  },
+  "featureMap": { "blocks": "docs/stack-map/blocks.json" }
+}

@@ -1,0 +1,4 @@
+package-lock.json
+dist
+# Written by `mise run schema`, byte for byte what the test compares
+schema

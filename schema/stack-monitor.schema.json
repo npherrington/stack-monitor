@@ -1,0 +1,295 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "mainline": {
+      "default": "origin/main",
+      "description": "The ref branches are compared against and cut from",
+      "type": "string",
+      "pattern": "^\\w[\\w./-]*$"
+    },
+    "worktrees": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "index": {
+          "description": "Where a worktree's number is kept, for a repo that gives each worktree its own ports",
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string",
+              "minLength": 1
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            "max": {
+              "default": 99,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 999
+            }
+          },
+          "required": [
+            "file",
+            "key"
+          ],
+          "additionalProperties": false
+        },
+        "setup": {
+          "description": "Run in a new worktree after git worktree add. A failure takes the worktree back",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "install": {
+          "description": "Installs dependencies, in the background once setup is done",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "teardown": {
+          "description": "Run before git worktree remove. A failure stops the removal",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "additionalProperties": false
+    },
+    "stack": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,23}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "description": "Starts it, run detached in the checkout"
+              },
+              "stop": {
+                "description": "Stops it. Without one, a stop sends SIGTERM to what status found, or docker stop to its containers",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "status": {
+                "type": "object",
+                "properties": {
+                  "port": {
+                    "description": "Up when something working inside the checkout listens on the port",
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "description": "The env file setup writes the port into",
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "key": {
+                        "description": "The port’s key in that file",
+                        "type": "string",
+                        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                      },
+                      "base": {
+                        "description": "The port is base + the worktree index. Create checks it is free before it makes a worktree",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "compose": {
+                    "description": "Up when the containers whose compose labels point inside the checkout are running",
+                    "type": "object",
+                    "properties": {
+                      "project": {
+                        "description": "The compose project; {index} allowed",
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "parts": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "description": "The compose services it runs as. Some of them up reads as half up"
+                      }
+                    },
+                    "required": [
+                      "parts"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "process": {
+                    "description": "Up when a matching process belongs to the checkout",
+                    "type": "object",
+                    "properties": {
+                      "match": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Text its command line contains"
+                      },
+                      "owner": {
+                        "default": "cwd",
+                        "description": "How it belongs to a checkout: its working directory is inside it, or a path in its arguments is",
+                        "type": "string",
+                        "enum": [
+                          "cwd",
+                          "argument"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "match"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "command": {
+                    "description": "Up when this exits 0",
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "additionalProperties": false
+              },
+              "oneShot": {
+                "default": false,
+                "description": "start exits once the service is up, and its exit code is the answer",
+                "type": "boolean"
+              },
+              "needs": {
+                "default": [],
+                "description": "Services started before it",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,23}$"
+                }
+              },
+              "ready": {
+                "description": "A line in start's output that says it's up, for a service status alone can't tell",
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "start",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "startAll": {
+          "description": "What Start all starts, in order. Default: every service",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,23}$"
+          }
+        },
+        "shared": {
+          "default": [],
+          "description": "Servers one machine runs for every checkout: shown, never stopped",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Answers 2xx while it is up"
+              }
+            },
+            "required": [
+              "name",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "services"
+      ],
+      "additionalProperties": false
+    },
+    "agents": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "default": "claude",
+          "type": "string",
+          "enum": [
+            "claude"
+          ]
+        },
+        "env": {
+          "default": {},
+          "description": "Added to the environment of every run",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "arguments": {
+          "default": {},
+          "description": "Patterns a run's argument is checked against, by name",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,23}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "workflows": {
+          "description": "The folder of saved workflows",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "featureMap": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "blocks": {
+          "description": "The repo's own blocks, added to the built-in ones",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "title": "stack-monitor.json"
+}

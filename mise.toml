@@ -1,0 +1,73 @@
+# mise: the pinned toolchain and every dev task. `mise install` provisions the tools; `mise tasks`
+# lists the tasks. CI runs `mise run check`, so a local pass is a CI pass.
+
+min_version = "2026.7.7"
+
+[settings]
+# Without this, a tool added below without a backend prefix resolves through whichever legacy
+# backend mise's registry recommends that day.
+disable_backends = ["vfox", "asdf"]
+# Exact resolved versions in a committed mise.lock, so a fresh machine and CI install what you did.
+lockfile = true
+
+[tools]
+# core/, server/ and mcp/ run as .ts through Node's type stripping, so this is the runtime too.
+node = "24.21.0"
+# lint:workflows. actionlint runs shellcheck over each workflow's run: blocks.
+actionlint = "1.7.12"
+shellcheck = "0.11.0"
+
+# sources/outputs let mise skip this when package-lock.json hasn't changed since the last install.
+[tasks.sync]
+description = "Install package-lock.json exactly. Run after pulling, or whenever the lockfile changed."
+sources = ["package-lock.json"]
+outputs = ["node_modules/.package-lock.json"]
+run = "npm ci"
+
+# The core files are the ones the page imports: the same list as tsconfig.web.json's include.
+[tasks.build]
+description = "Build the page into dist/; skipped when its sources are unchanged."
+depends = ["sync"]
+sources = [
+  "web/**/*",
+  "core/types.ts",
+  "index.html",
+  "vite.config.ts",
+  "package-lock.json",
+]
+outputs = ["dist/index.html"]
+run = "npm run build"
+
+[tasks.dev]
+description = "Serve the monitor on http://127.0.0.1:7420 (STACK_MONITOR_PORT) for the repo STACK_MONITOR_REPO names; unset, this one."
+depends = ["build"]
+run = "node server/main.ts"
+
+[tasks.lint]
+description = "eslint, prettier --check and tsc."
+depends = ["sync"]
+run = ["npm run lint", "npm run format:check", "npm run tsc"]
+
+[tasks.format]
+description = "Rewrite every file prettier covers into its format."
+depends = ["sync"]
+run = "npm run format"
+
+[tasks.test]
+description = "Run tests/ with Node's own test runner."
+depends = ["sync"]
+run = "npm test"
+
+[tasks."lint:workflows"]
+description = "actionlint over .github/workflows, with shellcheck on each run: block."
+run = "actionlint"
+
+[tasks.schema]
+description = "Write schema/stack-monitor.schema.json from the config's zod schema. A test fails while it's out of date."
+depends = ["sync"]
+run = "npm run schema"
+
+[tasks.check]
+description = "Everything CI runs: lint, lint:workflows, test, then a build of the page."
+depends = ["lint", "lint:workflows", "test"]
+run = "npm run build"

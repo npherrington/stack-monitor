@@ -34,12 +34,12 @@ launchd.
 
 ## Modules
 
-| Module      | On when                 | What it does                                                    |
-| ----------- | ----------------------- | --------------------------------------------------------------- |
-| Worktrees   | always                  | every checkout with its git state; create and remove worktrees  |
-| Stack       | the config has `stack`  | each checkout's services: status, start, stop                   |
-| Agents      | the config has `agents` | headless runs in a worktree, their logs and reports; schedules  |
-| Feature map | always                  | a canvas for sketching a feature across the stack               |
+| Module      | On when                 | What it does                                                   |
+| ----------- | ----------------------- | -------------------------------------------------------------- |
+| Worktrees   | always                  | every checkout with its git state; create and remove worktrees |
+| Stack       | the config has `stack`  | each checkout's services: status, start, stop                  |
+| Agents      | the config has `agents` | headless runs in a worktree, their logs and reports; schedules |
+| Feature map | always                  | a canvas for sketching a feature across the stack              |
 
 ### Worktrees
 
@@ -96,7 +96,12 @@ interface AgentAdapter {
   label: string
   program: string // looked for on PATH
   models: string[] // offered in the form; any other is typed in
-  can: { effort: boolean; cost: boolean; sessionIdUpFront: boolean; stages: boolean }
+  can: {
+    effort: boolean
+    cost: boolean
+    sessionIdUpFront: boolean
+    stages: boolean
+  }
   command(run: RunSpec): { program: string; argv: string[] } // headless, unattended
   parse(line: string): RunEvent[] // a log line as common events
   isSession(process: ProcessInfo): boolean // an interactive session open in a checkout
@@ -155,41 +160,52 @@ A module whose section is left out is off.
     "index": { "file": ".env.worktree", "key": "WORKTREE_INDEX", "max": 99 },
     "setup": "./scripts/setup-worktree.sh",
     "install": "npm ci",
-    "teardown": "docker compose -p myapp_wt{index} down --volumes"
+    "teardown": "docker compose -p myapp_wt{index} down --volumes",
   },
   "stack": {
     "services": {
       "db": {
         "start": "docker compose up -d --wait",
         "oneShot": true,
-        "status": { "compose": { "project": "myapp_wt{index}", "parts": ["postgres", "redis"] } }
+        "status": {
+          "compose": {
+            "project": "myapp_wt{index}",
+            "parts": ["postgres", "redis"],
+          },
+        },
       },
       "api": {
         "start": "npm run dev:api",
         "needs": ["db"],
-        "status": { "port": { "file": ".env", "key": "API_PORT", "base": 3000 } }
+        "status": {
+          "port": { "file": ".env", "key": "API_PORT", "base": 3000 },
+        },
       },
       "worker": {
         "start": "npm run dev:worker",
         "needs": ["db"],
         "ready": "worker ready",
-        "status": { "process": { "match": "node dist/worker.js" } }
+        "status": { "process": { "match": "node dist/worker.js" } },
       },
       "web": {
         "start": "npm run dev:web",
-        "status": { "port": { "file": ".env", "key": "WEB_PORT", "base": 5173 } }
-      }
+        "status": {
+          "port": { "file": ".env", "key": "WEB_PORT", "base": 5173 },
+        },
+      },
     },
     "startAll": ["db", "api", "worker", "web"],
-    "shared": [{ "name": "Ollama", "url": "http://127.0.0.1:11434/api/version" }]
+    "shared": [
+      { "name": "Ollama", "url": "http://127.0.0.1:11434/api/version" },
+    ],
   },
   "agents": {
     "default": "claude",
     "env": { "MYAPP_UNATTENDED": "1" },
     "arguments": { "ticket": "^[A-Z]+-\\d+$" },
-    "workflows": ".claude/workflows"
+    "workflows": ".claude/workflows",
   },
-  "featureMap": { "blocks": "docs/stack-map/blocks.json" }
+  "featureMap": { "blocks": "docs/stack-map/blocks.json" },
 }
 ```
 
@@ -215,7 +231,7 @@ Each step ends with the tests passing, the page working against a fixture repo, 
 repo's config (kept in `~/.config`) still giving a working monitor for that repo. Tests come across
 with their module, their fixtures rewritten to a generic repo.
 
-0. **Scaffold.** `package.json`, tsconfig, eslint, prettier, node's test runner, `mise.toml`
+0. **Scaffold** (done). `package.json`, tsconfig, eslint, prettier, node's test runner, `mise.toml`
    pinning Node 24, and CI on GitHub Actions. The server with `GET /api/health`, the page's shell,
    and the config loader and schema.
 1. **Worktrees.** The clone, checkouts and git state; create and remove with their hooks. The
@@ -240,7 +256,9 @@ those folders, so the login job and schedules would fail there.
 
 - **The second adapter**: Cursor's CLI, OpenCode or Codex. Check each one's current headless flags
   and output format before choosing.
-- **License.**
+- **Trusting a repo's config.** A committed `stack-monitor.json` names commands the monitor runs
+  when you click. Like `mise trust`, the monitor could ask once per file, and again whenever it
+  changes, before running any of them.
 - **Create a skill / Create a workflow.** The original has pages that start a run to write a new
   agent skill or saved workflow, following that repo's own authoring skills. They're out for now;
   they could come back as an extra of the Claude adapter.
