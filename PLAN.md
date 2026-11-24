@@ -247,10 +247,18 @@ with their module, their fixtures rewritten to a generic repo.
 5. **Feature map.** Built-in blocks and starters, a repo's blocks merged in, the editor, the file
    format and `draw`.
 6. **A second adapter.**
-7. **Keep it running.** A login LaunchAgent, a Dock icon through the web manifest, and themes.
+7. **Desktop app (Electron).** The main process starts the server in-process with `startMonitor`,
+   which already takes a port and the page's folder from its host, and opens the page in a window.
+   The window loads from `http://127.0.0.1:<port>`, so the server's Host and Origin checks hold
+   unchanged. The beaver is its Dock icon: `mise run icon` adds a 1024 px PNG and an `.icns` built
+   with `iconutil`. A login item starts it, so there's no LaunchAgent for the monitor itself.
+   Schedules stay launchd jobs, so they still fire while the app is closed. `mise run dev` stays,
+   for running without the app, and the MCP server stays a separate stdio process.
+8. **Themes.** The original's light, dark and pastel themes, chosen in the header and remembered
+   per browser.
 
 Keep the clone out of `~/Desktop`, `~/Documents` and `~/Downloads`: macOS keeps launchd jobs out of
-those folders, so the login job and schedules would fail there.
+those folders, so schedules would fail there.
 
 ## Open decisions
 
@@ -262,6 +270,8 @@ those folders, so the login job and schedules would fail there.
 - **Create a skill / Create a workflow.** The original has pages that start a run to write a new
   agent skill or saved workflow, following that repo's own authoring skills. They're out for now;
   they could come back as an extra of the Claude adapter.
+- **Shipping the app to others.** A download that macOS opens without a warning has to be signed
+  with an Apple Developer ID and notarised. Until then it's built from source.
 - **Linux.** `lsof` and `ps` work there; schedules and the login job would need systemd user units
   beside launchd.
 - **More than one repo per monitor.** One monitor serves one clone, as the original does. Several

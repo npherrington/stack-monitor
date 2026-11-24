@@ -24,6 +24,7 @@ export default defineConfig([
       'core/**/*.ts',
       'server/**/*.ts',
       'mcp/**/*.ts',
+      'scripts/**/*.ts',
       'tests/**/*.ts',
       'vite.config.ts',
     ],

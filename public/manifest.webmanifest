@@ -1,0 +1,15 @@
+{
+  "name": "Stack monitor",
+  "short_name": "Stack monitor",
+  "description": "Your repo's worktrees, the stack each one runs, and the agents working in them.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3ecff",
+  "theme_color": "#f3ecff",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

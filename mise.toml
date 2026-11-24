@@ -13,7 +13,7 @@ lockfile = true
 [tools]
 # core/, server/ and mcp/ run as .ts through Node's type stripping, so this is the runtime too.
 node = "24.21.0"
-# lint:workflows. actionlint runs shellcheck over each workflow's run: blocks.
+# lint:workflows and lint:scripts. actionlint also runs shellcheck over each workflow's run: blocks.
 actionlint = "1.7.12"
 shellcheck = "0.11.0"
 
@@ -32,6 +32,7 @@ sources = [
   "web/**/*",
   "core/types.ts",
   "index.html",
+  "public/**/*",
   "vite.config.ts",
   "package-lock.json",
 ]
@@ -42,6 +43,15 @@ run = "npm run build"
 description = "Serve the monitor on http://127.0.0.1:7420 (STACK_MONITOR_PORT) for the repo STACK_MONITOR_REPO names; unset, this one."
 depends = ["build"]
 run = "node server/main.ts"
+
+# Extra arguments go to the script: `mise run worktree -- try-1`.
+[tasks.worktree]
+description = "Add a linked worktree of this repo beside the primary, on <branch> (cut from origin/main when new), with its dependencies installed."
+run = "scripts/worktree.sh"
+
+[tasks.icon]
+description = "Draw the pastel beaver from scripts/draw-icon.ts into public/: the favicon, the Dock icon and the manifest's icons."
+run = "node scripts/draw-icon.ts"
 
 [tasks.lint]
 description = "eslint, prettier --check and tsc."
@@ -62,12 +72,16 @@ run = "npm test"
 description = "actionlint over .github/workflows, with shellcheck on each run: block."
 run = "actionlint"
 
+[tasks."lint:scripts"]
+description = "shellcheck over scripts/*.sh."
+run = "shellcheck scripts/*.sh"
+
 [tasks.schema]
 description = "Write schema/stack-monitor.schema.json from the config's zod schema. A test fails while it's out of date."
 depends = ["sync"]
 run = "npm run schema"
 
 [tasks.check]
-description = "Everything CI runs: lint, lint:workflows, test, then a build of the page."
-depends = ["lint", "lint:workflows", "test"]
+description = "Everything CI runs: lint, lint:workflows, lint:scripts, test, then a build of the page."
+depends = ["lint", "lint:workflows", "lint:scripts", "test"]
 run = "npm run build"
