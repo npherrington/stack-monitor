@@ -48,6 +48,15 @@ whose `export const meta` names it, started as `claude -p` asking the Workflow t
 what runs instead, given `--no-publish`, `--effort=`, `--notes=` and the argument, then `--` and
 claude's flags. The monitor runs a launcher only as committed at the checkout's HEAD.
 
+**Schedules.** The Schedules page starts a prompt or a workflow in one checkout on a cron line
+(local time). Each schedule is fired either by launchd, as a LaunchAgent in
+`~/Library/LaunchAgents` that fires whether the monitor is running or not, or by the running
+monitor, which checks each minute and skips a time it was off for. Saving a launchd schedule first
+checks that launchd can read the checkout: macOS keeps LaunchAgents out of `~/Desktop`,
+`~/Documents` and `~/Downloads` unless node has Full Disk Access, and the page says so and offers
+the monitor instead. A fire while a run is going in the checkout starts nothing and is logged as
+skipped. Schedules and their fire log live in `~/.local/state/stack-monitor/schedules/`.
+
 Pins, names and colours you give checkouts, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.
 

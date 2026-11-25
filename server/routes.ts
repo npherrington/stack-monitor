@@ -46,6 +46,19 @@ import {
 } from '../core/repos.ts'
 import { scanFolder } from '../core/scan.ts'
 import {
+  deleteSchedule,
+  listSchedules,
+  runScheduleNow,
+  saveSchedule,
+  scheduleContext,
+  type ScheduleContext,
+} from '../core/schedules/schedules.ts'
+import {
+  SaveScheduleSchema,
+  ScheduleIdRequest,
+  schedulesDir,
+} from '../core/schedules/store.ts'
+import {
   RepoRootRequest,
   trackedRepo,
   type SaveOutcome,
@@ -97,7 +110,10 @@ function notRead(why: Unlisted): Reply {
 
 // tracking.seed: the repo the monitor was started for, the whole list until the settings file is
 // first written.
-export function makeRoutes(tracking: Tracking): Routes {
+export function makeRoutes(
+  tracking: Tracking,
+  schedules: ScheduleContext = scheduleContext(schedulesDir()),
+): Routes {
   return {
     'GET /api/health': async () => {
       const health: Health = {
@@ -275,6 +291,25 @@ export function makeRoutes(tracking: Tracking): Routes {
       RunClaudeWorkflowSchema,
       '{ checkout, name, testRun?, notes?, argument?, permissions? }',
       async (body) => settled(await runClaudeWorkflow(tracking, body)),
+    ),
+    'GET /api/schedules': async () => {
+      const list = await listSchedules(tracking, schedules)
+      return 'problem' in list ? unlisted(list) : [200, list]
+    },
+    'POST /api/schedules/save': route(
+      SaveScheduleSchema,
+      '{ id?, name, cron, checkout, enabled, fireFrom, task }',
+      async (body) => settled(await saveSchedule(tracking, body, schedules)),
+    ),
+    'POST /api/schedules/delete': route(
+      ScheduleIdRequest,
+      '{ id }',
+      async ({ id }) => settled(await deleteSchedule(id, schedules)),
+    ),
+    'POST /api/schedules/run': route(
+      ScheduleIdRequest,
+      '{ id }',
+      async ({ id }) => settled(await runScheduleNow(tracking, id, schedules)),
     ),
   }
 }
