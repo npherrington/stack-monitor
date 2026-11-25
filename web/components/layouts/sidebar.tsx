@@ -1,4 +1,5 @@
 import { Bot, CalendarClock, FolderGit2, Settings } from 'lucide-react'
+import type { RefObject } from 'react'
 import { NavLink } from 'react-router'
 
 import { ThemePicker } from '@/components/settings/theme-picker.tsx'
@@ -13,7 +14,12 @@ const LINKS = [
   { to: '/settings', label: 'Settings', icon: Settings, end: false },
 ] as const
 
-export function Sidebar() {
+interface SidebarProps {
+  logoRef: RefObject<HTMLImageElement | null> // where the intro's beaver lands
+  hideLogo: boolean // while the intro's beaver is still on its way
+}
+
+export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
   const { theme } = useTheme()
   return (
     <nav
@@ -21,7 +27,12 @@ export function Sidebar() {
       className="flex flex-col gap-6 border-b bg-sidebar p-4 backdrop-blur md:sticky md:top-0 md:h-dvh md:w-60 md:shrink-0 md:border-r md:border-b-0"
     >
       <div className="flex items-center gap-2.5 px-2">
-        <img src={themeIcon(theme)} alt="" className="size-8 rounded-lg" />
+        <img
+          ref={logoRef}
+          src={themeIcon(theme)}
+          alt=""
+          className={cn('size-8 rounded-lg', hideLogo && 'invisible')}
+        />
         <span className="bg-linear-to-r from-strong to-muted-foreground bg-clip-text text-lg font-extrabold text-transparent">
           Stack monitor
         </span>
