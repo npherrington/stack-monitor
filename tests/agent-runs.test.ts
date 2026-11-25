@@ -211,7 +211,8 @@ describe('agent runs', () => {
     assert.equal(stop.ok, true, stop.message)
     const { run, stderr } = await waitFor(id, runs, ended)
     assert.equal(run.state, 'stopped')
-    assert.equal(stderr, 'got TERM\n')
+    // Linux's sh may also report the killed child as Terminated.
+    assert.match(stderr, /(^|\n)got TERM\n$/)
     assert.deepEqual(readExit(join(runs, id))?.steps, [
       { code: 143, signal: null },
     ])
