@@ -1,4 +1,4 @@
-import type { RepoCheckouts } from '../../../core/types.ts'
+import type { RepoCheckouts, RunSummary } from '../../../core/types.ts'
 import { CheckoutCard } from '@/components/checkouts/checkout-card.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { visibleCheckouts } from '@/lib/checkout-order.ts'
@@ -13,6 +13,9 @@ interface RepoSectionProps {
   prefs: CheckoutPrefs
   filters: CheckoutFilters
   onPrefChange: (path: string, change: Partial<CheckoutPref>) => void
+  latestRuns: Map<string, RunSummary> // by checkout path
+  onRunHere: (checkout: string) => void
+  onOpenRun: (id: string) => void
 }
 
 export function RepoSection({
@@ -20,6 +23,9 @@ export function RepoSection({
   prefs,
   filters,
   onPrefChange,
+  latestRuns,
+  onRunHere,
+  onOpenRun,
 }: RepoSectionProps) {
   const shown = visibleCheckouts(repo.checkouts, prefs, filters)
   const hidden = repo.checkouts.length - shown.length
@@ -57,6 +63,9 @@ export function RepoSection({
                 mainline={repo.mainline}
                 pref={prefs[checkout.path] ?? {}}
                 onChange={(change) => onPrefChange(checkout.path, change)}
+                latestRun={latestRuns.get(checkout.path) ?? null}
+                onRunHere={() => onRunHere(checkout.path)}
+                onOpenRun={onOpenRun}
               />
             ))}
           </div>

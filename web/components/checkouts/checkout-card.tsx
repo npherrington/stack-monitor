@@ -1,7 +1,17 @@
-import { Check, GitBranch, Palette, Pencil, Pin, PinOff, X } from 'lucide-react'
+import {
+  Bot,
+  Check,
+  GitBranch,
+  Palette,
+  Pencil,
+  Pin,
+  PinOff,
+  X,
+} from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
-import type { Checkout } from '../../../core/types.ts'
+import type { Checkout, RunSummary } from '../../../core/types.ts'
+import { RunStatePill } from '@/components/agents/run-state.tsx'
 import { GitSummary } from '@/components/checkouts/git-summary.tsx'
 import { ServiceChips } from '@/components/checkouts/service-chips.tsx'
 import { Button } from '@/components/ui/button.tsx'
@@ -27,6 +37,9 @@ interface CheckoutCardProps {
   mainline: string
   pref: CheckoutPref
   onChange: (change: Partial<CheckoutPref>) => void
+  latestRun: RunSummary | null
+  onRunHere: () => void
+  onOpenRun: (id: string) => void
 }
 
 function folderName(path: string): string {
@@ -38,6 +51,9 @@ export function CheckoutCard({
   mainline,
   pref,
   onChange,
+  latestRun,
+  onRunHere,
+  onOpenRun,
 }: CheckoutCardProps) {
   const [renaming, setRenaming] = useState(false)
   const folder = folderName(checkout.path)
@@ -83,6 +99,15 @@ export function CheckoutCard({
           <Button
             variant="ghost"
             size="icon-sm"
+            aria-label={`Run an agent in ${name}`}
+            onClick={onRunHere}
+            className="text-muted-foreground"
+          >
+            <Bot />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             aria-label={pref.pinned ? `Unpin ${name}` : `Pin ${name}`}
             aria-pressed={pref.pinned === true}
             onClick={() => onChange({ pinned: pref.pinned ? undefined : true })}
@@ -119,6 +144,18 @@ export function CheckoutCard({
           <p className="text-sm text-destructive" role="alert">
             {checkout.problem}
           </p>
+        )}
+        {latestRun !== null && (
+          <button
+            type="button"
+            onClick={() => onOpenRun(latestRun.id)}
+            className="flex items-center gap-2 self-start rounded-full border bg-card px-2.5 py-1 text-left text-xs hover:bg-accent/40"
+          >
+            <RunStatePill state={latestRun.state} />
+            <span className="max-w-56 truncate font-semibold text-strong">
+              {latestRun.title}
+            </span>
+          </button>
         )}
         {checkout.services.length > 0 && (
           <ServiceChips services={checkout.services} />

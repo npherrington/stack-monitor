@@ -1,4 +1,4 @@
-import { FolderGit2, Settings } from 'lucide-react'
+import { Bot, FolderGit2, Settings } from 'lucide-react'
 import { NavLink } from 'react-router'
 
 import { ThemePicker } from '@/components/settings/theme-picker.tsx'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils.ts'
 
 const LINKS = [
   { to: '/', label: 'Checkouts', icon: FolderGit2, end: true },
+  { to: '/agents', label: 'Agents', icon: Bot, end: false },
   { to: '/settings', label: 'Settings', icon: Settings, end: false },
 ] as const
 

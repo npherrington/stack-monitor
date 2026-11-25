@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { AgentsSettings } from '@/components/agents/agents-settings.tsx'
 import { AddRepoForm } from '@/components/repos/add-repo-form.tsx'
 import { RepoList } from '@/components/repos/repo-list.tsx'
 import { ScanRepos } from '@/components/repos/scan-repos.tsx'
@@ -42,6 +43,12 @@ export function Settings() {
         description="Look through a folder for git repos, a few levels deep, and add the ones you pick."
       >
         <ScanRepos />
+      </Section>
+      <Section
+        title="Agents"
+        description="The coding-agent CLIs on this machine, which runs, skills and workflows start. Each keeps its own login: no keys are stored here."
+      >
+        <AgentsSettings />
       </Section>
       <Section title="Theme" description="Remembered in this browser.">
         <div className="max-w-sm">
