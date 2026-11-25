@@ -78,13 +78,15 @@ async function start(): Promise<void> {
   const launched = await launchMonitor(
     { dist: DIST, unbuilt: "The page isn't built. Run mise run build." },
     process.cwd(),
+    // A port asked for by name is that port or nothing.
+    { fallback: !process.env.STACK_MONITOR_PORT },
   )
   if ('error' in launched) {
     dialog.showErrorBox("The monitor couldn't start", launched.error)
     app.quit()
     return
   }
-  // A monitor already serving the port (mise run dev, say) is the one this window shows.
+  // This monitor already serving the port (mise run dev, say) is the one the window shows.
   url = launched.url
   if (!app.isPackaged) watchPage()
   openWindow()

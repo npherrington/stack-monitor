@@ -1,5 +1,11 @@
 // Where the monitor listens, and how another process tells that the port's holder is one.
+import { resolve } from 'node:path'
+
 import { z } from 'zod'
+
+// The folder this monitor runs from. Another monitor on the port is this one only when its health
+// names the same folder: a copy elsewhere (an older monitor inside another repo, say) isn't.
+export const MONITOR_HOME = resolve(import.meta.dirname, '..')
 
 // STACK_MONITOR_PORT overrides it. Keep it clear of the ports your checkouts' services use.
 const MONITOR_PORT = 7420
@@ -10,6 +16,7 @@ export const HealthSchema = z.object({
   app: z.literal('stack-monitor'),
   root: z.string(), // the primary checkout of the repo it was started for
   pid: z.number(),
+  home: z.string().optional(), // MONITOR_HOME; older monitors don't say
 })
 export type Health = z.infer<typeof HealthSchema>
 
