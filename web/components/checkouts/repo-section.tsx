@@ -1,5 +1,8 @@
+import { Plus } from 'lucide-react'
+
 import type { RepoCheckouts, RunSummary } from '../../../core/types.ts'
 import { CheckoutCard } from '@/components/checkouts/checkout-card.tsx'
+import { Button } from '@/components/ui/button.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { visibleCheckouts } from '@/lib/checkout-order.ts'
 import type {
@@ -16,6 +19,7 @@ interface RepoSectionProps {
   latestRuns: Map<string, RunSummary> // by checkout path
   onRunHere: (checkout: string) => void
   onOpenRun: (id: string) => void
+  onNewWorktree: () => void
 }
 
 export function RepoSection({
@@ -26,6 +30,7 @@ export function RepoSection({
   latestRuns,
   onRunHere,
   onOpenRun,
+  onNewWorktree,
 }: RepoSectionProps) {
   const shown = visibleCheckouts(repo.checkouts, prefs, filters)
   const hidden = repo.checkouts.length - shown.length
@@ -34,20 +39,33 @@ export function RepoSection({
       aria-labelledby={`repo-${repo.root}`}
       className="flex flex-col gap-3"
     >
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2
-          id={`repo-${repo.root}`}
-          className="text-xl font-extrabold text-strong"
-        >
-          {repo.name}
-        </h2>
-        <Pill>
-          {repo.checkouts.length}{' '}
-          {repo.checkouts.length === 1 ? 'checkout' : 'checkouts'}
-        </Pill>
-        <span className="truncate font-mono text-xs text-muted-foreground">
-          {repo.root}
-        </span>
+      <header className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-baseline gap-3">
+            <h2
+              id={`repo-${repo.root}`}
+              className="text-xl font-extrabold text-strong"
+            >
+              {repo.name}
+            </h2>
+            <Pill>
+              {repo.checkouts.length}{' '}
+              {repo.checkouts.length === 1 ? 'checkout' : 'checkouts'}
+            </Pill>
+          </div>
+          <span
+            className="truncate font-mono text-xs text-muted-foreground"
+            title={repo.root}
+          >
+            {repo.root}
+          </span>
+        </div>
+        {repo.problem === null && (
+          <Button size="sm" variant="outline" onClick={onNewWorktree}>
+            <Plus aria-hidden />
+            New worktree
+          </Button>
+        )}
       </header>
       {repo.problem !== null ? (
         <p className="text-sm text-destructive" role="alert">

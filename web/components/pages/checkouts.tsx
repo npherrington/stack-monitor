@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { RunSummary } from '../../../core/types.ts'
+import type { RepoCheckouts, RunSummary } from '../../../core/types.ts'
 import { RunLogDialog } from '@/components/agents/run-log-dialog.tsx'
 import { RunHereDialog } from '@/components/checkouts/run-here-dialog.tsx'
 
 import { CheckoutFilters } from '@/components/checkouts/checkout-filters.tsx'
+import { NewWorktreeDialog } from '@/components/checkouts/new-worktree-dialog.tsx'
 import { RepoSection } from '@/components/checkouts/repo-section.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Card } from '@/components/ui/card.tsx'
@@ -22,6 +23,7 @@ export function Checkouts() {
   const { overview } = useAgents()
   const [runHere, setRunHere] = useState<string | null>(null)
   const [openRun, setOpenRun] = useState<string | null>(null)
+  const [newIn, setNewIn] = useState<RepoCheckouts | null>(null)
   // Runs come newest first, so the first one seen for a checkout is its latest.
   const latestRuns = useMemo(() => {
     const latest = new Map<string, RunSummary>()
@@ -88,6 +90,7 @@ export function Checkouts() {
             latestRuns={latestRuns}
             onRunHere={setRunHere}
             onOpenRun={setOpenRun}
+            onNewWorktree={() => setNewIn(repo)}
           />
         ))
       )}
@@ -101,6 +104,7 @@ export function Checkouts() {
         }}
       />
       <RunLogDialog runId={openRun} onClose={() => setOpenRun(null)} />
+      <NewWorktreeDialog repo={newIn} onClose={() => setNewIn(null)} />
     </div>
   )
 }
