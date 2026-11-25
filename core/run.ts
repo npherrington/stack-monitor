@@ -9,6 +9,7 @@ export interface RunResult {
 interface RunOptions {
   cwd?: string
   timeoutMs?: number
+  env?: NodeJS.ProcessEnv // the monitor's own by default
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -19,7 +20,7 @@ const MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 export function run(
   program: string,
   args: string[],
-  { cwd, timeoutMs = DEFAULT_TIMEOUT_MS }: RunOptions = {},
+  { cwd, timeoutMs = DEFAULT_TIMEOUT_MS, env }: RunOptions = {},
 ): Promise<RunResult> {
   return new Promise((resolve) => {
     execFile(
@@ -27,6 +28,7 @@ export function run(
       args,
       {
         cwd,
+        env,
         timeout: timeoutMs,
         maxBuffer: MAX_OUTPUT_BYTES,
         encoding: 'utf8',

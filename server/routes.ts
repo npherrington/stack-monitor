@@ -1,3 +1,34 @@
+import { readOverview } from '../core/agents/detect.ts'
+import {
+  listRuns,
+  readRun,
+  RunIdRequest,
+  RunsRequest,
+  startRun,
+  StartRunSchema,
+  stopRun,
+} from '../core/agents/runs.ts'
+import { runsDir } from '../core/agents/run-files.ts'
+import {
+  AgentSettingsSchema,
+  readAgentSettings,
+  saveAgentSettings,
+} from '../core/agents/settings.ts'
+import {
+  DraftSkillRequest,
+  ImprovePromptRequest,
+  listSkills,
+} from '../core/agents/skills.ts'
+import { draftSkill, improveText, runWorkflow } from '../core/agents/starts.ts'
+import {
+  deleteWorkflow,
+  DeleteWorkflowRequest,
+  listWorkflows,
+  RunWorkflowRequest,
+  saveWorkflow,
+  SaveWorkflowRequest,
+  WorkflowsRequest,
+} from '../core/agents/workflows.ts'
 import type { Health } from '../core/monitor-address.ts'
 import {
   addRepo,
@@ -33,7 +64,7 @@ import {
 import { detectWorktreeCommands } from '../core/worktrees/detect.ts'
 import { route, type Reply, type Routes } from './http.ts'
 
-// Of the largest body a route takes: a repo's stack.
+// Of the largest body a route takes: a repo's stack, or a run's four prompts.
 export const MAX_BODY_BYTES = 64 * 1024
 
 // 200 when the action was done, 409 when core refused it.
@@ -148,5 +179,84 @@ export function makeRoutes(tracking: Tracking): Routes {
       const snapshot = await readCheckouts(tracking)
       return 'problem' in snapshot ? unlisted(snapshot) : [200, snapshot]
     },
+    'GET /api/agents': async () => {
+      const settings = readAgentSettings(tracking.settings)
+      return 'problem' in settings
+        ? unlisted(settings)
+        : [200, await readOverview(settings)]
+    },
+    'POST /api/agents/settings': route(
+      AgentSettingsSchema,
+      '{ default?, designer?, agents? }',
+      async (body) => settled(await saveAgentSettings(tracking, body)),
+    ),
+    'GET /api/runs': route(RunsRequest, '?root=', async ({ root }) => {
+      if (root === undefined) return [200, await listRuns(runsDir())]
+      const repo = trackedRepo(tracking, root)
+      return 'root' in repo
+        ? [200, await listRuns(runsDir(), repo.root)]
+        : notRead(repo)
+    }),
+    'GET /api/runs/detail': route(RunIdRequest, '?id=', async ({ id }) => {
+      const detail = await readRun(id, runsDir())
+      return detail === null
+        ? [404, failure(`There's no run ${id}`)]
+        : [200, detail]
+    }),
+    'POST /api/runs': route(
+      StartRunSchema,
+      '{ checkout, title?, permissions, steps }',
+      async (body) => settled(await startRun(tracking, body, 'task')),
+    ),
+    'POST /api/runs/stop': route(RunIdRequest, '{ id }', async ({ id }) =>
+      settled(await stopRun(id, runsDir())),
+    ),
+    'GET /api/skills': route(RepoRootRequest, '?root=', async ({ root }) => {
+      const repo = trackedRepo(tracking, root)
+      return 'root' in repo ? [200, listSkills(repo.root)] : notRead(repo)
+    }),
+    'POST /api/skills/draft': route(
+      DraftSkillRequest,
+      '{ checkout, name, purpose, triggers, agent?, model? }',
+      async (body) => settled(await draftSkill(tracking, body)),
+    ),
+    'POST /api/prompts/improve': route(
+      ImprovePromptRequest,
+      '{ checkout, kind, text, agent?, model? }',
+      async (body) => settled(await improveText(tracking, body)),
+    ),
+    'GET /api/workflows': route(
+      WorkflowsRequest,
+      '?root=',
+      async ({ root }) => {
+        const repo = trackedRepo(tracking, root)
+        return 'root' in repo ? [200, listWorkflows(repo.root)] : notRead(repo)
+      },
+    ),
+    'POST /api/workflows/save': route(
+      SaveWorkflowRequest,
+      '{ root, workflow, replacing? }',
+      async ({ root, workflow, replacing }) => {
+        const repo = trackedRepo(tracking, root)
+        return 'root' in repo
+          ? settled(await saveWorkflow(repo.root, workflow, replacing))
+          : notRead(repo)
+      },
+    ),
+    'POST /api/workflows/delete': route(
+      DeleteWorkflowRequest,
+      '{ root, name }',
+      async ({ root, name }) => {
+        const repo = trackedRepo(tracking, root)
+        return 'root' in repo
+          ? settled(await deleteWorkflow(repo.root, name))
+          : notRead(repo)
+      },
+    ),
+    'POST /api/workflows/run': route(
+      RunWorkflowRequest,
+      '{ checkout, name }',
+      async (body) => settled(await runWorkflow(tracking, body)),
+    ),
   }
 }
