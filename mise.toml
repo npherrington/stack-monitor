@@ -31,6 +31,7 @@ depends = ["sync"]
 sources = [
   "web/**/*",
   "core/types.ts",
+  "core/config/schema.ts",
   "index.html",
   "public/**/*",
   "vite.config.ts",
@@ -50,7 +51,7 @@ description = "Add a linked worktree of this repo beside the primary, on <branch
 run = "scripts/worktree.sh"
 
 [tasks.icon]
-description = "Draw the pastel beaver from scripts/draw-icon.ts into public/: the favicon, the Dock icon and the manifest's icons."
+description = "Draw the pastel beaver from scripts/draw-icon.ts into public/: a favicon per pastel variety, the Dock icon and the manifest's icons."
 run = "node scripts/draw-icon.ts"
 
 [tasks.lint]
@@ -73,8 +74,8 @@ description = "actionlint over .github/workflows, with shellcheck on each run: b
 run = "actionlint"
 
 [tasks."lint:scripts"]
-description = "shellcheck over scripts/*.sh."
-run = "shellcheck scripts/*.sh"
+description = "shellcheck over scripts/*.sh and .claude/hooks/*.sh."
+run = "shellcheck scripts/*.sh .claude/hooks/*.sh"
 
 [tasks.schema]
 description = "Write schema/stack-monitor.schema.json from the config's zod schema. A test fails while it's out of date."

@@ -25,12 +25,18 @@ mise run dev                       # installs, builds the page, serves http://12
 Clone it outside `~/Desktop`, `~/Documents` and `~/Downloads`. macOS keeps background jobs out of
 those folders, and the monitor's schedules and login job will run as launchd jobs from its folder.
 
-**Point it at your repo.** Unset, it serves the repo it runs from, this one. For yours:
+**Add your repos.** Open **Settings** in the sidebar: add a repo by its path, or find the ones in
+a folder (`~/code`, say) and tick them. The Checkouts page then shows every worktree of each. The
+list lives in `~/.config/stack-monitor/.monitor.json` (`$STACK_MONITOR_SETTINGS` names another
+file); until you first change it, the list is the repo the monitor started in.
 
 ```sh
-STACK_MONITOR_REPO=~/src/myapp mise run dev   # any checkout of the repo, or a folder inside one
+STACK_MONITOR_REPO=~/src/myapp mise run dev   # start the list from another repo
 STACK_MONITOR_PORT=7430 mise run dev          # another port, 1024 to 65535
 ```
+
+Pins, names and colours you give checkouts, the filters, and the pastel theme (picked in the
+sidebar) are kept per browser.
 
 **Put it in the Dock.** Open the page in Safari and choose File > Add to Dock. It gets the beaver as
 its icon and opens in a window of its own. That window shows the running server, so start `mise run

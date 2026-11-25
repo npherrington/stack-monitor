@@ -1,6 +1,8 @@
 // `mise run icon`: the pastel beaver, drawn from the letter grid below into the page's icons in
-// public/. The grid is the source: edit it here, run the task, and commit what it writes.
-import { writeFileSync } from 'node:fs'
+// public/: one favicon per pastel variety, which the page swaps with the theme, plus the PNGs the
+// Dock and manifest take, in Blossom. The grid is the source: edit it here, run the task, and
+// commit what it writes.
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { crc32, deflateSync } from 'node:zlib'
 
@@ -39,9 +41,24 @@ const COLOURS: Record<string, string> = {
   T: '#f2aa6e', // tooth shadow
 }
 
-// The pastel theme's lavender, framed in its accent.
-const BACKGROUND = '#f3ecff'
-const FRAME = '#c08ae8'
+interface Backdrop {
+  background: string
+  frame: string
+}
+
+// Each variety's soft tint, framed in its accent: web/index.css's --secondary and --primary. The ids
+// are web/lib/theme.ts's THEMES.
+const VARIETIES: Record<string, Backdrop> = {
+  blossom: { background: '#f3ecff', frame: '#c08ae8' },
+  peach: { background: '#ffeee2', frame: '#f4a582' },
+  mint: { background: '#e3f6ec', frame: '#7fcfae' },
+  lavender: { background: '#eeeaff', frame: '#a99cf0' },
+  sky: { background: '#e6f1ff', frame: '#8cbcf0' },
+  lemon: { background: '#fff7d6', frame: '#f2d46b' },
+}
+
+// The PNGs are fixed once the Dock or a manifest has them, so they're the default variety.
+const DEFAULT = VARIETIES.blossom
 
 // Measured on a 512 canvas. Each size scales them and rounds to whole pixels.
 const CANVAS = 512
@@ -72,6 +89,7 @@ function layout(size: number): Layout {
 }
 
 function colourAt(at: Layout, x: number, y: number): string {
+  const { background, frame } = DEFAULT
   const { size, cell, offset, inset, width } = at
   const letter =
     BEAVER[Math.floor((y - offset) / cell)]?.[Math.floor((x - offset) / cell)]
@@ -80,7 +98,7 @@ function colourAt(at: Layout, x: number, y: number): string {
   }
   const within = (margin: number) =>
     x >= margin && y >= margin && x < size - margin && y < size - margin
-  return within(inset) && !within(inset + width) ? FRAME : BACKGROUND
+  return within(inset) && !within(inset + width) ? frame : background
 }
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -121,8 +139,8 @@ function png(size: number): Buffer {
   ])
 }
 
-// The favicon: one path per colour, a square per cell.
-function svg(): string {
+// A favicon: one path per colour, a square per cell.
+function svg({ background, frame }: Backdrop): string {
   const { cell, offset, inset, width } = layout(CANVAS)
   const paths = new Map<string, string>()
   BEAVER.forEach((row, y) => {
@@ -137,16 +155,22 @@ function svg(): string {
   const side = CANVAS - 2 * edge
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS} ${CANVAS}" shape-rendering="crispEdges">`,
-    `  <rect width="${CANVAS}" height="${CANVAS}" fill="${BACKGROUND}"/>`,
-    `  <rect x="${edge}" y="${edge}" width="${side}" height="${side}" fill="none" stroke="${FRAME}" stroke-width="${width}"/>`,
+    `  <rect width="${CANVAS}" height="${CANVAS}" fill="${background}"/>`,
+    `  <rect x="${edge}" y="${edge}" width="${side}" height="${side}" fill="none" stroke="${frame}" stroke-width="${width}"/>`,
     ...[...paths].map(([fill, d]) => `  <path fill="${fill}" d="${d}"/>`),
     '</svg>',
     '',
   ].join('\n')
 }
 
-writeFileSync(join(PUBLIC, 'icon.svg'), svg())
+writeFileSync(join(PUBLIC, 'icon.svg'), svg(DEFAULT))
+mkdirSync(join(PUBLIC, 'icons'), { recursive: true })
+for (const [id, backdrop] of Object.entries(VARIETIES)) {
+  writeFileSync(join(PUBLIC, 'icons', `${id}.svg`), svg(backdrop))
+}
 for (const [name, size] of Object.entries(SIZES)) {
   writeFileSync(join(PUBLIC, name), png(size))
 }
-console.warn(`Wrote icon.svg and ${Object.keys(SIZES).join(', ')} to ${PUBLIC}`)
+console.warn(
+  `Wrote icon.svg, icons/{${Object.keys(VARIETIES).join(',')}}.svg and ${Object.keys(SIZES).join(', ')} to ${PUBLIC}`,
+)
