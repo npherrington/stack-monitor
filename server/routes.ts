@@ -83,6 +83,10 @@ import {
   CreateWorktreeRequest,
 } from '../core/worktrees/create.ts'
 import { detectWorktreeCommands } from '../core/worktrees/detect.ts'
+import {
+  removeWorktree,
+  RemoveWorktreeRequest,
+} from '../core/worktrees/remove.ts'
 import { route, type Reply, type Routes } from './http.ts'
 
 // Of the largest body a route takes: a repo's stack, or a run's four prompts.
@@ -203,6 +207,11 @@ export function makeRoutes(
       CreateWorktreeRequest,
       '{ root, branch }',
       async (body) => settled(await createWorktree(tracking, body)),
+    ),
+    'POST /api/worktrees/remove': route(
+      RemoveWorktreeRequest,
+      '{ root, path, deleteBranch? }',
+      async (body) => settled(await removeWorktree(tracking, body)),
     ),
     'GET /api/checkouts': async () => {
       const snapshot = await readCheckouts(tracking)
