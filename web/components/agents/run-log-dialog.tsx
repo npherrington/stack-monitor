@@ -35,7 +35,7 @@ export function RunLogDialog({
 
   return (
     <Dialog open={runId !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85dvh] grid-cols-[minmax(0,1fr)] overflow-hidden sm:max-w-3xl">
+      <DialogContent className="max-h-[85dvh] overflow-hidden sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             {run?.title ?? 'Run'}

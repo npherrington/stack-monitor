@@ -65,6 +65,10 @@ import {
   saveRepoWorktrees,
   SaveWorktreesRequest,
 } from '../core/worktrees/config.ts'
+import {
+  createWorktree,
+  CreateWorktreeRequest,
+} from '../core/worktrees/create.ts'
 import { detectWorktreeCommands } from '../core/worktrees/detect.ts'
 import { route, type Reply, type Routes } from './http.ts'
 
@@ -178,6 +182,11 @@ export function makeRoutes(tracking: Tracking): Routes {
           ? [200, await detectWorktreeCommands(repo.root)]
           : notRead(repo)
       },
+    ),
+    'POST /api/worktrees': route(
+      CreateWorktreeRequest,
+      '{ root, branch }',
+      async (body) => settled(await createWorktree(tracking, body)),
     ),
     'GET /api/checkouts': async () => {
       const snapshot = await readCheckouts(tracking)

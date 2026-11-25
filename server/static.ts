@@ -81,6 +81,13 @@ export async function serveStatic(
   if (type.startsWith('text/html')) {
     res.setHeader('Content-Security-Policy', PAGE_POLICY)
   }
-  res.writeHead(200, { 'Content-Type': type })
+  // Vite names what's under assets/ by its contents; everything else is asked for again on each
+  // load, so a rebuilt page shows up without a hard reload.
+  res.writeHead(200, {
+    'Content-Type': type,
+    'Cache-Control': pathname.startsWith('/assets/')
+      ? 'public, max-age=31536000, immutable'
+      : 'no-cache',
+  })
   res.end(body)
 }

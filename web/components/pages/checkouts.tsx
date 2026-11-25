@@ -1,11 +1,20 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { RunSummary } from '../../../core/types.ts'
+import type {
+  ClaudeWorkflow,
+  RepoCheckouts,
+  RunSummary,
+} from '../../../core/types.ts'
 import { RunLogDialog } from '@/components/agents/run-log-dialog.tsx'
-import { RunHereDialog } from '@/components/checkouts/run-here-dialog.tsx'
+import {
+  RunHereDialog,
+  type RunHereTarget,
+} from '@/components/checkouts/run-here-dialog.tsx'
+import { ClaudeWorkflowDialog } from '@/components/agents/claude-workflow-dialog.tsx'
 
 import { CheckoutFilters } from '@/components/checkouts/checkout-filters.tsx'
+import { NewWorktreeDialog } from '@/components/checkouts/new-worktree-dialog.tsx'
 import { RepoSection } from '@/components/checkouts/repo-section.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Card } from '@/components/ui/card.tsx'
@@ -20,8 +29,13 @@ export function Checkouts() {
   const { prefs, filters, updatePref, setFilters } = useCheckoutPrefs()
   const { runs } = useRuns()
   const { overview } = useAgents()
-  const [runHere, setRunHere] = useState<string | null>(null)
+  const [runHere, setRunHere] = useState<RunHereTarget | null>(null)
+  const [claudeRun, setClaudeRun] = useState<{
+    workflow: ClaudeWorkflow
+    checkout: string
+  } | null>(null)
   const [openRun, setOpenRun] = useState<string | null>(null)
+  const [newIn, setNewIn] = useState<RepoCheckouts | null>(null)
   // Runs come newest first, so the first one seen for a checkout is its latest.
   const latestRuns = useMemo(() => {
     const latest = new Map<string, RunSummary>()
@@ -88,19 +102,36 @@ export function Checkouts() {
             latestRuns={latestRuns}
             onRunHere={setRunHere}
             onOpenRun={setOpenRun}
+            onNewWorktree={() => setNewIn(repo)}
           />
         ))
       )}
       <RunHereDialog
-        checkout={runHere}
+        target={runHere}
         overview={overview}
         onClose={() => setRunHere(null)}
         onStarted={(id) => {
           setRunHere(null)
           setOpenRun(id)
         }}
+        onRunClaude={(workflow) => {
+          if (runHere !== null) {
+            setClaudeRun({ workflow, checkout: runHere.checkout })
+          }
+          setRunHere(null)
+        }}
+      />
+      <ClaudeWorkflowDialog
+        workflow={claudeRun?.workflow ?? null}
+        checkout={claudeRun?.checkout}
+        onClose={() => setClaudeRun(null)}
+        onStarted={(id) => {
+          setClaudeRun(null)
+          setOpenRun(id)
+        }}
       />
       <RunLogDialog runId={openRun} onClose={() => setOpenRun(null)} />
+      <NewWorktreeDialog repo={newIn} onClose={() => setNewIn(null)} />
     </div>
   )
 }
