@@ -144,7 +144,11 @@ describe('workflows', () => {
 
   test('saves, lists, renames and deletes, reporting files that do not parse', async () => {
     const root = tempDir()
-    assert.deepEqual(listWorkflows(root), { workflows: [], problems: [] })
+    assert.deepEqual(listWorkflows(root), {
+      workflows: [],
+      claude: [],
+      problems: [],
+    })
     const saved = await saveWorkflow(root, workflow('review'))
     assert.deepEqual(saved, {
       ok: true,

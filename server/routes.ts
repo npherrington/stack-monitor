@@ -19,6 +19,10 @@ import {
   ImprovePromptRequest,
   listSkills,
 } from '../core/agents/skills.ts'
+import {
+  runClaudeWorkflow,
+  RunClaudeWorkflowSchema,
+} from '../core/agents/claude-workflows.ts'
 import { draftSkill, improveText, runWorkflow } from '../core/agents/starts.ts'
 import {
   deleteWorkflow,
@@ -257,6 +261,11 @@ export function makeRoutes(tracking: Tracking): Routes {
       RunWorkflowRequest,
       '{ checkout, name }',
       async (body) => settled(await runWorkflow(tracking, body)),
+    ),
+    'POST /api/workflows/run-claude': route(
+      RunClaudeWorkflowSchema,
+      '{ checkout, name, testRun?, notes?, argument?, permissions? }',
+      async (body) => settled(await runClaudeWorkflow(tracking, body)),
     ),
   }
 }

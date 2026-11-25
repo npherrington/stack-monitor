@@ -18,6 +18,7 @@ import {
   type Workflow,
   type WorkflowList,
 } from '../types.ts'
+import { listClaudeWorkflows } from './claude-workflows.ts'
 import { MAX_STEPS, PermissionsSchema, Prompt } from './runs.ts'
 import { AgentIdSchema, ModelName } from './settings.ts'
 
@@ -81,16 +82,18 @@ function readWorkflowFile(
     : { problem: `its name is ${parsed.data.name}, but the file is ${file}` }
 }
 
+// The monitor's own workflows, and Claude Code's from .claude/workflows.
 export function listWorkflows(root: string): WorkflowList {
-  let files: string[]
+  const { claude, problems } = listClaudeWorkflows(root)
+  const list: WorkflowList = { workflows: [], claude, problems: [] }
+  let files: string[] = []
   try {
     files = readdirSync(workflowsDir(root)).filter((file) =>
       file.endsWith('.json'),
     )
   } catch {
-    return { workflows: [], problems: [] }
+    // No folder: none of its own.
   }
-  const list: WorkflowList = { workflows: [], problems: [] }
   for (const file of files.toSorted()) {
     const read = readWorkflowFile(root, file)
     if ('problem' in read) {
@@ -102,6 +105,7 @@ export function listWorkflows(root: string): WorkflowList {
       list.workflows.push(read)
     }
   }
+  list.problems.push(...problems)
   return list
 }
 

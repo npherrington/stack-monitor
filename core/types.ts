@@ -280,8 +280,36 @@ export interface Workflow {
   steps: WorkflowStep[] // 1 to 4
 }
 
+export type ClaudeWorkflowArgument = 'none' | 'ticket' | 'tickets' | 'text'
+
+// .claude/workflows/<name>.js, a Claude Code Workflow script, read from its meta. With a
+// <name>.json manifest and an executable <name>.sh beside it, the launcher is what runs.
+export interface ClaudeWorkflow {
+  name: string
+  launcher: boolean // runs .claude/workflows/<name>.sh; else claude runs the script itself
+  label: string // the manifest's label, else the name
+  description: string
+  phases: string[] // the script's meta.phases titles
+  cost: string | null // what a run takes, from the manifest
+  effort: string | null // the manifest's default effort
+  testRun: boolean // the launcher takes --no-publish
+  argument: ClaudeWorkflowArgument // what the launcher takes after its options
+  argumentLabel: string | null
+}
+
+// POST /api/workflows/run-claude
+export interface RunClaudeWorkflowRequest {
+  checkout: string
+  name: string
+  testRun?: boolean
+  notes?: string // free text every stage reads
+  argument?: string // ticket ids split by spaces or commas, or one line of text
+  permissions?: RunPermissions // a script's run; a launcher sets its own
+}
+
 // GET /api/workflows?root=
 export interface WorkflowList {
   workflows: Workflow[]
-  problems: { file: string; problem: string }[] // files in the folder that didn't parse
+  claude: ClaudeWorkflow[]
+  problems: { file: string; problem: string }[] // files in the folders that didn't parse
 }
