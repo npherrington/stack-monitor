@@ -8,7 +8,7 @@ const PROBE_TIMEOUT_MS = 1000
 // What GET /api/health answers.
 export const HealthSchema = z.object({
   app: z.literal('stack-monitor'),
-  root: z.string(), // the checkout it serves the clone through
+  root: z.string(), // the primary checkout of the repo it was started for
   pid: z.number(),
 })
 export type Health = z.infer<typeof HealthSchema>

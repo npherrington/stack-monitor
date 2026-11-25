@@ -1,5 +1,5 @@
-// `mise run dev`: serves the monitor for the repo STACK_MONITOR_REPO names, or the one it's
-// started in.
+// `mise run dev`: serves the monitor, which tracks the repos its settings file lists. Until that
+// file is first written, the list is the repo STACK_MONITOR_REPO names, or the one it's started in.
 import { resolve } from 'node:path'
 
 import {
@@ -7,7 +7,8 @@ import {
   monitorUrl,
   readMonitorPort,
 } from '../core/monitor-address.ts'
-import { findRepo } from '../core/worktrees/clone.ts'
+import { settingsPath } from '../core/settings.ts'
+import { findRepo, primaryRoot } from '../core/worktrees/clone.ts'
 import { startMonitor } from './monitor.ts'
 
 const DIST = resolve(import.meta.dirname, '..', 'dist')
@@ -31,8 +32,10 @@ async function main(): Promise<number> {
     )
     return 1
   }
+  const seed = await primaryRoot(repo.root)
+  const settings = settingsPath()
   try {
-    await startMonitor({ port, repo: repo.root, dist: DIST, unbuilt: UNBUILT })
+    await startMonitor({ port, seed, settings, dist: DIST, unbuilt: UNBUILT })
   } catch (error) {
     if (!inUse(error)) throw error
     const running = await findMonitor(port)
@@ -43,7 +46,9 @@ async function main(): Promise<number> {
     )
     return 1
   }
-  console.log(`Stack monitor on ${monitorUrl(port)} for ${repo.root}`)
+  console.log(
+    `Stack monitor on ${monitorUrl(port)}, its repos listed in ${settings}`,
+  )
   return 0
 }
 

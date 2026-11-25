@@ -30,7 +30,8 @@ launchd.
   services, and creates and removes worktrees. It never starts an agent run or a schedule: an agent
   that starts unattended agents spends money with nobody deciding.
 - **No build step for the server.** `core/`, `server/` and `mcp/` are `.ts` files Node runs
-  directly (type stripping). Only the page is built (Vite + React).
+  directly (type stripping). Only the page is built: Vite + React, shadcn on Base UI with Tailwind,
+  TanStack Query and React Router (`docs/decisions/`).
 
 ## Modules
 
@@ -221,8 +222,10 @@ core/
   feature-map/  blocks, sketch layout, the file format
 server/         node:http, the route table, the built page
 mcp/            stdio MCP server over core/
-web/            the page
+web/            the page: components/{ui,layouts,pages,<feature>}, hooks, providers, lib
 tests/          node:test, against fixture repos
+docs/           style-guides, decisions, plans, agents (how the skills use the tracker)
+.agents/        agent skills and subagents; .claude/skills and .claude/agents link here
 ```
 
 ## Steps
@@ -274,5 +277,6 @@ those folders, so schedules would fail there.
   with an Apple Developer ID and notarised. Until then it's built from source.
 - **Linux.** `lsof` and `ps` work there; schedules and the login job would need systemd user units
   beside launchd.
-- **More than one repo per monitor.** One monitor serves one clone, as the original does. Several
-  would need a repo picker and a config per repo.
+- **More than one repo per monitor** (built: Settings keeps a list of repos in
+  `~/.config/stack-monitor/.monitor.json`, the one thing besides schedules and logs the monitor
+  stores). Still open: how create, remove, the stack and agents pick their repo.

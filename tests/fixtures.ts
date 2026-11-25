@@ -61,3 +61,39 @@ export function gitRepo(dir: string): string {
 export function writeJson(path: string, value: unknown): void {
   writeFileSync(path, JSON.stringify(value))
 }
+
+// A clone of a bare `origin`, with a linked worktree in each state the checkouts read tells apart.
+// The primary is on main, level with origin/main, which holds a tracked README.
+export function cloneWithOrigin(root: string) {
+  const origin = join(root, 'origin.git')
+  git(root, 'init', '-q', '--bare', '-b', 'main', origin)
+  const primary = join(root, 'app')
+  mkdirSync(primary)
+  git(primary, 'init', '-q', '-b', 'main')
+  writeFileSync(join(primary, 'README'), 'first\n')
+  git(primary, 'add', 'README')
+  git(primary, 'commit', '-q', '-m', 'first')
+  git(primary, 'remote', 'add', 'origin', origin)
+  git(primary, 'push', '-q', '-u', 'origin', 'main')
+  const worktree = (name: string) => {
+    const path = join(root, `app-${name}`)
+    git(primary, 'worktree', 'add', '-q', '-b', name, path, 'origin/main')
+    return path
+  }
+  const commit = (dir: string, message: string) =>
+    git(dir, 'commit', '-q', '--allow-empty', '-m', message)
+  // Cut before main moves on, so it ends behind by the merged commit and the merge.
+  const behind = worktree('behind')
+  // Merged into main with a merge commit, so its HEAD is off main's first-parent line.
+  const merged = worktree('merged')
+  commit(merged, 'merged work')
+  git(primary, 'merge', '-q', '--no-ff', '-m', 'merge merged', 'merged')
+  git(primary, 'push', '-q', 'origin', 'main')
+  const ahead = worktree('ahead')
+  commit(ahead, 'ahead work')
+  // A changed tracked file and an untracked one.
+  const changed = worktree('changed')
+  writeFileSync(join(changed, 'README'), 'changed\n')
+  writeFileSync(join(changed, 'new.txt'), 'new\n')
+  return { origin, primary, behind, merged, ahead, changed }
+}

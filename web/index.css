@@ -1,0 +1,226 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/* Pastel only, light only, for now. Each variety is a block of tokens on <html data-theme>, set
+   before first paint by public/theme.js and kept by ThemeProvider. A dark variant of each comes
+   later; it adds a block per variety and moves this variant onto it. */
+@custom-variant dark (&:is([data-mode='dark'] *));
+
+@theme inline {
+  --font-sans:
+    ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-strong: var(--strong);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  /* A checkout's colour (web/lib/checkout-prefs.ts): the same pastels on every variety */
+  --color-swatch-red: #f4a3a8;
+  --color-swatch-orange: #f8c08f;
+  --color-swatch-yellow: #f2dc7d;
+  --color-swatch-green: #a8ddb5;
+  --color-swatch-teal: #96d8cf;
+  --color-swatch-blue: #a3c4f3;
+  --color-swatch-purple: #c9b2f0;
+  --color-swatch-pink: #f5b2d0;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  color-scheme: light;
+  --radius: 0.75rem;
+}
+
+:root,
+:root[data-theme='blossom'] {
+  --background: #fbf7ff;
+  --wash: linear-gradient(135deg, #fdf0f7 0%, #f3efff 45%, #ebfbf3 100%);
+  --foreground: #4a4060;
+  --strong: #2f2742;
+  --card: rgb(255 255 255 / 82%);
+  --card-foreground: #4a4060;
+  --popover: #ffffff;
+  --popover-foreground: #4a4060;
+  --primary: #c08ae8;
+  --primary-foreground: #2f2742;
+  --secondary: #f3ecff;
+  --secondary-foreground: #2f2742;
+  --muted: #f3ecff;
+  --muted-foreground: #72678c;
+  --accent: #ffe3ee;
+  --accent-foreground: #2f2742;
+  --success: #228057;
+  --warning: #9f5f19;
+  --destructive: #bc4367;
+  --border: #e8def7;
+  --input: #e8def7;
+  --ring: #b79ce6;
+  --sidebar: rgb(255 255 255 / 55%);
+}
+
+:root[data-theme='peach'] {
+  --background: #fff8f3;
+  --wash: linear-gradient(135deg, #ffefe4 0%, #fff6e9 45%, #ffeaea 100%);
+  --foreground: #5a4338;
+  --strong: #3d2a22;
+  --card: rgb(255 255 255 / 82%);
+  --card-foreground: #5a4338;
+  --popover: #ffffff;
+  --popover-foreground: #5a4338;
+  --primary: #f4a582;
+  --primary-foreground: #3d2a22;
+  --secondary: #ffeee2;
+  --secondary-foreground: #3d2a22;
+  --muted: #ffeee2;
+  --muted-foreground: #8a6d5f;
+  --accent: #ffe0d6;
+  --accent-foreground: #3d2a22;
+  --success: #2f7d4f;
+  --warning: #9a5b12;
+  --destructive: #c0473f;
+  --border: #f5e1d4;
+  --input: #f5e1d4;
+  --ring: #eaa587;
+  --sidebar: rgb(255 255 255 / 55%);
+}
+
+:root[data-theme='mint'] {
+  --background: #f4fbf7;
+  --wash: linear-gradient(135deg, #e9f8f0 0%, #eef8f4 45%, #e6f6f8 100%);
+  --foreground: #36524a;
+  --strong: #213a33;
+  --card: rgb(255 255 255 / 82%);
+  --card-foreground: #36524a;
+  --popover: #ffffff;
+  --popover-foreground: #36524a;
+  --primary: #7fcfae;
+  --primary-foreground: #213a33;
+  --secondary: #e3f6ec;
+  --secondary-foreground: #213a33;
+  --muted: #e3f6ec;
+  --muted-foreground: #5f7d73;
+  --accent: #dff3f5;
+  --accent-foreground: #213a33;
+  --success: #1f7350;
+  --warning: #8f6116;
+  --destructive: #b8485a;
+  --border: #d6ece2;
+  --input: #d6ece2;
+  --ring: #86c9ad;
+  --sidebar: rgb(255 255 255 / 55%);
+}
+
+:root[data-theme='lavender'] {
+  --background: #f8f6ff;
+  --wash: linear-gradient(135deg, #f1edff 0%, #f6f0ff 45%, #fdeef5 100%);
+  --foreground: #484262;
+  --strong: #2c2745;
+  --card: rgb(255 255 255 / 82%);
+  --card-foreground: #484262;
+  --popover: #ffffff;
+  --popover-foreground: #484262;
+  --primary: #a99cf0;
+  --primary-foreground: #2c2745;
+  --secondary: #eeeaff;
+  --secondary-foreground: #2c2745;
+  --muted: #eeeaff;
+  --muted-foreground: #6f6a90;
+  --accent: #fde6f0;
+  --accent-foreground: #2c2745;
+  --success: #2a7a57;
+  --warning: #93611a;
+  --destructive: #b8436a;
+  --border: #e2ddf6;
+  --input: #e2ddf6;
+  --ring: #a99cf0;
+  --sidebar: rgb(255 255 255 / 55%);
+}
+
+:root[data-theme='sky'] {
+  --background: #f5f9ff;
+  --wash: linear-gradient(135deg, #e9f3ff 0%, #eef7fb 45%, #f1edff 100%);
+  --foreground: #3c4a63;
+  --strong: #24314a;
+  --card: rgb(255 255 255 / 82%);
+  --card-foreground: #3c4a63;
+  --popover: #ffffff;
+  --popover-foreground: #3c4a63;
+  --primary: #8cbcf0;
+  --primary-foreground: #24314a;
+  --secondary: #e6f1ff;
+  --secondary-foreground: #24314a;
+  --muted: #e6f1ff;
+  --muted-foreground: #637290;
+  --accent: #e2f6f7;
+  --accent-foreground: #24314a;
+  --success: #22785a;
+  --warning: #8e6218;
+  --destructive: #b84a5c;
+  --border: #dbe6f5;
+  --input: #dbe6f5;
+  --ring: #8cbcf0;
+  --sidebar: rgb(255 255 255 / 55%);
+}
+
+:root[data-theme='lemon'] {
+  --background: #fffdf2;
+  --wash: linear-gradient(135deg, #fffbe0 0%, #fff3e6 45%, #eefaf0 100%);
+  --foreground: #554d33;
+  --strong: #3a3420;
+  --card: rgb(255 255 255 / 82%);
+  --card-foreground: #554d33;
+  --popover: #ffffff;
+  --popover-foreground: #554d33;
+  --primary: #f2d46b;
+  --primary-foreground: #3a3420;
+  --secondary: #fff7d6;
+  --secondary-foreground: #3a3420;
+  --muted: #fff7d6;
+  --muted-foreground: #857a56;
+  --accent: #ffeedd;
+  --accent-foreground: #3a3420;
+  --success: #2b7a4b;
+  --warning: #8c5e10;
+  --destructive: #b8483f;
+  --border: #f1e9c8;
+  --input: #f1e9c8;
+  --ring: #e3c45a;
+  --sidebar: rgb(255 255 255 / 55%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply min-h-dvh font-sans text-foreground;
+    background: var(--wash) fixed var(--background);
+  }
+  ::selection {
+    @apply bg-accent text-strong;
+  }
+}

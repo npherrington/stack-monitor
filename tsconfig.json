@@ -4,5 +4,9 @@
     { "path": "./tsconfig.web.json" },
     { "path": "./tsconfig.node.json" },
     { "path": "./tsconfig.test.json" }
-  ]
+  ],
+  /* For the shadcn CLI, which reads the alias from here; tsconfig.web.json has the same */
+  "compilerOptions": {
+    "paths": { "@/*": ["./web/*"] }
+  }
 }

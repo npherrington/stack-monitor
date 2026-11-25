@@ -14,6 +14,7 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "paths": { "@/*": ["./web/*"] },
 
     /* Linting */
     "noUnusedLocals": true,
@@ -22,5 +23,5 @@
     "noFallthroughCasesInSwitch": true
   },
   /* The core files the page imports: the same list as mise.toml's build sources */
-  "include": ["web", "core/types.ts"]
+  "include": ["web", "core/types.ts", "core/config/schema.ts"]
 }
