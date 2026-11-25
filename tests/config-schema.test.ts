@@ -167,7 +167,7 @@ describe('the config schema', () => {
     ])
   })
 
-  test('{index} and a port base need worktrees.index', () => {
+  test('{index} needs worktrees.index; a port base alone is a fixed port', () => {
     const config = {
       worktrees: { teardown: 'docker compose -p app_wt{index} down' },
       stack: {
@@ -176,7 +176,6 @@ describe('the config schema', () => {
     }
     assert.deepEqual(problems(config), [
       'worktrees.teardown: uses {index}, which needs worktrees.index',
-      'stack.services.api.status.port.base: a port of base + index needs worktrees.index',
     ])
     const indexed = {
       ...config,

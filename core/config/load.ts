@@ -17,8 +17,10 @@ export type LoadedConfig =
   | { ok: true; path: string | null; config: Config } // path null: no file, the defaults
   | { ok: false; path: string; problem: string }
 
-interface Where {
+export interface Where {
   primary: string // the primary checkout's root
+  personal?: string // this machine's own config for the repo, looked at first
+  seed?: boolean // the repo the monitor was started for: the only one STACK_MONITOR_CONFIG names
   env?: NodeJS.ProcessEnv
   home?: string
 }
@@ -28,26 +30,30 @@ interface Candidate {
   required: boolean // named outright, so its absence is a problem rather than a miss
 }
 
-// Where a config is looked for, first match wins. STACK_MONITOR_CONFIG is the only place looked
-// when it's set: a typo in it mustn't fall through to some other file.
+// Where a config is looked for, first match wins: the personal file, the repo's own, then the
+// older per-user file named after the folder. For the seed, STACK_MONITOR_CONFIG is the only place
+// looked when it's set: a typo in it mustn't fall through to some other file.
 export function configCandidates({
   primary,
+  personal,
+  seed = false,
   env = process.env,
   home = homedir(),
 }: Where): Candidate[] {
   const named = env[CONFIG_ENV]
-  if (named) return [{ path: resolve(named), required: true }]
+  if (seed && named) return [{ path: resolve(named), required: true }]
   const userDir = join(
     env.XDG_CONFIG_HOME || join(home, '.config'),
     'stack-monitor',
   )
   return [
+    ...(personal === undefined ? [] : [{ path: personal, required: false }]),
     { path: join(primary, CONFIG_FILE), required: false },
     { path: join(userDir, `${basename(primary)}.json`), required: false },
   ]
 }
 
-function describeIssues(issues: z.core.$ZodIssue[]): string {
+export function describeIssues(issues: z.core.$ZodIssue[]): string {
   const shown = issues.slice(0, SHOWN_ISSUES).map((issue) => {
     const at = issue.path.map(String).join('.')
     return at === '' ? issue.message : `${at}: ${issue.message}`
@@ -78,22 +84,33 @@ function readFirst(
   return null
 }
 
-export function loadConfig(where: Where): LoadedConfig {
+export type RawConfig =
+  | { ok: true; path: string | null; raw: unknown } // path null: no file
+  | { ok: false; path: string; problem: string }
+
+// The config in effect as JSON, before the schema has looked at it.
+export function readRawConfig(where: Where): RawConfig {
   const found = readFirst(configCandidates(where))
-  if (found === null) {
-    return { ok: true, path: null, config: ConfigSchema.parse({}) }
-  }
+  if (found === null) return { ok: true, path: null, raw: {} }
   const { path } = found
   if ('problem' in found) return { ok: false, path, problem: found.problem }
-  let raw: unknown
   try {
-    raw = JSON.parse(found.text)
+    return { ok: true, path, raw: JSON.parse(found.text) }
   } catch (error) {
     return {
       ok: false,
       path,
       problem: `${path} isn't JSON: ${errorMessage(error)}`,
     }
+  }
+}
+
+export function loadConfig(where: Where): LoadedConfig {
+  const read = readRawConfig(where)
+  if (!read.ok) return read
+  const { path, raw } = read
+  if (path === null) {
+    return { ok: true, path: null, config: ConfigSchema.parse({}) }
   }
   const parsed = ConfigSchema.safeParse(raw)
   return parsed.success

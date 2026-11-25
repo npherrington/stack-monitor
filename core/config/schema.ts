@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Modules } from '../types.ts'
 
 export const INDEX = '{index}'
+export const DEFAULT_MAINLINE = 'origin/main'
 
 // Handed to git as an argument, so it can't start with '-'.
 const Ref = z
@@ -27,7 +28,7 @@ const EnvKey = z
   .string()
   .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, 'must be an environment variable name')
 
-const Name = z
+export const Name = z
   .string()
   .regex(
     /^[a-z][a-z0-9-]{0,23}$/,
@@ -60,7 +61,7 @@ const PortStatus = z
       .max(65535)
       .optional()
       .describe(
-        'The port is base + the worktree index. Create checks it is free before it makes a worktree',
+        'The port. With worktrees.index, base + the worktree’s index, so each worktree gets its own; create checks it is free before it makes a worktree',
       ),
   })
   .refine(
@@ -115,7 +116,7 @@ const Status = z
     'needs exactly one of port, compose, process or command',
   )
 
-const Service = z
+export const Service = z
   .strictObject({
     start: Command.describe('Starts it, run detached in the checkout'),
     stop: Command.optional().describe(
@@ -138,7 +139,7 @@ const Service = z
     path: ['ready'],
   })
 
-const Stack = z.strictObject({
+export const Stack = z.strictObject({
   services: z
     .record(Name, Service)
     .refine(
@@ -210,7 +211,7 @@ const FeatureMap = z.strictObject({
 
 const ConfigObject = z.strictObject({
   $schema: z.string().optional(),
-  mainline: Ref.default('origin/main').describe(
+  mainline: Ref.default(DEFAULT_MAINLINE).describe(
     'The ref branches are compared against and cut from',
   ),
   worktrees: Worktrees.prefault({}),
@@ -306,12 +307,6 @@ function indexProblems(config: ConfigShape): Problem[] {
       'compose',
       'project',
     ])
-    if (service.status.port?.base !== undefined) {
-      problems.push({
-        path: [...at, 'status', 'port', 'base'],
-        message: 'a port of base + index needs worktrees.index',
-      })
-    }
   }
   return problems
 }
@@ -329,6 +324,8 @@ export const ConfigSchema = ConfigObject.superRefine((config, ctx) => {
 
 export type Config = z.output<typeof ConfigSchema>
 export type ConfigInput = z.input<typeof ConfigSchema>
+export type StackInput = z.input<typeof Stack>
+export type ServiceInput = StackInput['services'][string]
 
 export function modulesOf(config: Config): Modules {
   return {
@@ -338,3 +335,5 @@ export function modulesOf(config: Config): Modules {
     featureMap: true,
   }
 }
+export type StackConfig = z.output<typeof Stack>
+export type ServiceConfig = StackConfig['services'][string]

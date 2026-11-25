@@ -103,7 +103,7 @@
                         "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
                       },
                       "base": {
-                        "description": "The port is base + the worktree index. Create checks it is free before it makes a worktree",
+                        "description": "The port. With worktrees.index, base + the worktree’s index, so each worktree gets its own; create checks it is free before it makes a worktree",
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 65535

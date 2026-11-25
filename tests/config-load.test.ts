@@ -61,19 +61,52 @@ describe('loading the config', () => {
     )
   })
 
-  test('STACK_MONITOR_CONFIG is the only place looked when it is set', () => {
+  test('for the seed, STACK_MONITOR_CONFIG is the only place looked when it is set', () => {
     const { root, primary, home } = places()
     writeJson(join(primary, 'stack-monitor.json'), {})
     const named = join(root, 'elsewhere.json')
     const env = { STACK_MONITOR_CONFIG: named }
-    const missing = loadConfig({ primary, home, env })
+    const personal = join(root, 'personal.json')
+    writeJson(personal, {})
+    const missing = loadConfig({ primary, personal, seed: true, home, env })
     assert.deepEqual(missing, {
       ok: false,
       path: named,
       problem: `STACK_MONITOR_CONFIG names ${named}, which doesn't exist`,
     })
     writeJson(named, {})
-    assert.equal(loadConfig({ primary, home, env }).path, named)
+    assert.equal(loadConfig({ primary, seed: true, home, env }).path, named)
+  })
+
+  test('STACK_MONITOR_CONFIG names no other repo’s config', () => {
+    const { root, primary, home } = places()
+    const env = { STACK_MONITOR_CONFIG: join(root, 'elsewhere.json') }
+    writeJson(env.STACK_MONITOR_CONFIG, {})
+    assert.equal(loadConfig({ primary, home, env }).path, null)
+  })
+
+  test('the personal file comes first, then the repo’s, then the user file', () => {
+    const { root, primary, home, env, userFile } = places()
+    const personal = join(root, 'repos', 'myapp-12345678.json')
+    assert.deepEqual(
+      configCandidates({ primary, personal, home, env }).map(
+        ({ path }) => path,
+      ),
+      [personal, join(primary, 'stack-monitor.json'), userFile],
+    )
+    mkdirSync(join(root, 'repos'))
+    for (const file of [userFile, join(primary, 'stack-monitor.json')]) {
+      writeJson(file, {})
+    }
+    assert.equal(
+      loadConfig({ primary, personal, home, env }).path,
+      join(primary, 'stack-monitor.json'),
+    )
+    writeJson(personal, { mainline: 'origin/mine' })
+    const loaded = loadConfig({ primary, personal, home, env })
+    assert.ok(loaded.ok)
+    assert.equal(loaded.path, personal)
+    assert.equal(loaded.config.mainline, 'origin/mine')
   })
 
   test('says a file that is not JSON is not, naming it', () => {
