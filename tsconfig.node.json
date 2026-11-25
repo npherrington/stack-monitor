@@ -19,5 +19,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["core", "server", "mcp", "scripts", "vite.config.ts"]
+  "include": ["app", "core", "server", "mcp", "scripts", "vite.config.ts"]
 }

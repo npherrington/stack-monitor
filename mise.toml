@@ -45,6 +45,11 @@ description = "Serve the monitor on http://127.0.0.1:7420 (STACK_MONITOR_PORT) f
 depends = ["build"]
 run = "node server/main.ts"
 
+[tasks.app]
+description = "Open the monitor as a macOS app (Electron), serving it in-process. The page rebuilds on save and the window reloads; restart for a server change."
+depends = ["build"]
+run = "npx electron app/main.ts"
+
 # Extra arguments go to the script: `mise run worktree -- try-1`.
 [tasks.worktree]
 description = "Add a linked worktree of this repo beside the primary, on <branch> (cut from origin/main when new), with its dependencies installed."

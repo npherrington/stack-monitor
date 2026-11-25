@@ -33,7 +33,7 @@ import {
   SaveWorkflowRequest,
   WorkflowsRequest,
 } from '../core/agents/workflows.ts'
-import type { Health } from '../core/monitor-address.ts'
+import { MONITOR_HOME, type Health } from '../core/monitor-address.ts'
 import {
   addRepo,
   AddRepoRequest,
@@ -120,6 +120,7 @@ export function makeRoutes(
         app: 'stack-monitor',
         root: tracking.seed,
         pid: process.pid,
+        home: MONITOR_HOME,
       }
       return [200, health]
     },
