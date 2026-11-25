@@ -14,20 +14,62 @@ concurrency:
 permissions:
   contents: read
 
+# Three jobs that together are a local `mise run check`. mise installs node, actionlint and
+# shellcheck at the builds mise.lock pins; each task installs package-lock.json first.
 jobs:
-  check:
-    name: Check
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-
-      # Installs node, actionlint and shellcheck at the builds mise.lock pins.
       - name: Set up mise
         uses: jdx/mise-action@v5
         with:
           install_args: --locked
+      # oxlint, eslint, prettier --check and tsc
+      - name: Lint
+        run: mise run lint
+      - name: Lint workflows
+        run: mise run lint:workflows
+      - name: Lint scripts and hooks
+        run: mise run lint:scripts
 
-      # The same as a local `mise run check`: lint, lint:workflows, test, build.
-      - name: Check
-        run: mise run check
+  test:
+    name: Test (${{ matrix.os }})
+    # The monitor reads macOS's lsof, ps and git; Linux catches what differs between git builds.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          install_args: --locked
+      - name: Test
+        run: mise run test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          install_args: --locked
+      - name: Build the page
+        run: mise run build
+      # The built page, to download from the run and serve with `node server/main.ts`.
+      - name: Upload the page
+        uses: actions/upload-artifact@v7
+        with:
+          name: page
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
