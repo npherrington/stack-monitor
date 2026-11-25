@@ -215,7 +215,8 @@ describe('reading the checkouts', () => {
     const broken = read.repos[0].checkouts.find((c) => c.path === clone.changed)
     assert.equal(broken?.changed, 0)
     assert.equal(broken?.prunable, false)
-    assert.match(broken?.problem ?? '', /^git status failed: .*nowhere/)
+    // git's own words differ between versions, so only the monitor's prefix is checked.
+    assert.match(broken?.problem ?? '', /^git status failed: \S/)
     assert.equal(read.repos[0].checkouts.length, 7)
   })
 })
