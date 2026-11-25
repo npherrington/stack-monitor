@@ -45,7 +45,7 @@ describe('scanning a folder for repos', () => {
         { root: two, name: 'two', worktrees: 1, tracked: true },
         { root: three, name: 'three', worktrees: 1, tracked: false },
         { root: outside, name: 'outside', worktrees: 3, tracked: false },
-      ].sort((a, b) => a.root.localeCompare(b.root)),
+      ].toSorted((a, b) => a.root.localeCompare(b.root)),
     )
   })
 

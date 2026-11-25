@@ -2,7 +2,7 @@ import type { Checkout } from '../../core/types.ts'
 import type { CheckoutFilters, CheckoutPrefs } from '@/lib/checkout-prefs.ts'
 
 // What the filters leave of one repo's checkouts, pinned first, each group in git's order (primary
-// first). Array.sort is stable, so git's order holds within a group.
+// first). toSorted is stable, so git's order holds within a group.
 export function visibleCheckouts(
   checkouts: Checkout[],
   prefs: CheckoutPrefs,
@@ -15,7 +15,7 @@ export function visibleCheckouts(
       (checkout) =>
         !(filters.hideClean && checkout.changed === 0 && !checkout.ahead),
     )
-    .sort(
+    .toSorted(
       (a, b) =>
         Number(prefs[b.path]?.pinned === true) -
         Number(prefs[a.path]?.pinned === true),

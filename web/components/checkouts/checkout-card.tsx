@@ -149,6 +149,7 @@ function RenameField({ initial, placeholder, onDone }: RenameFieldProps) {
   return (
     <form onSubmit={save} className="flex items-center gap-1">
       <Input
+        // oxlint-disable-next-line jsx-a11y/no-autofocus -- it appears because Rename was just clicked
         autoFocus
         aria-label="Name"
         value={value}

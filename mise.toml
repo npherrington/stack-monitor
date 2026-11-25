@@ -55,7 +55,7 @@ description = "Draw the pastel beaver from scripts/draw-icon.ts into public/: a 
 run = "node scripts/draw-icon.ts"
 
 [tasks.lint]
-description = "eslint, prettier --check and tsc."
+description = "oxlint, eslint, prettier --check and tsc."
 depends = ["sync"]
 run = ["npm run lint", "npm run format:check", "npm run tsc"]
 

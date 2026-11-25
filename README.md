@@ -70,7 +70,7 @@ and hover docs in your editor:
 ## Develop
 
 ```sh
-mise run check               # everything CI runs: eslint, prettier, tsc, actionlint, shellcheck, tests, the page build
+mise run check               # everything CI runs: oxlint, eslint, prettier, tsc, actionlint, shellcheck, tests, the page build
 mise run test                # tests/, with Node's own test runner
 mise run format              # prettier --write
 mise run schema              # rewrite the JSON Schema after changing core/config/schema.ts

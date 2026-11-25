@@ -241,10 +241,10 @@ describe('the routes', () => {
         marker: { start: 'touch up', status: { command: 'test -f up' } },
       },
     }
-    const saved = await post('/api/repos/stack', { root: primary, stack })
-    assert.equal(saved.status, 200)
+    const answer = await post('/api/repos/stack', { root: primary, stack })
+    assert.equal(answer.status, 200)
     assert.equal(
-      saved.body.message,
+      answer.body.message,
       `Saved the stack to ${personal}, with the rest of ${join(primary, 'stack-monitor.json')}`,
     )
     const read = await get(

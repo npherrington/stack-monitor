@@ -32,11 +32,11 @@ export interface Serving {
 export function route<Input>(
   input: z.ZodType<Input>,
   expects: string,
-  respond: (input: Input) => Promise<Reply>,
+  answer: (input: Input) => Promise<Reply>,
 ): Route {
   return async (raw) => {
     const parsed = input.safeParse(raw)
-    if (parsed.success) return respond(parsed.data)
+    if (parsed.success) return answer(parsed.data)
     const [issue] = parsed.error.issues
     const field = issue.path.join('.') || 'body'
     return [400, failure(`Expected ${expects}: ${field}: ${issue.message}`)]

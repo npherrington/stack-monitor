@@ -121,7 +121,7 @@ export async function scanFolder(
   const clones = await clonesOf(checkouts, deadline)
   const byRoot = new Map(clones.map((clone) => [clone.root, clone]))
   const hits: ScanHit[] = [...byRoot.values()]
-    .sort((a, b) => a.root.localeCompare(b.root))
+    .toSorted((a, b) => a.root.localeCompare(b.root))
     .map(({ root, worktrees }) => ({
       root,
       name: basename(root),

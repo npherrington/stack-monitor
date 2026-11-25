@@ -160,7 +160,7 @@ function workspaceDirs(root: string, json: Record<string, unknown>): string[] {
         return readdirSync(join(root, parent), { withFileTypes: true })
           .filter((entry) => entry.isDirectory())
           .map((entry) => join(parent, entry.name))
-          .sort()
+          .toSorted()
       } catch {
         return []
       }

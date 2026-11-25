@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import oxlint from 'eslint-plugin-oxlint'
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -38,4 +39,7 @@ export default defineConfig([
     files: ['core/**/*.ts', 'mcp/**/*.ts'],
     rules: { 'no-console': ['error', { allow: ['error', 'warn'] }] },
   },
+  // Last, so it turns off every rule oxlint (`.oxlintrc.json`) already checks. npm run lint runs
+  // oxlint first.
+  ...oxlint.buildFromOxlintConfigFile('./.oxlintrc.json'),
 ])

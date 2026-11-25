@@ -37,6 +37,7 @@ export const Name = z
 
 function compiles(source: string): boolean {
   try {
+    // oxlint-disable-next-line no-new -- constructing it is the check: a bad pattern throws
     new RegExp(source)
     return true
   } catch {
