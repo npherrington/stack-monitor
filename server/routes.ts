@@ -11,17 +11,26 @@ import {
 } from '../core/repos.ts'
 import { scanFolder } from '../core/scan.ts'
 import {
-  readRepoStack,
   RepoRootRequest,
+  trackedRepo,
+  type SaveOutcome,
+  type Unlisted,
+} from '../core/config/sections.ts'
+import {
+  readRepoStack,
   saveRepoStack,
   SaveStackRequest,
-  trackedRepo,
-  type Unlisted,
 } from '../core/stack/config.ts'
 import { detectServices } from '../core/stack/detect.ts'
 import { readRepoList, type Tracking } from '../core/settings.ts'
 import { failure, type ActionResult } from '../core/types.ts'
 import { readCheckouts } from '../core/worktrees/checkouts.ts'
+import {
+  readRepoWorktrees,
+  saveRepoWorktrees,
+  SaveWorktreesRequest,
+} from '../core/worktrees/config.ts'
+import { detectWorktreeCommands } from '../core/worktrees/detect.ts'
 import { route, type Reply, type Routes } from './http.ts'
 
 // Of the largest body a route takes: a repo's stack.
@@ -30,6 +39,11 @@ export const MAX_BODY_BYTES = 64 * 1024
 // 200 when the action was done, 409 when core refused it.
 function settled(result: ActionResult): Reply {
   return [result.ok ? 200 : 409, result]
+}
+
+// A config save: 400 when the config it would make fails the schema.
+function savedConfig(saved: SaveOutcome): Reply {
+  return 'invalid' in saved ? [400, failure(saved.invalid)] : settled(saved)
 }
 
 // A read that needs the list, when the settings file can't be read.
@@ -95,12 +109,7 @@ export function makeRoutes(tracking: Tracking): Routes {
     'POST /api/repos/stack': route(
       SaveStackRequest,
       '{ root, stack }',
-      async (body) => {
-        const saved = await saveRepoStack(tracking, body)
-        return 'invalid' in saved
-          ? [400, failure(saved.invalid)]
-          : settled(saved)
-      },
+      async (body) => savedConfig(await saveRepoStack(tracking, body)),
     ),
     'GET /api/repos/detect': route(
       RepoRootRequest,
@@ -109,6 +118,29 @@ export function makeRoutes(tracking: Tracking): Routes {
         const repo = trackedRepo(tracking, root)
         return 'root' in repo
           ? [200, await detectServices(repo.root)]
+          : notRead(repo)
+      },
+    ),
+    'GET /api/repos/worktrees': route(
+      RepoRootRequest,
+      '?root=',
+      async ({ root }) => {
+        const worktrees = readRepoWorktrees(tracking, root)
+        return 'root' in worktrees ? [200, worktrees] : notRead(worktrees)
+      },
+    ),
+    'POST /api/repos/worktrees': route(
+      SaveWorktreesRequest,
+      '{ root, worktrees }',
+      async (body) => savedConfig(await saveRepoWorktrees(tracking, body)),
+    ),
+    'GET /api/repos/detect-worktrees': route(
+      RepoRootRequest,
+      '?root=',
+      async ({ root }) => {
+        const repo = trackedRepo(tracking, root)
+        return 'root' in repo
+          ? [200, await detectWorktreeCommands(repo.root)]
           : notRead(repo)
       },
     ),

@@ -289,6 +289,100 @@ describe('the routes', () => {
     )
   })
 
+  test('the worktree settings: read as written, saved to the personal file, refused when wrong', async () => {
+    const personal = personalConfigPath(settings, primary)
+    const at = `/api/repos/worktrees?root=${encodeURIComponent(primary)}`
+    // The stack test before this one saved the personal file.
+    assert.deepEqual(await get(at), {
+      status: 200,
+      body: {
+        root: primary,
+        worktrees: {},
+        source: personal,
+        personal,
+        editable: true,
+      },
+    })
+    assert.deepEqual(
+      await post('/api/repos/worktrees', {
+        root: primary,
+        worktrees: { create: 'scripts/new-worktree.sh' },
+      }),
+      {
+        status: 400,
+        body: {
+          ok: false,
+          message:
+            'worktrees.create: must say where the branch goes with {branch}',
+          log: null,
+        },
+      },
+    )
+    const stranger = join(root, 'stranger')
+    assert.equal(
+      (await post('/api/repos/worktrees', { root: stranger, worktrees: {} }))
+        .status,
+      409,
+    )
+    assert.equal(
+      (await get(`/api/repos/worktrees?root=${encodeURIComponent(stranger)}`))
+        .status,
+      409,
+    )
+    const worktrees = { create: 'scripts/new-worktree.sh {branch}' }
+    const answer = await post('/api/repos/worktrees', {
+      root: primary,
+      worktrees,
+    })
+    assert.deepEqual(answer, {
+      status: 200,
+      body: {
+        ok: true,
+        message: `Saved the worktree settings to ${personal}`,
+        log: null,
+      },
+    })
+    assert.deepEqual((await get(at)).body.worktrees, worktrees)
+    const removed = await post('/api/repos/worktrees', {
+      root: primary,
+      worktrees: {},
+    })
+    assert.equal(removed.status, 200)
+    assert.deepEqual((await get(at)).body.worktrees, {})
+  })
+
+  test('detect-worktrees suggests commands from the repo’s files, and refuses an unknown root', async () => {
+    writeFileSync(join(primary, 'yarn.lock'), '')
+    try {
+      const { status, body } = await get(
+        `/api/repos/detect-worktrees?root=${encodeURIComponent(primary)}`,
+      )
+      assert.equal(status, 200)
+      assert.deepEqual(
+        body.filter((found: { from: string }) => found.from === 'yarn.lock'),
+        [
+          {
+            role: 'install',
+            command: 'yarn install --immutable',
+            from: 'yarn.lock',
+            note: null,
+          },
+        ],
+      )
+    } finally {
+      rmSync(join(primary, 'yarn.lock'))
+    }
+    const stranger = join(root, 'stranger')
+    assert.equal(
+      (
+        await get(
+          `/api/repos/detect-worktrees?root=${encodeURIComponent(stranger)}`,
+        )
+      ).status,
+      409,
+    )
+  })
+
   test('checkouts carry each service’s state in each checkout, in declared order', async () => {
     // Listening from inside the linked worktree, on a port both checkouts' .env name.
     const listener = spawn(

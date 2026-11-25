@@ -1,7 +1,11 @@
 // The shapes the server answers with and the page reads. Imports nothing from Node, so the page
 // can import it too.
 
-import type { ServiceInput, StackInput } from './config/schema.ts'
+import type {
+  ServiceInput,
+  StackInput,
+  WorktreesInput,
+} from './config/schema.ts'
 
 // What every action answers: done or refused, what happened, and the log to look at when there is
 // one.
@@ -114,4 +118,23 @@ export interface DetectedService {
   from: string // where it was found: "package.json", "mise", "compose.yaml", "Procfile"
   service: ServiceInput
   note: string | null // what to check before trusting the guess, e.g. "port guessed from vite's default"
+}
+
+// GET /api/repos/worktrees?root=: how the repo makes worktrees, as its config in effect has it.
+export interface RepoWorktrees {
+  root: string
+  worktrees: WorktreesInput // {} when the config has no worktrees section
+  source: string | null
+  personal: string // the file on this machine POST /api/repos/worktrees writes
+  editable: boolean
+}
+
+export type WorktreeCommandRole = 'create' | 'setup' | 'install' | 'teardown'
+
+// GET /api/repos/detect-worktrees?root=: commands the repo's files suggest for each role.
+export interface DetectedWorktreeCommand {
+  role: WorktreeCommandRole
+  command: string // create commands carry {branch}
+  from: string // "mise", "package.json", "scripts/", "Makefile", "justfile", "package-lock.json"
+  note: string | null // what to check before trusting the guess
 }

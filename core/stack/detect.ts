@@ -26,7 +26,7 @@ export type Runner = (
 // A DetectedService whose name settle() hasn't yet made a schema Name and unique.
 type Suggestion = DetectedService
 
-type Manager = 'npm' | 'pnpm' | 'yarn' | 'bun'
+export type Manager = 'npm' | 'pnpm' | 'yarn' | 'bun'
 
 const LOCKFILES: [string, Manager][] = [
   ['pnpm-lock.yaml', 'pnpm'],
@@ -46,11 +46,11 @@ const TOOL_PORTS: [RegExp, string, number][] = [
   [/\bvite\b/, 'vite', 5173],
 ]
 
-function isObject(value: unknown): value is Record<string, unknown> {
+export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function readJson(path: string): unknown {
+export function readJson(path: string): unknown {
   try {
     return JSON.parse(readFileSync(path, 'utf8'))
   } catch {
@@ -58,7 +58,7 @@ function readJson(path: string): unknown {
   }
 }
 
-function readText(path: string): string | null {
+export function readText(path: string): string | null {
   try {
     return readFileSync(path, 'utf8')
   } catch {
@@ -67,7 +67,7 @@ function readText(path: string): string | null {
 }
 
 // Single-quoted for the shell when it needs to be.
-function quoted(word: string): string {
+export function quoted(word: string): string {
   return /^[\w@%+=:,./-]+$/.test(word)
     ? word
     : `'${word.replaceAll("'", `'\\''`)}'`
@@ -114,7 +114,7 @@ function isDevScript(name: string): boolean {
   return ['dev', 'start', 'serve'].includes(name) || name.endsWith(':dev')
 }
 
-function managerOf(root: string): Manager {
+export function managerOf(root: string): Manager {
   return LOCKFILES.find(([file]) => existsSync(join(root, file)))?.[1] ?? 'npm'
 }
 
@@ -244,11 +244,12 @@ export function fromPackageJson(root: string): Suggestion[] {
   )
 }
 
-export async function fromMise(
+// The task names `mise tasks` lists. Empty when mise is missing or the config isn't trusted:
+// either way there's nothing to offer.
+export async function miseTaskNames(
   root: string,
   run: Runner,
-): Promise<Suggestion[]> {
-  // Fails when mise is missing or the config isn't trusted: either way there's nothing to offer.
+): Promise<string[]> {
   const listed = await run('mise', ['tasks', '--json'], {
     cwd: root,
     timeoutMs: LIST_TIMEOUT_MS,
@@ -261,10 +262,16 @@ export async function fromMise(
     return []
   }
   if (!Array.isArray(tasks)) return []
-  return tasks
-    .map((task) =>
-      isObject(task) && typeof task.name === 'string' ? task.name : '',
-    )
+  return tasks.flatMap((task) =>
+    isObject(task) && typeof task.name === 'string' ? [task.name] : [],
+  )
+}
+
+export async function fromMise(
+  root: string,
+  run: Runner,
+): Promise<Suggestion[]> {
+  return (await miseTaskNames(root, run))
     .filter((name) => /^(?:dev|start|serve|up)/.test(name))
     .map((task) => ({
       name: task,

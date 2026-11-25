@@ -15,6 +15,12 @@
       "default": {},
       "type": "object",
       "properties": {
+        "create": {
+          "description": "Makes a worktree itself, run in the primary checkout, with {branch} for the branch to put it on. Without it, the monitor runs git worktree add beside the primary, then setup and install",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
         "index": {
           "description": "Where a worktree's number is kept, for a repo that gives each worktree its own ports",
           "type": "object",

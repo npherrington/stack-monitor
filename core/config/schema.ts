@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Modules } from '../types.ts'
 
 export const INDEX = '{index}'
+export const BRANCH = '{branch}'
 export const DEFAULT_MAINLINE = 'origin/main'
 
 // Handed to git as an argument, so it can't start with '-'.
@@ -166,7 +167,15 @@ export const Stack = z.strictObject({
     ),
 })
 
-const Worktrees = z.strictObject({
+export const Worktrees = z.strictObject({
+  create: Command.refine(
+    (command) => command.includes(BRANCH),
+    `must say where the branch goes with ${BRANCH}`,
+  )
+    .optional()
+    .describe(
+      `Makes a worktree itself, run in the primary checkout, with ${BRANCH} for the branch to put it on. Without it, the monitor runs git worktree add beside the primary, then setup and install`,
+    ),
   index: z
     .strictObject({
       file: RepoPath,
@@ -326,6 +335,7 @@ export const ConfigSchema = ConfigObject.superRefine((config, ctx) => {
 export type Config = z.output<typeof ConfigSchema>
 export type ConfigInput = z.input<typeof ConfigSchema>
 export type StackInput = z.input<typeof Stack>
+export type WorktreesInput = z.input<typeof Worktrees>
 export type ServiceInput = StackInput['services'][string]
 
 export function modulesOf(config: Config): Modules {

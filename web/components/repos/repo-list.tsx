@@ -1,4 +1,4 @@
-import { Layers, Trash2 } from 'lucide-react'
+import { GitFork, Layers, Trash2 } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { MODULE_NAMES, type ModuleName } from '../../../core/types.ts'
@@ -55,6 +55,19 @@ export function RepoList() {
             >
               <Layers />
               Stack
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={
+                <Link
+                  to={`/settings/worktrees/${encodeURIComponent(repo.root)}`}
+                />
+              }
+            >
+              <GitFork />
+              Worktrees
             </Button>
             <Button
               variant="ghost"
