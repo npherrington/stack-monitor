@@ -57,12 +57,12 @@ export function installsDir(
 }
 
 // The last few lines a failed command printed, for the message.
-function tail(result: RunResult): string {
+export function tail(result: RunResult): string {
   const text = (result.stderr.trim() || result.stdout.trim()).split('\n')
   return text.slice(-6).join('\n')
 }
 
-function shell(command: string, cwd: string): Promise<RunResult> {
+export function shell(command: string, cwd: string): Promise<RunResult> {
   return run('sh', ['-c', command], { cwd, timeoutMs: COMMAND_TIMEOUT_MS })
 }
 

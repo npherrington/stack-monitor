@@ -1,11 +1,13 @@
 import {
   Bot,
   Check,
+  Ellipsis,
   GitBranch,
   Palette,
   Pencil,
   Pin,
   PinOff,
+  Trash2,
   X,
 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
@@ -16,6 +18,12 @@ import { GitSummary } from '@/components/checkouts/git-summary.tsx'
 import { ServiceChips } from '@/components/checkouts/service-chips.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Card } from '@/components/ui/card.tsx'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx'
 import { ColourSwatch } from '@/components/ui/colour-swatch.tsx'
 import { Input } from '@/components/ui/input.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
@@ -40,6 +48,7 @@ interface CheckoutCardProps {
   latestRun: RunSummary | null
   onRunHere: () => void
   onOpenRun: (id: string) => void
+  onRemove: (() => void) | null // null for the primary checkout
 }
 
 function folderName(path: string): string {
@@ -54,6 +63,7 @@ export function CheckoutCard({
   latestRun,
   onRunHere,
   onOpenRun,
+  onRemove,
 }: CheckoutCardProps) {
   const [renaming, setRenaming] = useState(false)
   const folder = folderName(checkout.path)
@@ -115,20 +125,37 @@ export function CheckoutCard({
           >
             {pref.pinned ? <PinOff /> : <Pin />}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Rename ${name}`}
-            onClick={() => setRenaming(true)}
-            className="text-muted-foreground"
-          >
-            <Pencil />
-          </Button>
           <ColourPicker
             name={name}
             colour={pref.colour}
             onPick={(colour) => onChange({ colour })}
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`More for ${name}`}
+                  className="text-muted-foreground"
+                />
+              }
+            >
+              <Ellipsis />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={() => setRenaming(true)}>
+                <Pencil />
+                Rename
+              </DropdownMenuItem>
+              {onRemove !== null && (
+                <DropdownMenuItem variant="destructive" onClick={onRemove}>
+                  <Trash2 />
+                  Remove worktree
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <div className="flex flex-col gap-2.5 px-4 pb-1">
