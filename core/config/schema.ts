@@ -197,8 +197,9 @@ export const Worktrees = z.strictObject({
   ),
 })
 
-// The adapters there are. core/agents/ will own this list.
-export const AGENT_IDS = ['claude'] as const
+// The adapters there are (core/agents/adapters/).
+export const AGENT_IDS = ['claude', 'opencode'] as const
+export type AgentId = (typeof AGENT_IDS)[number]
 
 const Agents = z.strictObject({
   default: z.enum(AGENT_IDS).default('claude'),

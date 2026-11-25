@@ -1,16 +1,34 @@
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
+
+import type { RunSummary } from '../../../core/types.ts'
+import { RunLogDialog } from '@/components/agents/run-log-dialog.tsx'
+import { RunHereDialog } from '@/components/checkouts/run-here-dialog.tsx'
 
 import { CheckoutFilters } from '@/components/checkouts/checkout-filters.tsx'
 import { RepoSection } from '@/components/checkouts/repo-section.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Card } from '@/components/ui/card.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { useAgents } from '@/hooks/use-agents.ts'
 import { useCheckoutPrefs } from '@/hooks/use-checkout-prefs.ts'
 import { useCheckouts } from '@/hooks/use-checkouts.ts'
+import { useRuns } from '@/hooks/use-runs.ts'
 
 export function Checkouts() {
   const { repos, isPending, error, isStale } = useCheckouts()
   const { prefs, filters, updatePref, setFilters } = useCheckoutPrefs()
+  const { runs } = useRuns()
+  const { overview } = useAgents()
+  const [runHere, setRunHere] = useState<string | null>(null)
+  const [openRun, setOpenRun] = useState<string | null>(null)
+  // Runs come newest first, so the first one seen for a checkout is its latest.
+  const latestRuns = useMemo(() => {
+    const latest = new Map<string, RunSummary>()
+    for (const run of runs)
+      if (!latest.has(run.checkout)) latest.set(run.checkout, run)
+    return latest
+  }, [runs])
   // A repo filter naming a repo that's since been removed shows everything.
   const repoFilter = repos.some((repo) => repo.root === filters.repo)
     ? filters.repo
@@ -67,9 +85,22 @@ export function Checkouts() {
             prefs={prefs}
             filters={filters}
             onPrefChange={updatePref}
+            latestRuns={latestRuns}
+            onRunHere={setRunHere}
+            onOpenRun={setOpenRun}
           />
         ))
       )}
+      <RunHereDialog
+        checkout={runHere}
+        overview={overview}
+        onClose={() => setRunHere(null)}
+        onStarted={(id) => {
+          setRunHere(null)
+          setOpenRun(id)
+        }}
+      />
+      <RunLogDialog runId={openRun} onClose={() => setOpenRun(null)} />
     </div>
   )
 }

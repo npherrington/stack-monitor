@@ -247,7 +247,8 @@
           "default": "claude",
           "type": "string",
           "enum": [
-            "claude"
+            "claude",
+            "opencode"
           ]
         },
         "env": {

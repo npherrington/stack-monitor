@@ -2,6 +2,7 @@
 // can import it too.
 
 import type {
+  AgentId,
   ServiceInput,
   StackInput,
   WorktreesInput,
@@ -137,4 +138,178 @@ export interface DetectedWorktreeCommand {
   command: string // create commands carry {branch}
   from: string // "mise", "package.json", "scripts/", "Makefile", "justfile", "package-lock.json"
   note: string | null // what to check before trusting the guess
+}
+
+// ---- Agents: the coding-agent CLIs the monitor launches headless in a checkout ----
+
+export type { AgentId }
+
+// What an adapter's CLI reports, so the page shows only what it has.
+export interface AgentCapabilities {
+  effort: boolean // takes an effort level
+  cost: boolean // reports what a run cost
+  resume: boolean // a finished run can be resumed interactively
+}
+
+// One CLI on this machine, as GET /api/agents reads it now.
+export interface AgentStatus {
+  id: AgentId
+  label: string // "Claude Code", "OpenCode"
+  installed: boolean
+  path: string | null // where the program was found (the settings' program override, else PATH)
+  version: string | null
+  // The CLI keeps its own login; the monitor never holds a key. 'unknown' when it can't be checked.
+  login: {
+    state: 'yes' | 'no' | 'unknown'
+    command: string
+    note: string | null
+  }
+  install: string // how to install it: a command, or a URL
+  models: string[] // offered in the run form; any other may be typed
+  model: string | null // this machine's default for it, from settings
+  can: AgentCapabilities
+}
+
+// Ollama, which OpenCode reaches as ollama/<model>: shown so a dev sees their local models.
+export interface OllamaStatus {
+  running: boolean
+  version: string | null
+  models: string[]
+}
+
+// A run's agent and model: a step of a workflow, the designer, a Run here.
+export interface AgentChoice {
+  agent: AgentId
+  model: string | null // null: the agent's own default
+}
+
+// GET /api/agents
+export interface AgentsOverview {
+  agents: AgentStatus[]
+  default: AgentId | null // what Run here starts with; null when none is installed
+  // Drafts skills and prompts: the settings' choice, else a free OpenCode model when there is one.
+  designer: AgentChoice | null
+  ollama: OllamaStatus
+}
+
+// POST /api/agents/settings: this machine's agent preferences, kept in the settings file.
+export interface AgentSettings {
+  default?: AgentId
+  designer?: AgentChoice
+  agents?: Partial<Record<AgentId, { program?: string; model?: string }>>
+}
+
+// What a run may do to the checkout. read: look only. edit: change files. full: anything,
+// commands included, without asking.
+export type RunPermissions = 'read' | 'edit' | 'full'
+
+export interface RunStepSpec extends AgentChoice {
+  prompt: string
+  title?: string
+}
+
+export type RunKind = 'task' | 'workflow' | 'skill' | 'draft'
+export type RunState = 'running' | 'done' | 'failed' | 'stopped'
+
+// POST /api/runs
+export interface StartRunRequest {
+  checkout: string // a worktree of a tracked repo
+  title?: string
+  permissions: RunPermissions
+  steps: RunStepSpec[] // 1 to 4, run in order in the same checkout; a failed step ends the run
+}
+
+export interface StartRunResult extends ActionResult {
+  runId: string | null
+}
+
+export interface RunSummary {
+  id: string
+  kind: RunKind
+  title: string
+  root: string // the repo
+  checkout: string
+  permissions: RunPermissions
+  steps: (AgentChoice & { title: string | null })[]
+  step: number // the step running now, or the last one that ran
+  state: RunState
+  startedAt: string // ISO
+  endedAt: string | null
+  cost: number | null // USD, summed over steps, when the adapters report it
+  report: string | null // the last step's final message
+  resume: string | null // the command that resumes the last step's session interactively
+}
+
+// A line of an agent's output, as every adapter maps it.
+export type RunEvent =
+  | { kind: 'text'; step: number; text: string }
+  | { kind: 'tool'; step: number; name: string; detail: string | null }
+  | { kind: 'report'; step: number; text: string }
+  | { kind: 'error'; step: number; text: string }
+  | { kind: 'cost'; step: number; usd: number }
+  | { kind: 'step'; step: number; state: 'started' | 'finished' | 'failed' }
+
+// GET /api/runs/detail?id=
+export interface RunDetail {
+  run: RunSummary
+  events: RunEvent[]
+  stderr: string // the tail of what the CLI wrote to stderr
+}
+
+// ---- Skills and workflows: what the Agentic tab builds ----
+
+// A skill in a repo: .agents/skills/<name>/SKILL.md (or .claude/skills/).
+export interface SkillInfo {
+  name: string
+  description: string | null // its frontmatter description
+  path: string // relative to the repo root
+}
+
+export interface WorkflowStep {
+  title: string
+  agent: AgentId | null // null: the machine's default agent
+  model: string | null
+  prompt: string
+}
+
+// .agents/workflows/<name>.json in a repo: steps the monitor runs in order in one checkout.
+export interface Workflow {
+  name: string // lowercase, digits and -, as a service name
+  description: string
+  permissions: RunPermissions
+  steps: WorkflowStep[] // 1 to 4
+}
+
+export type ClaudeWorkflowArgument = 'none' | 'ticket' | 'tickets' | 'text'
+
+// .claude/workflows/<name>.js, a Claude Code Workflow script, read from its meta. With a
+// <name>.json manifest and an executable <name>.sh beside it, the launcher is what runs.
+export interface ClaudeWorkflow {
+  name: string
+  launcher: boolean // runs .claude/workflows/<name>.sh; else claude runs the script itself
+  label: string // the manifest's label, else the name
+  description: string
+  phases: string[] // the script's meta.phases titles
+  cost: string | null // what a run takes, from the manifest
+  effort: string | null // the manifest's default effort
+  testRun: boolean // the launcher takes --no-publish
+  argument: ClaudeWorkflowArgument // what the launcher takes after its options
+  argumentLabel: string | null
+}
+
+// POST /api/workflows/run-claude
+export interface RunClaudeWorkflowRequest {
+  checkout: string
+  name: string
+  testRun?: boolean
+  notes?: string // free text every stage reads
+  argument?: string // ticket ids split by spaces or commas, or one line of text
+  permissions?: RunPermissions // a script's run; a launcher sets its own
+}
+
+// GET /api/workflows?root=
+export interface WorkflowList {
+  workflows: Workflow[]
+  claude: ClaudeWorkflow[]
+  problems: { file: string; problem: string }[] // files in the folders that didn't parse
 }

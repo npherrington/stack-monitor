@@ -1,6 +1,7 @@
 import { createHashRouter } from 'react-router'
 
 import { AppShell } from '@/components/layouts/app-shell.tsx'
+import { Agents } from '@/components/pages/agents.tsx'
 import { Checkouts } from '@/components/pages/checkouts.tsx'
 import { Settings } from '@/components/pages/settings.tsx'
 import { StackSettings } from '@/components/pages/stack-settings.tsx'
@@ -13,6 +14,7 @@ export const router = createHashRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <Checkouts /> },
+      { path: 'agents', element: <Agents /> },
       { path: 'settings', element: <Settings /> },
       { path: 'settings/stack/:root', element: <StackSettings /> },
       { path: 'settings/worktrees/:root', element: <WorktreeSettings /> },
