@@ -5,6 +5,7 @@ import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 
+import { MONITOR_HOME } from '../core/monitor-address.ts'
 import { personalConfigPath } from '../core/settings.ts'
 import type { Serving } from '../server/http.ts'
 import { startMonitor } from '../server/monitor.ts'
@@ -50,10 +51,15 @@ describe('the routes', () => {
     return { status: answer.status, body: JSON.parse(answer.text) }
   }
 
-  test('health names the app, the repo it was started for and its pid', async () => {
+  test('health names the app, the repo it was started for, its pid and its folder', async () => {
     assert.deepEqual(await get('/api/health'), {
       status: 200,
-      body: { app: 'stack-monitor', root: primary, pid: process.pid },
+      body: {
+        app: 'stack-monitor',
+        root: primary,
+        pid: process.pid,
+        home: MONITOR_HOME,
+      },
     })
   })
 

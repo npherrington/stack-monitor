@@ -3,6 +3,7 @@
 // names, or the one it's started in.
 import {
   findMonitor,
+  MONITOR_HOME,
   monitorUrl,
   readMonitorPort,
   type Health,
@@ -27,13 +28,18 @@ function inUse(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === 'EADDRINUSE'
 }
 
+// How many ports past the default the app tries when another program, or another copy of the
+// monitor, holds it.
+const FALLBACK_PORTS = 20
+
+// fallback: on a port held by something that isn't this monitor, take the next free one.
 export async function launchMonitor(
   page: Page,
   from: string,
+  { fallback = false }: { fallback?: boolean } = {},
 ): Promise<Launched> {
   const address = readMonitorPort()
   if ('error' in address) return { error: address.error }
-  const { port } = address
   const repo = await findRepo(process.env.STACK_MONITOR_REPO || from)
   if ('error' in repo) {
     return {
@@ -42,19 +48,30 @@ export async function launchMonitor(
   }
   const seed = await primaryRoot(repo.root)
   const settings = settingsPath()
-  let serving: Serving
-  try {
-    serving = await startMonitor({ port, seed, settings, ...page })
-  } catch (error) {
-    if (!inUse(error)) throw error
-    const running = await findMonitor(port)
-    if (running !== null) {
-      return { started: false, url: monitorUrl(port), running }
-    }
-    return {
-      error: `Port ${port} is held by another program. Set STACK_MONITOR_PORT to a free one.`,
+  const tries = fallback ? FALLBACK_PORTS + 1 : 1
+  let serving: Serving | null = null
+  let port = address.port
+  for (let attempt = 0; attempt < tries; attempt++) {
+    port = address.port + attempt
+    try {
+      serving = await startMonitor({ port, seed, settings, ...page })
+      break
+    } catch (error) {
+      if (!inUse(error)) throw error
+      const running = await findMonitor(port)
+      if (running?.home === MONITOR_HOME) {
+        return { started: false, url: monitorUrl(port), running }
+      }
+      if (attempt < tries - 1) continue
+      return {
+        error:
+          running === null
+            ? `Port ${port} is held by another program. Set STACK_MONITOR_PORT to a free one.`
+            : `Port ${port} is held by a different stack monitor, for ${running.root}${running.home === undefined ? '' : ` from ${running.home}`}. Stop it, or set STACK_MONITOR_PORT to a free port.`,
+      }
     }
   }
+  if (serving === null) return { error: `No free port from ${address.port}` }
   // Schedules set to fire from the monitor fire while it runs; launchd ones fire without it.
   startScheduleTicker({ settings, seed }, scheduleContext(schedulesDir()))
   return { started: true, url: monitorUrl(port), settings, serving }
