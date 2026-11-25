@@ -14,6 +14,10 @@ import {
 import { ClaudeWorkflowDialog } from '@/components/agents/claude-workflow-dialog.tsx'
 
 import { CheckoutFilters } from '@/components/checkouts/checkout-filters.tsx'
+import {
+  RemoveWorktreeDialog,
+  type RemoveTarget,
+} from '@/components/checkouts/remove-worktree-dialog.tsx'
 import { NewWorktreeDialog } from '@/components/checkouts/new-worktree-dialog.tsx'
 import { RepoSection } from '@/components/checkouts/repo-section.tsx'
 import { Button } from '@/components/ui/button.tsx'
@@ -36,6 +40,7 @@ export function Checkouts() {
   } | null>(null)
   const [openRun, setOpenRun] = useState<string | null>(null)
   const [newIn, setNewIn] = useState<RepoCheckouts | null>(null)
+  const [removing, setRemoving] = useState<RemoveTarget | null>(null)
   // Runs come newest first, so the first one seen for a checkout is its latest.
   const latestRuns = useMemo(() => {
     const latest = new Map<string, RunSummary>()
@@ -103,6 +108,13 @@ export function Checkouts() {
             onRunHere={setRunHere}
             onOpenRun={setOpenRun}
             onNewWorktree={() => setNewIn(repo)}
+            onRemove={(checkout) =>
+              setRemoving({
+                root: repo.root,
+                mainline: repo.mainline,
+                checkout,
+              })
+            }
           />
         ))
       )}
@@ -132,6 +144,10 @@ export function Checkouts() {
       />
       <RunLogDialog runId={openRun} onClose={() => setOpenRun(null)} />
       <NewWorktreeDialog repo={newIn} onClose={() => setNewIn(null)} />
+      <RemoveWorktreeDialog
+        target={removing}
+        onClose={() => setRemoving(null)}
+      />
     </div>
   )
 }

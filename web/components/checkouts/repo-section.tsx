@@ -1,6 +1,10 @@
 import { Plus } from 'lucide-react'
 
-import type { RepoCheckouts, RunSummary } from '../../../core/types.ts'
+import type {
+  Checkout,
+  RepoCheckouts,
+  RunSummary,
+} from '../../../core/types.ts'
 import { CheckoutCard } from '@/components/checkouts/checkout-card.tsx'
 import type { RunHereTarget } from '@/components/checkouts/run-here-dialog.tsx'
 import { Button } from '@/components/ui/button.tsx'
@@ -21,6 +25,7 @@ interface RepoSectionProps {
   onRunHere: (target: RunHereTarget) => void
   onOpenRun: (id: string) => void
   onNewWorktree: () => void
+  onRemove: (checkout: Checkout) => void
 }
 
 export function RepoSection({
@@ -32,6 +37,7 @@ export function RepoSection({
   onRunHere,
   onOpenRun,
   onNewWorktree,
+  onRemove,
 }: RepoSectionProps) {
   const shown = visibleCheckouts(repo.checkouts, prefs, filters)
   const hidden = repo.checkouts.length - shown.length
@@ -87,6 +93,7 @@ export function RepoSection({
                   onRunHere({ root: repo.root, checkout: checkout.path })
                 }
                 onOpenRun={onOpenRun}
+                onRemove={checkout.primary ? null : () => onRemove(checkout)}
               />
             ))}
           </div>
