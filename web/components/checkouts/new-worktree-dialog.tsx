@@ -37,7 +37,7 @@ interface NewWorktreeDialogProps {
 export function NewWorktreeDialog({ repo, onClose }: NewWorktreeDialogProps) {
   return (
     <Dialog open={repo !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl">
         {repo !== null && <NewWorktreeForm repo={repo} onDone={onClose} />}
       </DialogContent>
     </Dialog>
