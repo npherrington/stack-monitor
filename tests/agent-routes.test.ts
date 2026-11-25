@@ -310,7 +310,7 @@ describe('the agent routes', () => {
     )
     assert.deepEqual(await get(`/api/workflows?root=${q(primary)}`), {
       status: 200,
-      body: { workflows: [workflow], problems: [] },
+      body: { workflows: [workflow], claude: [], problems: [] },
     })
     const started = await post('/api/workflows/run', {
       checkout: linked,

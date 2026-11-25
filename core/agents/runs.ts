@@ -32,6 +32,7 @@ import {
   type StartRunResult,
 } from '../types.ts'
 import { canonical, listWorktrees } from '../worktrees/clone.ts'
+import type { LineParser } from './adapter.ts'
 import { ADAPTERS } from './adapters/index.ts'
 import { findProgram } from './detect.ts'
 import {
@@ -166,6 +167,23 @@ export async function startRun(
       },
     })
   }
+  return beginRun(dir, {
+    kind,
+    title: request.title ?? titleOf(request),
+    root,
+    checkout,
+    permissions: request.permissions,
+    steps,
+  })
+}
+
+// Starts a run whose commands are already built, unless one is running or starting in its
+// checkout.
+export async function beginRun(
+  dir: string,
+  prepared: Omit<Meta, 'id' | 'startedAt'>,
+): Promise<StartRunResult> {
+  const { root, checkout } = prepared
   if (starting.has(checkout)) {
     return refused(`A run is already starting in ${checkout}`)
   }
@@ -181,13 +199,8 @@ export async function startRun(
     }
     const meta: Meta = {
       id: newRunId(),
-      kind,
-      title: request.title ?? titleOf(request),
-      root,
-      checkout,
-      permissions: request.permissions,
       startedAt: new Date().toISOString(),
-      steps,
+      ...prepared,
     }
     return launch(join(dir, meta.id), meta)
   } finally {
@@ -272,6 +285,20 @@ function modified(path: string): string | null {
   }
 }
 
+// A launcher prints its own plain lines before the agent's stream starts; they read as text.
+function launcherLines(
+  parse: LineParser,
+  step: Meta['steps'][number],
+  at: number,
+): LineParser {
+  if (step.launcher !== true) return parse
+  return (line) => {
+    const said = line.trim()
+    if (said === '' || said.startsWith('{')) return parse(line)
+    return { events: [{ kind: 'text', step: at, text: said }], sessionId: null }
+  }
+}
+
 // The run as its directory has it now. alive: its launcher is running or still starting, which
 // settles a run with no exit file.
 function readFrom(runDir: string, meta: Meta, alive: boolean): RunDetail {
@@ -288,7 +315,7 @@ function readFrom(runDir: string, meta: Meta, alive: boolean): RunDetail {
     report = null
     sessionId = null
     events.push({ kind: 'step', step: at, state: 'started' })
-    const parse = ADAPTERS[step.agent].parser(at)
+    const parse = launcherLines(ADAPTERS[step.agent].parser(at), step, at)
     for (const line of lines(out)) {
       const parsed = parse(line)
       sessionId = parsed.sessionId ?? sessionId

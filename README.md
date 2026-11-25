@@ -41,6 +41,13 @@ keys: to use your own provider key, or a local Ollama model, use it through Open
 card starts a run in it, and the **Agents** page drafts skills and builds workflows, by default with
 a free OpenCode model. Run logs live in `~/.local/state/stack-monitor/runs/`.
 
+The Workflows tab also lists a repo's Claude Code workflows: each `.claude/workflows/<name>.js`
+whose `export const meta` names it, started as `claude -p` asking the Workflow tool to run it. A
+`<name>.json` manifest (`label`, `description`, and optionally `argument`, `argumentLabel`,
+`testRun`, `sessions`, `cost`, `effort`) with an executable `<name>.sh` beside it makes the launcher
+what runs instead, given `--no-publish`, `--effort=`, `--notes=` and the argument, then `--` and
+claude's flags. The monitor runs a launcher only as committed at the checkout's HEAD.
+
 Pins, names and colours you give checkouts, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.
 

@@ -57,6 +57,8 @@ const MetaStepSchema = z.object({
   title: z.string().nullable(),
   prompt: z.string(),
   command: CommandSchema,
+  // A repo's launcher script, whose own lines come before the agent's stream.
+  launcher: z.boolean().optional(),
 })
 
 export const MetaSchema = z.object({
