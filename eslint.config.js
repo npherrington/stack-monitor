@@ -22,6 +22,7 @@ export default defineConfig([
   },
   {
     files: [
+      'app/**/*.ts',
       'core/**/*.ts',
       'server/**/*.ts',
       'mcp/**/*.ts',

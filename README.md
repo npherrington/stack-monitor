@@ -60,9 +60,12 @@ skipped. Schedules and their fire log live in `~/.local/state/stack-monitor/sche
 Pins, names and colours you give checkouts, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.
 
-**Put it in the Dock.** Open the page in Safari and choose File > Add to Dock. It gets the beaver as
-its icon and opens in a window of its own. That window shows the running server, so start `mise run
-dev` first; until the desktop app comes, nothing starts the server at login.
+**Open it as an app.** `mise run app` opens the monitor as a Mac app (Electron) with the beaver
+in the Dock, running the server itself; closing the window keeps it running until you quit. A change
+to the page rebuilds and reloads the window; a change to `core/` or `server/` needs a restart. It
+uses the same port as `mise run dev`, and shows that monitor if one is already running. A signed
+download comes later; it won't be on the App Store, whose sandbox can't run git and agent CLIs
+across your disk.
 
 **Update.** `git pull`, then `mise run dev` again: it installs and rebuilds what changed.
 
