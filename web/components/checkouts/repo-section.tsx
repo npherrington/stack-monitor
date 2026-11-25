@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react'
 
 import type { RepoCheckouts, RunSummary } from '../../../core/types.ts'
 import { CheckoutCard } from '@/components/checkouts/checkout-card.tsx'
+import type { RunHereTarget } from '@/components/checkouts/run-here-dialog.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { visibleCheckouts } from '@/lib/checkout-order.ts'
@@ -17,7 +18,7 @@ interface RepoSectionProps {
   filters: CheckoutFilters
   onPrefChange: (path: string, change: Partial<CheckoutPref>) => void
   latestRuns: Map<string, RunSummary> // by checkout path
-  onRunHere: (checkout: string) => void
+  onRunHere: (target: RunHereTarget) => void
   onOpenRun: (id: string) => void
   onNewWorktree: () => void
 }
@@ -82,7 +83,9 @@ export function RepoSection({
                 pref={prefs[checkout.path] ?? {}}
                 onChange={(change) => onPrefChange(checkout.path, change)}
                 latestRun={latestRuns.get(checkout.path) ?? null}
-                onRunHere={() => onRunHere(checkout.path)}
+                onRunHere={() =>
+                  onRunHere({ root: repo.root, checkout: checkout.path })
+                }
                 onOpenRun={onOpenRun}
               />
             ))}
