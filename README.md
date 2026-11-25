@@ -35,6 +35,12 @@ STACK_MONITOR_REPO=~/src/myapp mise run dev   # start the list from another repo
 STACK_MONITOR_PORT=7430 mise run dev          # another port, 1024 to 65535
 ```
 
+**Agents.** The monitor runs the coding-agent CLIs you already use: Claude Code and OpenCode so
+far. Install and log in to them as usual; Settings → Agents shows what it found. It stores no API
+keys: to use your own provider key, or a local Ollama model, use it through OpenCode. A checkout's
+card starts a run in it, and the **Agents** page drafts skills and builds workflows, by default with
+a free OpenCode model. Run logs live in `~/.local/state/stack-monitor/runs/`.
+
 Pins, names and colours you give checkouts, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.
 
