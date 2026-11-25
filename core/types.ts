@@ -313,3 +313,64 @@ export interface WorkflowList {
   claude: ClaudeWorkflow[]
   problems: { file: string; problem: string }[] // files in the folders that didn't parse
 }
+
+// What a schedule starts each time it fires: the same three things a person can start by hand.
+export type ScheduleTask =
+  | {
+      kind: 'prompt'
+      agent: AgentId
+      model: string | null
+      prompt: string
+      permissions: RunPermissions
+    }
+  | { kind: 'workflow'; name: string } // .agents/workflows/<name>.json
+  | {
+      kind: 'claude'
+      name: string // .claude/workflows/<name>
+      testRun?: boolean
+      notes?: string
+      argument?: string
+      permissions?: RunPermissions
+    }
+
+// launchd: a LaunchAgent fires it, the monitor running or not. monitor: the running monitor fires
+// it, checking each minute.
+export type FireFrom = 'launchd' | 'monitor'
+
+export interface Schedule {
+  id: string
+  name: string
+  cron: string // five fields, local time
+  checkout: string // the worktree it runs in
+  enabled: boolean
+  fireFrom: FireFrom
+  task: ScheduleTask
+}
+
+// One time a schedule fired, or was due and didn't start a run.
+export interface Fire {
+  id: string // the schedule's
+  at: string // ISO
+  by: FireFrom | 'now' // 'now': Run now on the page
+  ok: boolean
+  runId: string | null
+  message: string // why it didn't start, when it didn't
+}
+
+// GET /api/schedules
+export interface ScheduleView extends Schedule {
+  root: string | null // the repo, when the checkout is still a worktree of a tracked one
+  next: string[] // the next three fires, ISO
+  fires: Fire[] // newest first, the last ten
+  problem: string | null // why it won't fire as set: a bad cron line, launchd refusing it
+}
+
+// POST /api/schedules/save: no id makes a new one.
+export type SaveScheduleRequest = Omit<Schedule, 'id'> & { id?: string }
+
+export interface SaveScheduleResult extends ActionResult {
+  id: string | null
+  // launchd couldn't read the checkout or the monitor's files: macOS keeps LaunchAgents out of
+  // ~/Desktop, ~/Documents and ~/Downloads unless the program has Full Disk Access.
+  blocked: { program: string; path: string } | null
+}

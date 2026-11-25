@@ -7,6 +7,11 @@ import {
   monitorUrl,
   readMonitorPort,
 } from '../core/monitor-address.ts'
+import {
+  scheduleContext,
+  startScheduleTicker,
+} from '../core/schedules/schedules.ts'
+import { schedulesDir } from '../core/schedules/store.ts'
 import { settingsPath } from '../core/settings.ts'
 import { findRepo, primaryRoot } from '../core/worktrees/clone.ts'
 import { startMonitor } from './monitor.ts'
@@ -46,6 +51,8 @@ async function main(): Promise<number> {
     )
     return 1
   }
+  // Schedules set to fire from the monitor fire while it runs; launchd ones fire without it.
+  startScheduleTicker({ settings, seed }, scheduleContext(schedulesDir()))
   console.log(
     `Stack monitor on ${monitorUrl(port)}, its repos listed in ${settings}`,
   )
