@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 
 import type { TerminalSession } from '../../core/types.ts'
+import type { TerminalTarget } from '@/hooks/use-terminals.ts'
 
 export interface TerminalContextValue {
   sessions: TerminalSession[]
@@ -8,7 +9,7 @@ export interface TerminalContextValue {
   setShown: (shown: boolean) => void
   active: string | null // the tab showing, by session id
   setActive: (id: string) => void
-  openFor: (target: { root: string; path: string }) => void // a worktree's session, started if needed
+  openFor: (target: TerminalTarget) => void // a worktree's session of that kind, started if needed
   close: (id: string) => void
   busy: ReadonlySet<string> // the sessions Claude is working in, by id
   setBusy: (id: string, busy: boolean) => void

@@ -23,6 +23,17 @@ function fakeClaude(dir: string): string {
   return path
 }
 
+// Stands in for the user's $SHELL.
+function fakeShell(dir: string): string {
+  const path = join(dir, 'fake-shell')
+  writeFileSync(
+    path,
+    '#!/bin/sh\necho "shell cwd=$(pwd) args=$*"\nwhile read line; do echo "sh:$line"; done\n',
+  )
+  chmodSync(path, 0o755)
+  return path
+}
+
 interface Watching {
   socket: WebSocket
   output: () => string
@@ -73,9 +84,11 @@ describe('the terminal routes', () => {
   let primary: string
   let linked: string
   let page: string // the Origin the page sends
+  const shell = process.env.SHELL
 
   before(async () => {
     const root = tempDir()
+    process.env.SHELL = fakeShell(root)
     primary = gitRepo(join(root, 'app'))
     linked = join(root, 'app-wt1')
     git(primary, 'worktree', 'add', '-q', '-b', 'feature', linked)
@@ -93,12 +106,16 @@ describe('the terminal routes', () => {
     })
     page = `http://127.0.0.1:${monitor.port}`
   })
-  after(() => monitor.stop())
+  after(() => {
+    process.env.SHELL = shell
+    return monitor.stop()
+  })
 
-  const open = async (path: string) => {
+  const open = async (path: string, kind?: 'shell') => {
     const answer = await sendJson(monitor.port, '/api/terminals', {
       root: primary,
       path,
+      ...(kind === undefined ? {} : { kind }),
     })
     return { status: answer.status, body: JSON.parse(answer.text) }
   }
@@ -113,6 +130,7 @@ describe('the terminal routes', () => {
     const { status, body } = await open(linked)
     assert.equal(status, 200)
     const session = body as TerminalSession
+    assert.equal(session.kind, 'claude')
     assert.equal(session.exitCode, null)
     assert.equal((await open(linked)).body.id, session.id, 'one per worktree')
 
@@ -152,6 +170,29 @@ describe('the terminal routes', () => {
       (JSON.parse(listed.text) as TerminalsSnapshot).sessions,
       [],
     )
+  })
+
+  test('runs the user’s login shell in the worktree, beside its claude', async () => {
+    const claude = (await open(linked)).body as TerminalSession
+    const { status, body } = await open(linked, 'shell')
+    assert.equal(status, 200)
+    const session = body as TerminalSession
+    assert.equal(session.kind, 'shell')
+    assert.notEqual(session.id, claude.id)
+    const another = (await open(linked, 'shell')).body as TerminalSession
+    assert.notEqual(another.id, session.id, 'a new shell each time')
+
+    const watching = watch(monitor.port, session.id, page)
+    await until(
+      () =>
+        watching.output().includes(`shell cwd=${realpathSync(linked)} args=-l`),
+      'the shell to start in the worktree',
+    )
+    watching.socket.send(JSON.stringify({ type: 'input', data: 'ls\r' }))
+    await until(() => watching.output().includes('sh:ls'), 'the typed line')
+    for (const id of [session.id, another.id, claude.id]) {
+      await sendJson(monitor.port, '/api/terminals/close', { id })
+    }
   })
 
   test('opens a socket only for the page’s own origin', async () => {

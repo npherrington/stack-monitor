@@ -231,7 +231,7 @@ export function makeRoutes(
     },
     'POST /api/terminals': route(
       OpenTerminalRequest,
-      '{ root, path }',
+      "{ root, path, kind?: 'claude' | 'shell' }",
       async (body) => {
         const opened = await openTerminal(tracking, body)
         return 'ok' in opened ? settled(opened) : [200, opened]

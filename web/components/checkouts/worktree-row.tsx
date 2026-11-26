@@ -69,6 +69,7 @@ interface WorktreeRowProps {
   onOpenRun: (id: string) => void
   terminal: TerminalState
   onOpenTerminal: () => void
+  onOpenShell: () => void
   onRemove: (() => void) | null // null for the primary checkout
   onMoveUp: (() => void) | null // null at the top of its group
   onMoveDown: (() => void) | null
@@ -106,6 +107,7 @@ export function WorktreeRow({
   onOpenRun,
   terminal,
   onOpenTerminal,
+  onOpenShell,
   onRemove,
   onMoveUp,
   onMoveDown,
@@ -282,6 +284,12 @@ export function WorktreeRow({
               <Copy />
               Copy path
             </DropdownMenuItem>
+            {!checkout.prunable && (
+              <DropdownMenuItem onClick={onOpenShell}>
+                <Terminal />
+                Open a terminal here
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               disabled={onMoveUp === null}

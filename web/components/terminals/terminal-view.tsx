@@ -5,6 +5,7 @@ import { Terminal } from '@xterm/xterm'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
+import type { TerminalKind } from '../../../core/types.ts'
 import { useTerminalPanel } from '@/contexts/terminal-context.ts'
 import { terminalsKey } from '@/hooks/use-terminals.ts'
 import { readTerminalTheme } from '@/lib/terminal-theme.ts'
@@ -16,6 +17,7 @@ const NO_SESSION = 4004
 
 interface TerminalViewProps {
   id: string // the session it shows
+  kind: TerminalKind
   visible: boolean // the active tab of an open panel
 }
 
@@ -26,7 +28,7 @@ function socketUrl(id: string): string {
 
 // One session's terminal. It stays mounted while its tab is hidden, so what's on screen and the
 // socket survive switching tabs.
-export function TerminalView({ id, visible }: TerminalViewProps) {
+export function TerminalView({ id, kind, visible }: TerminalViewProps) {
   const host = useRef<HTMLDivElement>(null)
   const terminal = useRef<Terminal | null>(null)
   const queryClient = useQueryClient()
@@ -83,7 +85,7 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       (event) => {
         const why =
           event.code === EXITED
-            ? `claude exited (${event.reason}). Close this tab to end it.`
+            ? `${kind === 'shell' ? 'The shell' : 'claude'} exited (${event.reason}). Close this tab to end it.`
             : event.code === NO_SESSION
               ? 'This session has ended.'
               : "Lost the monitor. Reopen this worktree's terminal once it's back."
@@ -94,11 +96,12 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       { signal },
     )
     // Claude Code reports its progress as OSC 9;4;<state>: 3 while it works (1 with a known
-    // amount), 0 when it's done. A reattached page replays the latest.
+    // amount), 0 when it's done. A reattached page replays the latest. A shell's programs may
+    // send it too, but only Claude working turns the beaver.
     const progress = term.parser.registerOscHandler(9, (data) => {
       const state = /^4;(\d)/.exec(data)?.[1]
       if (state === undefined) return false
-      setBusy(id, state === '1' || state === '3')
+      if (kind === 'claude') setBusy(id, state === '1' || state === '3')
       return true
     })
     const typing = term.onData((data) => send({ type: 'input', data }))
@@ -126,7 +129,7 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       term.dispose()
       terminal.current = null
     }
-  }, [id, queryClient, setBusy])
+  }, [id, kind, queryClient, setBusy])
 
   useEffect(() => {
     if (visible) terminal.current?.focus()
