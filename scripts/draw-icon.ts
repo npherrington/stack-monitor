@@ -49,6 +49,18 @@ const VARIETIES: Record<string, string> = {
   lavender: '#eeeaff',
   sky: '#e6f1ff',
   lemon: '#fff7d6',
+  rose: '#ffe9f0',
+  sage: '#e9efe3',
+  seafoam: '#ddf3f0',
+  coral: '#ffe8df',
+  sand: '#f3ecdf',
+  cloud: '#eceff4',
+  midnight: '#232a40',
+  dusk: '#2f2336',
+  forest: '#1f2d27',
+  mocha: '#30261f',
+  ink: '#232328',
+  ocean: '#1b2e34',
 }
 
 // The PNGs are fixed once the Dock or a manifest has them, so they're the default variety.
