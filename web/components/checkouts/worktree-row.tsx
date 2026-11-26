@@ -54,7 +54,7 @@ import { cn } from '@/lib/utils.ts'
 export type TerminalState = 'none' | 'open' | 'busy'
 
 const TERMINAL_TIPS: Record<TerminalState, string> = {
-  none: 'Open Claude Code here',
+  none: 'Start a Claude Code session here',
   open: 'Go to its Claude Code session',
   busy: 'Claude is working here: go to its session',
 }
@@ -240,11 +240,15 @@ export function WorktreeRow({
               onClick={onOpenTerminal}
               className="text-muted-foreground"
             >
-              {terminal === 'none' ? (
-                <Terminal />
-              ) : (
-                <Beaver busy={terminal === 'busy'} />
-              )}
+              {/* The beaver is a Claude Code session: faded until one runs here. The plain shell is
+                  the ⋯ menu's. */}
+              <Beaver
+                busy={terminal === 'busy'}
+                className={cn(
+                  terminal === 'none' &&
+                    'opacity-50 grayscale transition group-hover/button:opacity-100 group-hover/button:grayscale-0',
+                )}
+              />
             </Button>
           </Tip>
         )}

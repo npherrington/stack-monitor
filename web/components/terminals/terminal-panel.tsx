@@ -190,13 +190,10 @@ export function TerminalPanel() {
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
           <Terminal className="size-6" aria-hidden="true" />
           <p>
-            Click{' '}
-            <Terminal
-              className="inline size-4 align-text-bottom"
-              aria-label="the terminal icon"
-            />{' '}
-            on a worktree to open Claude Code in it, or pick Open a terminal
-            here from its ⋯ menu for a shell.
+            Click the{' '}
+            <Beaver busy={false} className="inline align-text-bottom" /> on a
+            worktree to start a Claude Code session in it, or pick Open a
+            terminal here from its ⋯ menu for a shell.
           </p>
         </div>
       ) : (
