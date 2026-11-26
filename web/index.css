@@ -8,6 +8,7 @@
 @custom-variant dark (&:is([data-mode='dark'] *));
 
 @theme inline {
+  --animate-intro-float: intro-float 3s ease-in-out infinite;
   --font-sans:
     ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI',
     sans-serif;
@@ -222,5 +223,22 @@
   }
   ::selection {
     @apply bg-accent text-strong;
+  }
+}
+
+/* The intro's beaver, bobbing until it's clicked. */
+@keyframes intro-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-intro-float {
+    animation: none;
   }
 }
