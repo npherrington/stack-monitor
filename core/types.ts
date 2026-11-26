@@ -374,3 +374,18 @@ export interface SaveScheduleResult extends ActionResult {
   // ~/Desktop, ~/Documents and ~/Downloads unless the program has Full Disk Access.
   blocked: { program: string; path: string } | null
 }
+
+// A `claude` session the monitor runs in a terminal of its own, for the page's Terminal panel.
+// exitCode: null while it runs.
+export interface TerminalSession {
+  id: string
+  root: string // the repo it belongs to
+  path: string // the worktree it runs in
+  startedAt: string
+  exitCode: number | null
+}
+
+// GET /api/terminals: the sessions, oldest first. POST /api/terminals answers one.
+export interface TerminalsSnapshot {
+  sessions: TerminalSession[]
+}

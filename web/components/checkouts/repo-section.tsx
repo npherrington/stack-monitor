@@ -9,6 +9,7 @@ import type { RunHereTarget } from '@/components/checkouts/run-here-dialog.tsx'
 import { WorktreeRow } from '@/components/checkouts/worktree-row.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
+import { useTerminalPanel } from '@/contexts/terminal-context.ts'
 import { visibleCheckouts } from '@/lib/checkout-order.ts'
 import type {
   CheckoutFilters,
@@ -53,6 +54,7 @@ export function RepoSection({
     (checkout) => matches(checkout, prefs[checkout.path] ?? {}, query),
   )
   const hidden = repo.checkouts.length - shown.length
+  const terminals = useTerminalPanel()
   return (
     <section
       aria-labelledby={`repo-${repo.root}`}
@@ -91,7 +93,7 @@ export function RepoSection({
           {repo.problem}
         </p>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-card">
+        <div className="@container overflow-hidden rounded-xl border bg-card">
           {shown.length > 0 && (
             <ul className="divide-y">
               {shown.map((checkout) => (
@@ -106,6 +108,14 @@ export function RepoSection({
                     onRunHere({ root: repo.root, checkout: checkout.path })
                   }
                   onOpenRun={onOpenRun}
+                  hasTerminal={terminals.sessions.some(
+                    (session) =>
+                      session.path === checkout.path &&
+                      session.exitCode === null,
+                  )}
+                  onOpenTerminal={() =>
+                    terminals.openFor({ root: repo.root, path: checkout.path })
+                  }
                   onRemove={checkout.primary ? null : () => onRemove(checkout)}
                 />
               ))}

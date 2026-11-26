@@ -11,6 +11,7 @@ import {
   Pin,
   PinOff,
   Play,
+  SquareTerminal,
   Trash2,
   TriangleAlert,
   X,
@@ -53,6 +54,8 @@ interface WorktreeRowProps {
   latestRun: RunSummary | null
   onRunHere: () => void
   onOpenRun: (id: string) => void
+  hasTerminal: boolean // a `claude` session runs in it
+  onOpenTerminal: () => void
   onRemove: (() => void) | null // null for the primary checkout
 }
 
@@ -86,6 +89,8 @@ export function WorktreeRow({
   latestRun,
   onRunHere,
   onOpenRun,
+  hasTerminal,
+  onOpenTerminal,
   onRemove,
 }: WorktreeRowProps) {
   const [renaming, setRenaming] = useState(false)
@@ -105,7 +110,7 @@ export function WorktreeRow({
         swatchTint({ colour: pref.colour ?? 'none' }),
       )}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className="flex min-w-24 flex-1 flex-col gap-0.5">
         {renaming ? (
           <RenameField
             initial={pref.nickname ?? ''}
@@ -154,7 +159,7 @@ export function WorktreeRow({
         </p>
       </div>
 
-      <div className="hidden w-36 shrink-0 sm:block">
+      <div className="hidden w-36 shrink-0 @lg:block">
         {checkout.problem === null ? (
           <GitSummary checkout={checkout} mainline={mainline} />
         ) : (
@@ -163,12 +168,12 @@ export function WorktreeRow({
           </Marker>
         )}
       </div>
-      <div className="hidden w-12 shrink-0 md:block">
+      <div className="hidden w-12 shrink-0 @2xl:block">
         {checkout.services.length > 0 && (
           <ServiceChips services={checkout.services} />
         )}
       </div>
-      <div className="hidden w-44 shrink-0 lg:block">
+      <div className="hidden w-44 shrink-0 @4xl:block">
         {latestRun !== null && (
           <Tip label={`Last run ${latestRun.state}. Open its log`}>
             <button
@@ -196,6 +201,25 @@ export function WorktreeRow({
             {pref.pinned ? <PinOff /> : <Pin />}
           </Button>
         </Tip>
+        {!checkout.prunable && (
+          <Tip
+            label={
+              hasTerminal
+                ? 'Go to its Claude Code session'
+                : 'Open Claude Code here'
+            }
+          >
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Claude Code in ${name}`}
+              onClick={onOpenTerminal}
+              className={hasTerminal ? 'text-success' : 'text-muted-foreground'}
+            >
+              <SquareTerminal />
+            </Button>
+          </Tip>
+        )}
         <Tip label="Start an agent or workflow here">
           <Button variant="outline" size="sm" onClick={onRunHere}>
             <Play aria-hidden="true" />

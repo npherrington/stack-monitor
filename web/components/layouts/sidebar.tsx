@@ -1,4 +1,10 @@
-import { Bot, CalendarClock, FolderGit2, Settings } from 'lucide-react'
+import {
+  Bot,
+  CalendarClock,
+  FolderGit2,
+  Settings,
+  SquareTerminal,
+} from 'lucide-react'
 import type { RefObject } from 'react'
 import { NavLink } from 'react-router'
 
@@ -8,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover.tsx'
+import { useTerminalPanel } from '@/contexts/terminal-context.ts'
 import { useTheme } from '@/contexts/theme-context.ts'
 import { THEMES, themeIcon } from '@/lib/theme.ts'
 import { cn } from '@/lib/utils.ts'
@@ -58,9 +65,38 @@ export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
             </NavLink>
           </li>
         ))}
+        <li>
+          <TerminalButton />
+        </li>
       </ul>
       <ThemeButton />
     </nav>
+  )
+}
+
+// Not a page: it shows or hides the Terminal panel beside whichever page is open.
+function TerminalButton() {
+  const { sessions, shown, setShown } = useTerminalPanel()
+  const running = sessions.filter((session) => session.exitCode === null).length
+  return (
+    <button
+      type="button"
+      aria-pressed={shown}
+      onClick={() => setShown(!shown)}
+      className={cn(
+        'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-strong focus-visible:ring-2 focus-visible:ring-ring',
+        shown && 'bg-muted text-strong',
+      )}
+    >
+      <SquareTerminal className="size-4" aria-hidden="true" />
+      Terminal
+      {running > 0 && (
+        <span className="ml-auto rounded-full bg-success/15 px-1.5 text-xs text-success tabular-nums">
+          {running}
+          <span className="sr-only"> running</span>
+        </span>
+      )}
+    </button>
   )
 }
 
