@@ -40,6 +40,9 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       cursorBlink: true,
       scrollback: 5000,
       theme: readTerminalTheme(),
+      // Text a program draws too close to the background (a session still in a dark theme) is
+      // darkened until it reads.
+      minimumContrastRatio: 4.5,
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
@@ -117,9 +120,15 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
   }, [visible])
 
   return (
+    // The padding sits outside the element the terminal is fitted to, which counts its own padding
+    // as room for rows.
     <div
-      ref={host}
-      className={cn('min-h-0 flex-1 bg-card py-2 pl-3', !visible && 'hidden')}
-    />
+      className={cn(
+        'flex min-h-0 flex-1 flex-col bg-muted py-2 pl-3',
+        !visible && 'hidden',
+      )}
+    >
+      <div ref={host} className="min-h-0 flex-1" />
+    </div>
   )
 }
