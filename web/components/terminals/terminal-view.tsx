@@ -120,9 +120,15 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
   }, [visible])
 
   return (
+    // The padding sits outside the element the terminal is fitted to, which counts its own padding
+    // as room for rows.
     <div
-      ref={host}
-      className={cn('min-h-0 flex-1 bg-muted py-2 pl-3', !visible && 'hidden')}
-    />
+      className={cn(
+        'flex min-h-0 flex-1 flex-col bg-muted py-2 pl-3',
+        !visible && 'hidden',
+      )}
+    >
+      <div ref={host} className="min-h-0 flex-1" />
+    </div>
   )
 }
