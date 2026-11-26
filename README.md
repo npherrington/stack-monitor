@@ -95,6 +95,12 @@ uses the same port as `mise run dev`, and shows that monitor if one is already r
 download comes later; it won't be on the App Store, whose sandbox can't run git and agent CLIs
 across your disk.
 
+`mise run install-app` puts **Stack monitor.app** in `~/Applications`, so from then on it opens
+from Spotlight, Launchpad or the Dock with no terminal. It's a launcher for your checkout: it runs
+`mise run app` there with the PATH of the terminal you installed it from, and logs to
+`~/Library/Logs/Stack monitor/app.log`. Run it again after moving the checkout; to remove it, move
+the app to the Bin.
+
 **Update.** `git pull`, then `mise run dev` again: it installs and rebuilds what changed.
 
 The server answers only on 127.0.0.1, and only requests whose Host is `127.0.0.1` or `localhost`
