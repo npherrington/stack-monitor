@@ -40,6 +40,9 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       cursorBlink: true,
       scrollback: 5000,
       theme: readTerminalTheme(),
+      // Text a program draws in a light colour (a session still in a dark theme) is darkened
+      // until it reads on the background.
+      minimumContrastRatio: 4.5,
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
