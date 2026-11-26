@@ -5,10 +5,33 @@
 A local page and MCP server for working across a repo's git worktrees: each checkout's git state,
 the dev stack it runs, and the coding agents working in it.
 
-**Status: early.** The scaffold is in: the server, the config file and its schema, and a page that
-shows which modules a repo's config turns on. Worktrees, the stack, agent runs, schedules and the
-feature map come next, in the order [PLAN.md](PLAN.md) gives. It will ship as a desktop app
-(Electron); until then it runs as a local server you open in a browser.
+**Status: early, and in daily use.** Worktrees, the stack, agent runs, schedules and a Claude Code
+terminal per worktree are in; the feature map comes next ([PLAN.md](PLAN.md)). It runs as a Mac
+app (`mise run app`) or a local server you open in a browser.
+
+![Every worktree across your repos, one row each, with its git state, stack and last run](docs/screenshots/worktrees.png)
+
+**Every worktree, across the repos you care about.** One row per worktree, grouped by repo. Icons
+say what you'd otherwise `git status` for, with words on hover: uncommitted files, commits ahead of
+and behind main, merged, how much of its stack is up, and its last agent run. Pin the ones you're
+on, rename them, and give them a colour.
+
+![The row menu: pin, rename, colour, copy path, remove](docs/screenshots/menu.png)
+
+**Claude Code in any worktree, without leaving the app.** The terminal icon on a row opens Claude
+Code in that worktree, in a panel beside the page. It's the real `claude`, so `/model`, `/mcp`,
+`/usage`, your skills and permission prompts all work, with a tab per session.
+
+![Claude Code running in a worktree, in the Terminal panel](docs/screenshots/terminal.png)
+
+**Runs and schedules.** **Run** starts an agent or a workflow in a worktree and keeps its log. The
+Schedules page runs one on a cron timetable: a nightly audit, a morning triage.
+
+![Schedules: prompts on a cron timetable](docs/screenshots/schedules.png)
+
+**Six pastel themes,** and the terminal follows whichever you pick.
+
+![The theme picker, on Mint](docs/screenshots/themes.png)
 
 ## Install
 
@@ -26,7 +49,7 @@ Clone it outside `~/Desktop`, `~/Documents` and `~/Downloads`. macOS keeps backg
 those folders, and the monitor's schedules and login job will run as launchd jobs from its folder.
 
 **Add your repos.** Open **Settings** in the sidebar: add a repo by its path, or find the ones in
-a folder (`~/code`, say) and tick them. The Checkouts page then shows every worktree of each. The
+a folder (`~/code`, say) and tick them. The Worktrees page then shows every worktree of each. The
 list lives in `~/.config/stack-monitor/.monitor.json` (`$STACK_MONITOR_SETTINGS` names another
 file); until you first change it, the list is the repo the monitor started in.
 
@@ -37,9 +60,14 @@ STACK_MONITOR_PORT=7430 mise run dev          # another port, 1024 to 65535
 
 **Agents.** The monitor runs the coding-agent CLIs you already use: Claude Code and OpenCode so
 far. Install and log in to them as usual; Settings → Agents shows what it found. It stores no API
-keys: to use your own provider key, or a local Ollama model, use it through OpenCode. A checkout's
-card starts a run in it, and the **Agents** page drafts skills and builds workflows, by default with
+keys: to use your own provider key, or a local Ollama model, use it through OpenCode. A worktree's
+**Run** starts a run in it, and the **Agents** page drafts skills and builds workflows, by default with
 a free OpenCode model. Run logs live in `~/.local/state/stack-monitor/runs/`.
+
+**Terminal.** A worktree's terminal icon starts `claude` in it, in a pseudo-terminal the monitor
+keeps, shown in the Terminal panel (the sidebar's **Terminal** shows and hides it). Hiding the
+panel or reloading the page comes back to the same session; quitting the monitor ends them. It
+finds `claude` the way runs do, and opens only in a worktree of a repo you track.
 
 The Workflows tab also lists a repo's Claude Code workflows: each `.claude/workflows/<name>.js`
 whose `export const meta` names it, started as `claude -p` asking the Workflow tool to run it. A
@@ -57,7 +85,7 @@ checks that launchd can read the checkout: macOS keeps LaunchAgents out of `~/De
 the monitor instead. A fire while a run is going in the checkout starts nothing and is logged as
 skipped. Schedules and their fire log live in `~/.local/state/stack-monitor/schedules/`.
 
-Pins, names and colours you give checkouts, the filters, and the pastel theme (picked in the
+Pins, names and colours you give worktrees, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.
 
 **Open it as an app.** `mise run app` opens the monitor as a Mac app (Electron) with the beaver
