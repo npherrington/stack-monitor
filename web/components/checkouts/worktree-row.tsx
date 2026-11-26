@@ -22,6 +22,7 @@ import type { Checkout, RunSummary } from '../../../core/types.ts'
 import { RunStateIcon } from '@/components/agents/run-state.tsx'
 import { GitSummary } from '@/components/checkouts/git-summary.tsx'
 import { ServiceChips } from '@/components/checkouts/service-chips.tsx'
+import { Beaver } from '@/components/terminals/beaver.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
   DropdownMenu,
@@ -46,6 +47,15 @@ import {
 } from '@/lib/checkout-prefs.ts'
 import { cn } from '@/lib/utils.ts'
 
+// Whether a `claude` session runs in the worktree, and whether Claude is working in it.
+export type TerminalState = 'none' | 'open' | 'busy'
+
+const TERMINAL_TIPS: Record<TerminalState, string> = {
+  none: 'Open Claude Code here',
+  open: 'Go to its Claude Code session',
+  busy: 'Claude is working here: go to its session',
+}
+
 interface WorktreeRowProps {
   checkout: Checkout
   mainline: string
@@ -54,7 +64,7 @@ interface WorktreeRowProps {
   latestRun: RunSummary | null
   onRunHere: () => void
   onOpenRun: (id: string) => void
-  hasTerminal: boolean // a `claude` session runs in it
+  terminal: TerminalState
   onOpenTerminal: () => void
   onRemove: (() => void) | null // null for the primary checkout
 }
@@ -89,7 +99,7 @@ export function WorktreeRow({
   latestRun,
   onRunHere,
   onOpenRun,
-  hasTerminal,
+  terminal,
   onOpenTerminal,
   onRemove,
 }: WorktreeRowProps) {
@@ -202,21 +212,19 @@ export function WorktreeRow({
           </Button>
         </Tip>
         {!checkout.prunable && (
-          <Tip
-            label={
-              hasTerminal
-                ? 'Go to its Claude Code session'
-                : 'Open Claude Code here'
-            }
-          >
+          <Tip label={TERMINAL_TIPS[terminal]}>
             <Button
               variant="ghost"
               size="icon-sm"
               aria-label={`Claude Code in ${name}`}
               onClick={onOpenTerminal}
-              className={hasTerminal ? 'text-success' : 'text-muted-foreground'}
+              className="text-muted-foreground"
             >
-              <SquareTerminal />
+              {terminal === 'none' ? (
+                <SquareTerminal />
+              ) : (
+                <Beaver busy={terminal === 'busy'} />
+              )}
             </Button>
           </Tip>
         )}
