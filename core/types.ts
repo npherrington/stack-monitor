@@ -377,8 +377,12 @@ export interface SaveScheduleResult extends ActionResult {
 
 // A `claude` session the monitor runs in a terminal of its own, for the page's Terminal panel.
 // exitCode: null while it runs.
+// `claude`, or the user's own shell.
+export type TerminalKind = 'claude' | 'shell'
+
 export interface TerminalSession {
   id: string
+  kind: TerminalKind
   root: string // the repo it belongs to
   path: string // the worktree it runs in
   startedAt: string

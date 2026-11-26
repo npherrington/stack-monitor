@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 
 import { TerminalContext } from '@/contexts/terminal-context.ts'
-import { useTerminals } from '@/hooks/use-terminals.ts'
+import { useTerminals, type TerminalTarget } from '@/hooks/use-terminals.ts'
 import { toastFailure } from '@/lib/toast-failure.ts'
 
 export function TerminalProvider({ children }: { children: ReactNode }) {
@@ -16,7 +16,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     null
 
   const openFor = useCallback(
-    (target: { root: string; path: string }) => {
+    (target: TerminalTarget) => {
       setShown(true)
       open(target).then(
         (session) => setActive(session.id),

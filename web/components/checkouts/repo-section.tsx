@@ -69,7 +69,8 @@ function terminalState(
   path: string,
 ): TerminalState {
   const session = sessions.find(
-    (each) => each.path === path && each.exitCode === null,
+    (each) =>
+      each.kind === 'claude' && each.path === path && each.exitCode === null,
   )
   if (session === undefined) return 'none'
   return busy.has(session.id) ? 'busy' : 'open'
@@ -235,6 +236,13 @@ export function RepoSection({
                   terminal={terminalState(terminals, checkout.path)}
                   onOpenTerminal={() =>
                     terminals.openFor({ root: repo.root, path: checkout.path })
+                  }
+                  onOpenShell={() =>
+                    terminals.openFor({
+                      root: repo.root,
+                      path: checkout.path,
+                      kind: 'shell',
+                    })
                   }
                   onRemove={checkout.primary ? null : () => onRemove(checkout)}
                   onMoveUp={moveBy(index, -1)}

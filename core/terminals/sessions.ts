@@ -1,4 +1,4 @@
-// `claude` in a terminal of its own for each worktree, which the page's Terminal panel attaches
+// `claude`, or the user's shell, in a terminal of its own for each worktree, which the page's Terminal panel attaches
 // to over a WebSocket. The sessions live in the monitor, so a closed panel or a reloaded page
 // comes back to the same one; quitting the monitor ends them (their terminals close, so each gets
 // SIGHUP).
@@ -19,6 +19,7 @@ import { canonical, listWorktrees } from '../worktrees/clone.ts'
 export const OpenTerminalRequest = z.strictObject({
   root: PathText,
   path: PathText,
+  kind: z.enum(['claude', 'shell']).default('claude'),
 })
 export const TerminalIdRequest = z.strictObject({
   id: z.string().min(1).max(64),
@@ -84,19 +85,40 @@ const sessions = new Map<string, Session>()
 
 function summary({
   id,
+  kind,
   root,
   path,
   startedAt,
   exitCode,
 }: Session): TerminalSession {
-  return { id, root, path, startedAt, exitCode }
+  return { id, kind, root, path, startedAt, exitCode }
+}
+
+// A login shell, so it has the PATH and prompt a new Terminal window would.
+function shellProgram(): { program: string; args: string[] } {
+  return { program: process.env.SHELL || '/bin/zsh', args: ['-l'] }
+}
+
+async function claudeProgram(
+  tracking: Tracking,
+): Promise<{ program: string; args: string[] } | ActionResult> {
+  const settings = readAgentSettings(tracking.settings)
+  if ('problem' in settings) return failure(settings.problem)
+  const program = await findProgram(ADAPTERS.claude, settings)
+  if (program === null) {
+    return failure(
+      "Claude Code isn't on the monitor's PATH. Install it, or set its program in Settings › Agents.",
+    )
+  }
+  return { program, args: CLAUDE_ARGS }
 }
 
 export function listTerminals(): TerminalSession[] {
   return [...sessions.values()].map(summary)
 }
 
-// The running session for a worktree, or a new `claude` started in it.
+// The worktree's running `claude`, or a new one started in it; a shell is new each time, as a
+// new Terminal tab is.
 export async function openTerminal(
   tracking: Tracking,
   request: z.output<typeof OpenTerminalRequest>,
@@ -116,22 +138,23 @@ export async function openTerminal(
       `${worktree.path} is gone: git still lists it, but its folder isn't there`,
     )
   }
+  const { kind } = request
   const running = [...sessions.values()].find(
-    (each) => each.exitCode === null && canonical(each.path) === wanted,
+    (each) =>
+      kind === 'claude' &&
+      each.kind === 'claude' &&
+      each.exitCode === null &&
+      canonical(each.path) === wanted,
   )
   if (running !== undefined) return summary(running)
 
-  const settings = readAgentSettings(tracking.settings)
-  if ('problem' in settings) return failure(settings.problem)
-  const program = await findProgram(ADAPTERS.claude, settings)
-  if (program === null) {
-    return failure(
-      "Claude Code isn't on the monitor's PATH. Install it, or set its program in Settings › Agents.",
-    )
-  }
+  const command =
+    kind === 'shell' ? shellProgram() : await claudeProgram(tracking)
+  if ('ok' in command) return command
+  const { program, args } = command
   let pty: IPty
   try {
-    pty = spawn(program, CLAUDE_ARGS, {
+    pty = spawn(program, args, {
       name: 'xterm-256color',
       cols: 100,
       rows: 30,
@@ -143,6 +166,7 @@ export async function openTerminal(
   }
   const session: Session = {
     id: randomUUID(),
+    kind,
     root: repo.root,
     path: worktree.path,
     startedAt: new Date().toISOString(),
@@ -163,7 +187,7 @@ export async function openTerminal(
   return summary(session)
 }
 
-// Ends a session's `claude` (SIGHUP, as closing a terminal window does) and forgets it.
+// Ends a session's program (SIGHUP, as closing a terminal window does) and forgets it.
 export function closeTerminal(id: string): ActionResult {
   const session = sessions.get(id)
   if (session === undefined) return failure(`There's no terminal ${id}`)
@@ -179,7 +203,7 @@ export interface Attached {
   detach: () => void
 }
 
-// A page watching a session: it's sent what `claude` prints from here on, and its keys and size
+// A page watching a session: it's sent what its program prints from here on, and its keys and size
 // go to the terminal.
 export function attachTerminal(id: string, viewer: Viewer): Attached | null {
   const session = sessions.get(id)

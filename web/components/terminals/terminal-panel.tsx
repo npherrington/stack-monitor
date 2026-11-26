@@ -1,4 +1,4 @@
-import { PanelRightClose, Terminal, X } from 'lucide-react'
+import { PanelRightClose, Plus, Terminal, X } from 'lucide-react'
 import {
   lazy,
   Suspense,
@@ -71,12 +71,13 @@ function dragWidth(
   window.addEventListener('pointerup', stop)
 }
 
-// The Terminal panel beside the page: a tab per `claude` session. Every session's terminal stays
+// The Terminal panel beside the page: a tab per session, `claude` or a shell. Every session's terminal stays
 // mounted while the panel is closed, so reopening it shows each one as it was.
 export function TerminalPanel() {
-  const { sessions, shown, setShown, active, setActive, close, busy } =
+  const { sessions, shown, setShown, active, setActive, openFor, close, busy } =
     useTerminalPanel()
   const [width, setWidth] = useState(readWidth)
+  const current = sessions.find((session) => session.id === active)
 
   return (
     <aside
@@ -116,12 +117,22 @@ export function TerminalPanel() {
                 onClick={() => setActive(session.id)}
                 className="flex items-center gap-1.5 rounded-md py-1 pr-1 pl-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Beaver
-                  busy={busy.has(session.id)}
-                  className={cn(
-                    session.exitCode !== null && 'opacity-40 grayscale',
-                  )}
-                />
+                {session.kind === 'shell' ? (
+                  <Terminal
+                    aria-hidden="true"
+                    className={cn(
+                      'size-4 shrink-0',
+                      session.exitCode !== null && 'opacity-40',
+                    )}
+                  />
+                ) : (
+                  <Beaver
+                    busy={busy.has(session.id)}
+                    className={cn(
+                      session.exitCode !== null && 'opacity-40 grayscale',
+                    )}
+                  />
+                )}
                 <span className="max-w-40 truncate">{label(session)}</span>
                 {session.exitCode !== null ? (
                   <span className="sr-only">(exited)</span>
@@ -144,6 +155,25 @@ export function TerminalPanel() {
             </div>
           ))}
         </div>
+        {current !== undefined && (
+          <Tip label={`New terminal in ${label(current)}`}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`New terminal in ${label(current)}`}
+              onClick={() =>
+                openFor({
+                  root: current.root,
+                  path: current.path,
+                  kind: 'shell',
+                })
+              }
+              className="text-muted-foreground"
+            >
+              <Plus />
+            </Button>
+          </Tip>
+        )}
         <Tip label="Hide the terminal">
           <Button
             variant="ghost"
@@ -160,12 +190,10 @@ export function TerminalPanel() {
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
           <Terminal className="size-6" aria-hidden="true" />
           <p>
-            Click{' '}
-            <Terminal
-              className="inline size-4 align-text-bottom"
-              aria-label="the terminal icon"
-            />{' '}
-            on a worktree to open Claude Code in it.
+            Click the{' '}
+            <Beaver busy={false} className="inline align-text-bottom" /> on a
+            worktree to start a Claude Code session in it, or pick Open a
+            terminal here from its ⋯ menu for a shell.
           </p>
         </div>
       ) : (
@@ -174,6 +202,7 @@ export function TerminalPanel() {
             <TerminalView
               key={session.id}
               id={session.id}
+              kind={session.kind}
               visible={shown && session.id === active}
             />
           ))}
