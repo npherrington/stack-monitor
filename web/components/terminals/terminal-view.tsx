@@ -122,7 +122,7 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
   return (
     <div
       ref={host}
-      className={cn('min-h-0 flex-1 bg-card py-2 pl-3', !visible && 'hidden')}
+      className={cn('min-h-0 flex-1 bg-muted py-2 pl-3', !visible && 'hidden')}
     />
   )
 }
