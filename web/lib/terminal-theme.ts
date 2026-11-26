@@ -23,9 +23,12 @@ const COLOURS: Partial<Record<Colour, string>> = {
   // the bar behind `!` output in bright white.
   white: 'var(--border)',
   brightBlack: 'var(--muted-foreground)',
-  brightRed: TEXT('red'),
+  // Claude Code's spinner and its name: a coral with a lighter shimmer running through it.
+  brightRed:
+    'color-mix(in oklab, var(--color-swatch-orange) 50%, var(--destructive))',
   brightGreen: TEXT('green'),
-  brightYellow: TEXT('orange'),
+  brightYellow:
+    'color-mix(in oklab, var(--color-swatch-orange) 80%, var(--destructive))',
   brightBlue: TEXT('blue'),
   brightMagenta: TEXT('pink'),
   brightCyan: TEXT('teal'),
