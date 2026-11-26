@@ -19,7 +19,8 @@ const COLOURS: Partial<Record<Colour, string>> = {
   blue: TEXT('blue'),
   magenta: TEXT('purple'),
   cyan: TEXT('teal'),
-  white: 'var(--muted-foreground)',
+  // Claude Code's light-ansi theme fills its message bars and draws the prompt's border in these.
+  white: 'var(--border)',
   brightBlack: 'var(--muted-foreground)',
   brightRed: TEXT('red'),
   brightGreen: TEXT('green'),
@@ -27,7 +28,7 @@ const COLOURS: Partial<Record<Colour, string>> = {
   brightBlue: TEXT('blue'),
   brightMagenta: TEXT('pink'),
   brightCyan: TEXT('teal'),
-  brightWhite: 'var(--strong)',
+  brightWhite: 'var(--muted)',
 }
 
 // xterm reads only plain colours, and a computed var() or color-mix() can come back as oklab()
