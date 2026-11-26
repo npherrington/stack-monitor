@@ -96,7 +96,7 @@ export function WorkflowEditor({
 
   return (
     <Card className="gap-4 px-6 py-6">
-      <h2 className="text-lg font-extrabold text-strong">
+      <h2 className="text-lg font-semibold text-strong">
         {editing === null ? 'New workflow' : `Edit ${editing.name}`}
       </h2>
       <form

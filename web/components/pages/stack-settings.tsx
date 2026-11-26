@@ -22,7 +22,7 @@ export function StackSettings() {
           <ArrowLeft className="size-4" aria-hidden="true" />
           Settings
         </Link>
-        <h1 className="text-2xl font-extrabold text-strong">{name}: stack</h1>
+        <h1 className="text-2xl font-semibold text-strong">{name}: stack</h1>
         <p className="text-muted-foreground">
           The commands that start this repo’s services, and how the monitor
           tells each one is up. Every checkout’s card shows them.

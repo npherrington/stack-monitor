@@ -15,7 +15,7 @@ export function ThemePicker() {
           title={`${option.label}: ${option.colours}`}
           onClick={() => setTheme(option.id)}
           className={cn(
-            'group flex flex-col items-center gap-1.5 rounded-xl p-2 text-[11px] font-semibold text-muted-foreground transition outline-none hover:bg-card focus-visible:ring-2 focus-visible:ring-ring',
+            'group flex flex-col items-center gap-1.5 rounded-md p-2 text-[11px] font-semibold text-muted-foreground transition outline-none hover:bg-card focus-visible:ring-2 focus-visible:ring-ring',
             'aria-pressed:bg-card aria-pressed:text-strong aria-pressed:shadow-sm',
           )}
         >

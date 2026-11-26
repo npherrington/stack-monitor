@@ -26,7 +26,7 @@ export function Agents() {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3">
-        <h1 className="text-2xl font-extrabold text-strong">Agents</h1>
+        <h1 className="text-2xl font-semibold text-strong">Agents</h1>
         <p className="text-muted-foreground">
           Design skills, build workflows and follow every run, with whichever
           agent CLI you use. Settings → Agents sets which ones.

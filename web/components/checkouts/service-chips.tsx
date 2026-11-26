@@ -1,5 +1,8 @@
+import { Layers } from 'lucide-react'
+
 import type { ServiceState } from '../../../core/types.ts'
-import { StatusDot } from '@/components/ui/status-dot.tsx'
+import { Tip } from '@/components/ui/tooltip.tsx'
+import { cn } from '@/lib/utils.ts'
 
 interface ServiceChipsProps {
   services: ServiceState[]
@@ -12,31 +15,42 @@ const STATE_WORDS = {
   unknown: "can't tell",
 } as const
 
-// A checkout's stack: each service with whether it's up here, the detail on hover.
+// A checkout's stack as one icon and how many services are up; each service's state on hover.
 export function ServiceChips({ services }: ServiceChipsProps) {
   const up = services.filter((service) => service.state === 'up').length
+  const tone =
+    up === services.length
+      ? 'text-success'
+      : up > 0 || services.some((service) => service.state === 'partial')
+        ? 'text-warning'
+        : 'text-muted-foreground'
+  const summary = `Stack: ${up} of ${services.length} up`
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-bold text-muted-foreground">
-        Stack · {up} of {services.length} up
-      </p>
-      <ul className="flex flex-wrap gap-1.5">
-        {services.map((service) => (
-          <li
-            key={service.name}
-            title={
-              service.detail === null
-                ? STATE_WORDS[service.state]
-                : `${STATE_WORDS[service.state]}: ${service.detail}`
-            }
-            className="inline-flex h-7 items-center gap-1.5 rounded-full border bg-card px-2.5 text-xs font-semibold text-strong"
-          >
-            <StatusDot state={service.state} />
-            {service.name}
-            <span className="sr-only">{STATE_WORDS[service.state]}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Tip
+      label={
+        <span className="flex flex-col">
+          <span className="font-semibold">{summary}</span>
+          {services.map((service) => (
+            <span key={service.name}>
+              {service.name}: {STATE_WORDS[service.state]}
+              {service.detail !== null && ` (${service.detail})`}
+            </span>
+          ))}
+        </span>
+      }
+    >
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 text-xs font-medium tabular-nums',
+          tone,
+        )}
+      >
+        <Layers className="size-3.5" aria-hidden="true" />
+        <span aria-hidden="true">
+          {up}/{services.length}
+        </span>
+        <span className="sr-only">{summary}</span>
+      </span>
+    </Tip>
   )
 }

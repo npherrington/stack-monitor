@@ -94,7 +94,7 @@ export function Intro({ target, onDone }: IntroProps) {
           leaving && 'translate-y-3 opacity-0',
         )}
       >
-        <span className="bg-linear-to-r from-strong to-muted-foreground bg-clip-text text-4xl font-extrabold text-transparent">
+        <span className="text-3xl font-semibold text-strong">
           Stack monitor
         </span>
         <span className="text-sm font-semibold text-muted-foreground">
