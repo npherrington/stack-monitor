@@ -11,7 +11,7 @@ import { launchMonitor } from '../server/launch.ts'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const DIST = join(ROOT, 'dist')
-const ICON = join(ROOT, 'public', 'icon-512.png')
+const ICON = join(ROOT, 'public', 'icon-dock.png')
 const RELOAD_DEBOUNCE_MS = 300
 
 let url = ''

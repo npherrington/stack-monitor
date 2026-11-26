@@ -7,10 +7,10 @@ const TEXT = (swatch: string) =>
 type Colour = Exclude<keyof ITheme, 'extendedAnsi'>
 
 const COLOURS: Partial<Record<Colour, string>> = {
-  background: 'var(--card)',
+  background: 'var(--muted)',
   foreground: 'var(--foreground)',
   cursor: 'var(--primary)',
-  cursorAccent: 'var(--card)',
+  cursorAccent: 'var(--muted)',
   selectionBackground: 'color-mix(in srgb, var(--primary) 30%, transparent)',
   black: 'var(--strong)',
   red: 'var(--destructive)',
@@ -19,15 +19,20 @@ const COLOURS: Partial<Record<Colour, string>> = {
   blue: TEXT('blue'),
   magenta: TEXT('purple'),
   cyan: TEXT('teal'),
-  white: 'var(--muted-foreground)',
+  // Claude Code's light-ansi theme draws your messages' bars and the prompt's border in white, and
+  // the bar behind `!` output in bright white.
+  white: 'var(--border)',
   brightBlack: 'var(--muted-foreground)',
-  brightRed: TEXT('red'),
+  // Claude Code's spinner and its name: a coral with a lighter shimmer running through it.
+  brightRed:
+    'color-mix(in oklab, var(--color-swatch-orange) 50%, var(--destructive))',
   brightGreen: TEXT('green'),
-  brightYellow: TEXT('orange'),
+  brightYellow:
+    'color-mix(in oklab, var(--color-swatch-orange) 80%, var(--destructive))',
   brightBlue: TEXT('blue'),
   brightMagenta: TEXT('pink'),
   brightCyan: TEXT('teal'),
-  brightWhite: 'var(--strong)',
+  brightWhite: 'var(--card)',
 }
 
 // xterm reads only plain colours, and a computed var() or color-mix() can come back as oklab()

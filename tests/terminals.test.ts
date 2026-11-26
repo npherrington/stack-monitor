@@ -17,7 +17,7 @@ function fakeClaude(dir: string): string {
   const path = join(dir, 'fake-claude')
   writeFileSync(
     path,
-    '#!/bin/sh\necho "cwd=$(pwd)"\nwhile read line; do echo "got:$line"; done\n',
+    '#!/bin/sh\necho "cwd=$(pwd)"\necho "args=$*"\nwhile read line; do echo "got:$line"; done\n',
   )
   chmodSync(path, 0o755)
   return path
@@ -120,6 +120,15 @@ describe('the terminal routes', () => {
     await until(
       () => watching.output().includes(`cwd=${realpathSync(linked)}`),
       'the fake to say where it runs',
+    )
+    await until(
+      () =>
+        watching
+          .output()
+          .includes(
+            'args=--settings {"theme":"light-ansi","spinnerVerbs":{"mode":"replace","verbs":["Gnawing",',
+          ),
+      'claude to be started in the light-ansi theme, with beaver verbs',
     )
     watching.socket.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }))
     watching.socket.send(JSON.stringify({ type: 'input', data: 'hello\r' }))

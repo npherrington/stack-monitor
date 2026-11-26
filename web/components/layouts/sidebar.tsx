@@ -5,12 +5,13 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  SquareTerminal,
+  Terminal,
 } from 'lucide-react'
 import type { ReactElement, RefObject } from 'react'
 import { NavLink } from 'react-router'
 
 import { ThemePicker } from '@/components/settings/theme-picker.tsx'
+import { Beaver } from '@/components/terminals/beaver.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
   Popover,
@@ -152,7 +153,7 @@ interface TerminalButtonProps {
 // Not a page: it shows or hides the Terminal panel beside whichever page is open. The rest of its
 // props come from a tooltip that wraps it.
 function TerminalButton({ collapsed, ...trigger }: TerminalButtonProps) {
-  const { sessions, shown, setShown } = useTerminalPanel()
+  const { sessions, shown, setShown, busy } = useTerminalPanel()
   const running = sessions.filter((session) => session.exitCode === null).length
   return (
     <button
@@ -166,7 +167,11 @@ function TerminalButton({ collapsed, ...trigger }: TerminalButtonProps) {
         collapsed && 'md:justify-center md:px-0',
       )}
     >
-      <SquareTerminal className="size-4 shrink-0" aria-hidden="true" />
+      {busy.size > 0 ? (
+        <Beaver busy />
+      ) : (
+        <Terminal className="size-4 shrink-0" aria-hidden="true" />
+      )}
       <span className={cn(collapsed && 'md:sr-only')}>Terminal</span>
       {running > 0 && (
         <span

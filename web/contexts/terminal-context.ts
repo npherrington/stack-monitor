@@ -10,6 +10,8 @@ export interface TerminalContextValue {
   setActive: (id: string) => void
   openFor: (target: { root: string; path: string }) => void // a worktree's session, started if needed
   close: (id: string) => void
+  busy: ReadonlySet<string> // the sessions Claude is working in, by id
+  setBusy: (id: string, busy: boolean) => void
 }
 
 export const TerminalContext = createContext<TerminalContextValue | undefined>(

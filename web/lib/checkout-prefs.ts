@@ -11,6 +11,12 @@ export const SWATCHES = [
   'blue',
   'purple',
   'pink',
+  'coral',
+  'lime',
+  'sky',
+  'indigo',
+  'sand',
+  'slate',
 ] as const
 
 export type Swatch = (typeof SWATCHES)[number]

@@ -1,6 +1,6 @@
 # stack-monitor
 
-<img src="public/icon-512.png" alt="" width="96" align="right" />
+<img src="public/icon-dock.png" alt="" width="112" align="right" />
 
 A local page and MCP server for working across a repo's git worktrees: each checkout's git state,
 the dev stack it runs, and the coding agents working in it.

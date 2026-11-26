@@ -1,6 +1,6 @@
 // `mise run icon`: the pastel beaver, drawn from the letter grid below into the page's icons in
-// public/: one favicon per pastel variety, which the page swaps with the theme, plus the PNGs the
-// Dock and manifest take, in Blossom. The grid is the source: edit it here, run the task, and
+// public/: one favicon per pastel variety, which the page swaps with the theme, the PNGs the
+// manifest takes, and the app's Dock icon, in Blossom. The grid is the source: edit it here, run the task, and
 // commit what it writes.
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -41,64 +41,80 @@ const COLOURS: Record<string, string> = {
   T: '#f2aa6e', // tooth shadow
 }
 
-interface Backdrop {
-  background: string
-  frame: string
-}
-
-// Each variety's soft tint, framed in its accent: web/index.css's --secondary and --primary. The ids
-// are web/lib/theme.ts's THEMES.
-const VARIETIES: Record<string, Backdrop> = {
-  blossom: { background: '#f3ecff', frame: '#c08ae8' },
-  peach: { background: '#ffeee2', frame: '#f4a582' },
-  mint: { background: '#e3f6ec', frame: '#7fcfae' },
-  lavender: { background: '#eeeaff', frame: '#a99cf0' },
-  sky: { background: '#e6f1ff', frame: '#8cbcf0' },
-  lemon: { background: '#fff7d6', frame: '#f2d46b' },
+// Each variety's soft tint: web/index.css's --secondary. The ids are web/lib/theme.ts's THEMES.
+const VARIETIES: Record<string, string> = {
+  blossom: '#f3ecff',
+  peach: '#ffeee2',
+  mint: '#e3f6ec',
+  lavender: '#eeeaff',
+  sky: '#e6f1ff',
+  lemon: '#fff7d6',
+  rose: '#ffe9f0',
+  sage: '#e9efe3',
+  seafoam: '#ddf3f0',
+  coral: '#ffe8df',
+  sand: '#f3ecdf',
+  cloud: '#eceff4',
+  midnight: '#232a40',
+  dusk: '#2f2336',
+  forest: '#1f2d27',
+  mocha: '#30261f',
+  ink: '#232328',
+  ocean: '#1b2e34',
 }
 
 // The PNGs are fixed once the Dock or a manifest has them, so they're the default variety.
 const DEFAULT = VARIETIES.blossom
 
-// Measured on a 512 canvas. Each size scales them and rounds to whole pixels.
+// Measured on a 512 canvas. Each size scales it and rounds to whole pixels.
 const CANVAS = 512
 const CELL = 20
-const FRAME_INSET = 24
-const FRAME_WIDTH = 8
 
+// Square and edge to edge: a browser or iOS rounds these itself.
 const SIZES = { 'icon-512.png': 512, 'apple-touch-icon.png': 180 }
+
+// The Dock shows an image as it is, so this one is drawn in a Mac app icon's shape: on Apple's
+// 1024 grid, an 824 squircle in the middle, the beaver about seven tenths of it.
+const DOCK = { file: 'icon-dock.png', size: 1024, shape: 824, cell: 36 }
+const SQUIRCLE_POWER = 5 // a superellipse this round is close to Apple's continuous corners
+const SAMPLES = 4 // per side of a pixel, for the squircle's soft edge
 
 interface Layout {
   size: number
   cell: number
   offset: number // where the grid starts, on both axes
-  inset: number
-  width: number
 }
 
-function layout(size: number): Layout {
-  const scale = size / CANVAS
-  const cell = Math.max(1, Math.round(CELL * scale))
-  return {
-    size,
-    cell,
-    offset: Math.floor((size - cell * BEAVER.length) / 2),
-    inset: Math.round(FRAME_INSET * scale),
-    width: Math.max(1, Math.round(FRAME_WIDTH * scale)),
-  }
+function layout(
+  size: number,
+  cell = Math.max(1, Math.round(CELL * (size / CANVAS))),
+): Layout {
+  return { size, cell, offset: Math.floor((size - cell * BEAVER.length) / 2) }
 }
 
-function colourAt(at: Layout, x: number, y: number): string {
-  const { background, frame } = DEFAULT
-  const { size, cell, offset, inset, width } = at
+// The beaver's colour at a pixel, or the background's.
+function colourAt({ cell, offset }: Layout, x: number, y: number): string {
   const letter =
     BEAVER[Math.floor((y - offset) / cell)]?.[Math.floor((x - offset) / cell)]
   if (x >= offset && y >= offset && letter !== undefined && letter !== '.') {
     return COLOURS[letter]
   }
-  const within = (margin: number) =>
-    x >= margin && y >= margin && x < size - margin && y < size - margin
-  return within(inset) && !within(inset + width) ? frame : background
+  return DEFAULT
+}
+
+// How much of a pixel the Dock icon's squircle covers, 0 to 1.
+function squircleCover(x: number, y: number): number {
+  const half = DOCK.shape / 2
+  const centre = DOCK.size / 2
+  let inside = 0
+  for (let i = 0; i < SAMPLES; i += 1) {
+    for (let j = 0; j < SAMPLES; j += 1) {
+      const u = Math.abs(x + (i + 0.5) / SAMPLES - centre) / half
+      const v = Math.abs(y + (j + 0.5) / SAMPLES - centre) / half
+      if (u ** SQUIRCLE_POWER + v ** SQUIRCLE_POWER <= 1) inside += 1
+    }
+  }
+  return inside / SAMPLES ** 2
 }
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -114,8 +130,11 @@ function chunk(type: string, data: Buffer): Buffer {
 }
 
 // An 8-bit RGBA PNG. Each row starts with filter byte 0 (none), which Buffer.alloc's zeros give.
-function png(size: number): Buffer {
-  const at = layout(size)
+function png(
+  at: Layout,
+  cover: (x: number, y: number) => number = () => 1,
+): Buffer {
+  const { size } = at
   const stride = size * 4 + 1
   const pixels = Buffer.alloc(stride * size)
   for (let y = 0; y < size; y += 1) {
@@ -123,7 +142,7 @@ function png(size: number): Buffer {
       const hex = colourAt(at, x, y)
       const i = y * stride + 1 + x * 4
       pixels.writeUIntBE(Number.parseInt(hex.slice(1), 16), i, 3)
-      pixels[i + 3] = 255
+      pixels[i + 3] = Math.round(cover(x, y) * 255)
     }
   }
   const header = Buffer.alloc(13)
@@ -140,8 +159,8 @@ function png(size: number): Buffer {
 }
 
 // A favicon: one path per colour, a square per cell.
-function svg({ background, frame }: Backdrop): string {
-  const { cell, offset, inset, width } = layout(CANVAS)
+function svg(background: string): string {
+  const { cell, offset } = layout(CANVAS)
   const paths = new Map<string, string>()
   BEAVER.forEach((row, y) => {
     ;[...row].forEach((letter, x) => {
@@ -151,12 +170,9 @@ function svg({ background, frame }: Backdrop): string {
       paths.set(fill, (paths.get(fill) ?? '') + square)
     })
   })
-  const edge = inset + width / 2
-  const side = CANVAS - 2 * edge
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS} ${CANVAS}" shape-rendering="crispEdges">`,
     `  <rect width="${CANVAS}" height="${CANVAS}" fill="${background}"/>`,
-    `  <rect x="${edge}" y="${edge}" width="${side}" height="${side}" fill="none" stroke="${frame}" stroke-width="${width}"/>`,
     ...[...paths].map(([fill, d]) => `  <path fill="${fill}" d="${d}"/>`),
     '</svg>',
     '',
@@ -165,12 +181,16 @@ function svg({ background, frame }: Backdrop): string {
 
 writeFileSync(join(PUBLIC, 'icon.svg'), svg(DEFAULT))
 mkdirSync(join(PUBLIC, 'icons'), { recursive: true })
-for (const [id, backdrop] of Object.entries(VARIETIES)) {
-  writeFileSync(join(PUBLIC, 'icons', `${id}.svg`), svg(backdrop))
+for (const [id, background] of Object.entries(VARIETIES)) {
+  writeFileSync(join(PUBLIC, 'icons', `${id}.svg`), svg(background))
 }
 for (const [name, size] of Object.entries(SIZES)) {
-  writeFileSync(join(PUBLIC, name), png(size))
+  writeFileSync(join(PUBLIC, name), png(layout(size)))
 }
+writeFileSync(
+  join(PUBLIC, DOCK.file),
+  png(layout(DOCK.size, DOCK.cell), squircleCover),
+)
 console.warn(
-  `Wrote icon.svg, icons/{${Object.keys(VARIETIES).join(',')}}.svg and ${Object.keys(SIZES).join(', ')} to ${PUBLIC}`,
+  `Wrote icon.svg, icons/{${Object.keys(VARIETIES).join(',')}}.svg, ${Object.keys(SIZES).join(', ')} and ${DOCK.file} to ${PUBLIC}`,
 )
