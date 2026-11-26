@@ -75,7 +75,8 @@ function NewWorktreeButton({
 
 export function Checkouts() {
   const { repos, isPending, error, isStale } = useCheckouts()
-  const { prefs, filters, updatePref, setFilters } = useCheckoutPrefs()
+  const { prefs, filters, updatePref, setRanks, setFilters } =
+    useCheckoutPrefs()
   const { runs } = useRuns()
   const { overview } = useAgents()
   const [runHere, setRunHere] = useState<RunHereTarget | null>(null)
@@ -169,6 +170,7 @@ export function Checkouts() {
             filters={filters}
             query={query.trim()}
             onPrefChange={updatePref}
+            onReorder={setRanks}
             latestRuns={latestRuns}
             onRunHere={setRunHere}
             onOpenRun={setOpenRun}

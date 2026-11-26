@@ -14,6 +14,7 @@ interface UseCheckoutPrefsResult {
   prefs: CheckoutPrefs
   filters: CheckoutFilters
   updatePref: (path: string, change: Partial<CheckoutPref>) => void
+  setRanks: (ranks: Record<string, number>) => void // places in a repo's list, by path
   setFilters: (filters: CheckoutFilters) => void
 }
 
@@ -35,13 +36,24 @@ export function useCheckoutPrefs(): UseCheckoutPrefsResult {
     [],
   )
 
+  const setRanks = useCallback((ranks: Record<string, number>) => {
+    setPrefs((current) => {
+      const next = { ...current }
+      for (const [path, rank] of Object.entries(ranks)) {
+        next[path] = { ...current[path], rank }
+      }
+      savePrefs(next)
+      return next
+    })
+  }, [])
+
   const setFilters = useCallback((next: CheckoutFilters) => {
     saveFilters(next)
     setFiltersState(next)
   }, [])
 
   return useMemo(
-    () => ({ prefs, filters, updatePref, setFilters }),
-    [prefs, filters, updatePref, setFilters],
+    () => ({ prefs, filters, updatePref, setRanks, setFilters }),
+    [prefs, filters, updatePref, setRanks, setFilters],
   )
 }

@@ -1,7 +1,10 @@
 import {
+  ArrowDown,
+  ArrowUp,
   Check,
   Copy,
   Ellipsis,
+  GripVertical,
   FolderX,
   GitBranch,
   House,
@@ -67,6 +70,8 @@ interface WorktreeRowProps {
   terminal: TerminalState
   onOpenTerminal: () => void
   onRemove: (() => void) | null // null for the primary checkout
+  onMoveUp: (() => void) | null // null at the top of its group
+  onMoveDown: (() => void) | null
 }
 
 function folderName(path: string): string {
@@ -102,6 +107,8 @@ export function WorktreeRow({
   terminal,
   onOpenTerminal,
   onRemove,
+  onMoveUp,
+  onMoveDown,
 }: WorktreeRowProps) {
   const [renaming, setRenaming] = useState(false)
   const folder = folderName(checkout.path)
@@ -115,11 +122,22 @@ export function WorktreeRow({
 
   return (
     <li
+      data-path={checkout.path}
       className={cn(
         'group relative flex items-center gap-4 py-2.5 pr-3 pl-4 transition-colors',
         swatchTint({ colour: pref.colour ?? 'none' }),
       )}
     >
+      {/* Dragged by RepoSection, which listens on the list. The menu's Move items do the same
+          from the keyboard. */}
+      <span
+        draggable
+        aria-hidden="true"
+        title="Drag to reorder"
+        className="absolute inset-y-0 left-0 flex w-4 cursor-grab items-center justify-center text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+      >
+        <GripVertical className="size-3.5" />
+      </span>
       <div className="flex min-w-24 flex-1 flex-col gap-0.5">
         {renaming ? (
           <RenameField
@@ -263,6 +281,21 @@ export function WorktreeRow({
             <DropdownMenuItem onClick={copyPath}>
               <Copy />
               Copy path
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={onMoveUp === null}
+              onClick={() => onMoveUp?.()}
+            >
+              <ArrowUp />
+              Move up
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={onMoveDown === null}
+              onClick={() => onMoveDown?.()}
+            >
+              <ArrowDown />
+              Move down
             </DropdownMenuItem>
             {onRemove !== null && (
               <>
