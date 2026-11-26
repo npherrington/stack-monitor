@@ -123,8 +123,12 @@ describe('the terminal routes', () => {
     )
     await until(
       () =>
-        watching.output().includes('args=--settings {"theme":"light-ansi"}'),
-      'claude to be started in the light-ansi theme',
+        watching
+          .output()
+          .includes(
+            'args=--settings {"theme":"light-ansi","spinnerVerbs":{"mode":"replace","verbs":["Gnawing",',
+          ),
+      'claude to be started in the light-ansi theme, with beaver verbs',
     )
     watching.socket.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }))
     watching.socket.send(JSON.stringify({ type: 'input', data: 'hello\r' }))

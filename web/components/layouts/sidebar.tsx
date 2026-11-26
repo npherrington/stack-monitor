@@ -3,12 +3,13 @@ import {
   CalendarClock,
   FolderGit2,
   Settings,
-  SquareTerminal,
+  Terminal,
 } from 'lucide-react'
 import type { RefObject } from 'react'
 import { NavLink } from 'react-router'
 
 import { ThemePicker } from '@/components/settings/theme-picker.tsx'
+import { Beaver } from '@/components/terminals/beaver.tsx'
 import {
   Popover,
   PopoverContent,
@@ -76,7 +77,7 @@ export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
 
 // Not a page: it shows or hides the Terminal panel beside whichever page is open.
 function TerminalButton() {
-  const { sessions, shown, setShown } = useTerminalPanel()
+  const { sessions, shown, setShown, busy } = useTerminalPanel()
   const running = sessions.filter((session) => session.exitCode === null).length
   return (
     <button
@@ -88,7 +89,11 @@ function TerminalButton() {
         shown && 'bg-muted text-strong',
       )}
     >
-      <SquareTerminal className="size-4" aria-hidden="true" />
+      {busy.size > 0 ? (
+        <Beaver busy />
+      ) : (
+        <Terminal className="size-4" aria-hidden="true" />
+      )}
       Terminal
       {running > 0 && (
         <span className="ml-auto rounded-full bg-success/15 px-1.5 text-xs text-success tabular-nums">
