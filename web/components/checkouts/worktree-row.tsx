@@ -11,7 +11,7 @@ import {
   Pin,
   PinOff,
   Play,
-  SquareTerminal,
+  Terminal,
   Trash2,
   TriangleAlert,
   X,
@@ -221,7 +221,7 @@ export function WorktreeRow({
               className="text-muted-foreground"
             >
               {terminal === 'none' ? (
-                <SquareTerminal />
+                <Terminal />
               ) : (
                 <Beaver busy={terminal === 'busy'} />
               )}

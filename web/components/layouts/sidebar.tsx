@@ -3,7 +3,7 @@ import {
   CalendarClock,
   FolderGit2,
   Settings,
-  SquareTerminal,
+  Terminal,
 } from 'lucide-react'
 import type { RefObject } from 'react'
 import { NavLink } from 'react-router'
@@ -92,7 +92,7 @@ function TerminalButton() {
       {busy.size > 0 ? (
         <Beaver busy />
       ) : (
-        <SquareTerminal className="size-4" aria-hidden="true" />
+        <Terminal className="size-4" aria-hidden="true" />
       )}
       Terminal
       {running > 0 && (

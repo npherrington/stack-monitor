@@ -1,4 +1,4 @@
-import { PanelRightClose, SquareTerminal, X } from 'lucide-react'
+import { PanelRightClose, Terminal, X } from 'lucide-react'
 import {
   lazy,
   Suspense,
@@ -158,10 +158,10 @@ export function TerminalPanel() {
       </div>
       {sessions.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
-          <SquareTerminal className="size-6" aria-hidden="true" />
+          <Terminal className="size-6" aria-hidden="true" />
           <p>
             Click{' '}
-            <SquareTerminal
+            <Terminal
               className="inline size-4 align-text-bottom"
               aria-label="the terminal icon"
             />{' '}
