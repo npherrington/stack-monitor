@@ -7,10 +7,16 @@ import type {
   RunSummary,
 } from '../../../core/types.ts'
 import type { RunHereTarget } from '@/components/checkouts/run-here-dialog.tsx'
-import { WorktreeRow } from '@/components/checkouts/worktree-row.tsx'
+import {
+  WorktreeRow,
+  type TerminalState,
+} from '@/components/checkouts/worktree-row.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
-import { useTerminalPanel } from '@/contexts/terminal-context.ts'
+import {
+  useTerminalPanel,
+  type TerminalContextValue,
+} from '@/contexts/terminal-context.ts'
 import {
   moveCheckout,
   visibleCheckouts,
@@ -55,6 +61,18 @@ function rowAt(
     place: event.clientY < top + height / 2 ? 'before' : 'after',
     row,
   }
+}
+
+// Whether a worktree has a running `claude` session, and whether it's working.
+function terminalState(
+  { sessions, busy }: TerminalContextValue,
+  path: string,
+): TerminalState {
+  const session = sessions.find(
+    (each) => each.path === path && each.exitCode === null,
+  )
+  if (session === undefined) return 'none'
+  return busy.has(session.id) ? 'busy' : 'open'
 }
 
 function matches(checkout: Checkout, pref: CheckoutPref, query: string) {
@@ -214,11 +232,7 @@ export function RepoSection({
                     onRunHere({ root: repo.root, checkout: checkout.path })
                   }
                   onOpenRun={onOpenRun}
-                  hasTerminal={terminals.sessions.some(
-                    (session) =>
-                      session.path === checkout.path &&
-                      session.exitCode === null,
-                  )}
+                  terminal={terminalState(terminals, checkout.path)}
                   onOpenTerminal={() =>
                     terminals.openFor({ root: repo.root, path: checkout.path })
                   }

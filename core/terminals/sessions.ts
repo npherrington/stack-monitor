@@ -38,6 +38,37 @@ export type TerminalInput = z.output<typeof TerminalInput>
 // Enough for a page that reattaches to redraw what was on screen and some history above it.
 const SCROLLBACK_CHARS = 256 * 1024
 
+// The page is light, and its terminal sets the 16 ANSI colours from the app's theme. Claude
+// Code's light-ansi theme draws only in those, so it follows the app; its other themes paint some
+// bars in fixed colours. Set for these sessions only, over whatever theme the user picked, with
+// the monitor's beaver doing the work on the spinner line.
+const CLAUDE_ARGS = [
+  '--settings',
+  JSON.stringify({
+    theme: 'light-ansi',
+    spinnerVerbs: {
+      mode: 'replace',
+      verbs: [
+        'Gnawing',
+        'Dam-building',
+        'Felling',
+        'Whittling',
+        'Log-rolling',
+        'Paddling',
+        'Tail-slapping',
+        'Stacking sticks',
+        'Damming',
+        'Lodge-building',
+        'Chewing it over',
+        'Nibbling',
+        'Burrowing',
+        'Mudding the lodge',
+        'Beavering away',
+      ],
+    },
+  }),
+]
+
 export interface Viewer {
   output: (data: string) => void
   exited: (code: number) => void
@@ -100,7 +131,7 @@ export async function openTerminal(
   }
   let pty: IPty
   try {
-    pty = spawn(program, [], {
+    pty = spawn(program, CLAUDE_ARGS, {
       name: 'xterm-256color',
       cols: 100,
       rows: 30,

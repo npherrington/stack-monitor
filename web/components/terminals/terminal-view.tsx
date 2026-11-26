@@ -5,6 +5,7 @@ import { Terminal } from '@xterm/xterm'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
+import { useTerminalPanel } from '@/contexts/terminal-context.ts'
 import { terminalsKey } from '@/hooks/use-terminals.ts'
 import { readTerminalTheme } from '@/lib/terminal-theme.ts'
 import { cn } from '@/lib/utils.ts'
@@ -29,6 +30,7 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
   const host = useRef<HTMLDivElement>(null)
   const terminal = useRef<Terminal | null>(null)
   const queryClient = useQueryClient()
+  const { setBusy } = useTerminalPanel()
 
   useEffect(() => {
     const element = host.current
@@ -40,6 +42,9 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       cursorBlink: true,
       scrollback: 5000,
       theme: readTerminalTheme(),
+      // Text a program draws too close to the background (a session still in a dark theme) is
+      // darkened until it reads.
+      minimumContrastRatio: 4.5,
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
@@ -82,11 +87,20 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
             : event.code === NO_SESSION
               ? 'This session has ended.'
               : "Lost the monitor. Reopen this worktree's terminal once it's back."
+        setBusy(id, false)
         term.write(`\r\n\x1b[2m${why}\x1b[0m\r\n`)
         void queryClient.invalidateQueries({ queryKey: terminalsKey })
       },
       { signal },
     )
+    // Claude Code reports its progress as OSC 9;4;<state>: 3 while it works (1 with a known
+    // amount), 0 when it's done. A reattached page replays the latest.
+    const progress = term.parser.registerOscHandler(9, (data) => {
+      const state = /^4;(\d)/.exec(data)?.[1]
+      if (state === undefined) return false
+      setBusy(id, state === '1' || state === '3')
+      return true
+    })
     const typing = term.onData((data) => send({ type: 'input', data }))
     const resizing = term.onResize(sendSize)
     const sized = new ResizeObserver(refit)
@@ -103,6 +117,8 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
     return () => {
       themed.disconnect()
       sized.disconnect()
+      progress.dispose()
+      setBusy(id, false)
       typing.dispose()
       resizing.dispose()
       listening.abort()
@@ -110,16 +126,22 @@ export function TerminalView({ id, visible }: TerminalViewProps) {
       term.dispose()
       terminal.current = null
     }
-  }, [id, queryClient])
+  }, [id, queryClient, setBusy])
 
   useEffect(() => {
     if (visible) terminal.current?.focus()
   }, [visible])
 
   return (
+    // The padding sits outside the element the terminal is fitted to, which counts its own padding
+    // as room for rows.
     <div
-      ref={host}
-      className={cn('min-h-0 flex-1 bg-card py-2 pl-3', !visible && 'hidden')}
-    />
+      className={cn(
+        'flex min-h-0 flex-1 flex-col bg-muted py-2 pl-3',
+        !visible && 'hidden',
+      )}
+    >
+      <div ref={host} className="min-h-0 flex-1" />
+    </div>
   )
 }

@@ -1,4 +1,4 @@
-import { PanelRightClose, SquareTerminal, X } from 'lucide-react'
+import { PanelRightClose, Terminal, X } from 'lucide-react'
 import {
   lazy,
   Suspense,
@@ -8,6 +8,7 @@ import {
 } from 'react'
 
 import type { TerminalSession } from '../../../core/types.ts'
+import { Beaver } from '@/components/terminals/beaver.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
 import { useTerminalPanel } from '@/contexts/terminal-context.ts'
@@ -73,7 +74,7 @@ function dragWidth(
 // The Terminal panel beside the page: a tab per `claude` session. Every session's terminal stays
 // mounted while the panel is closed, so reopening it shows each one as it was.
 export function TerminalPanel() {
-  const { sessions, shown, setShown, active, setActive, close } =
+  const { sessions, shown, setShown, active, setActive, close, busy } =
     useTerminalPanel()
   const [width, setWidth] = useState(readWidth)
 
@@ -115,16 +116,19 @@ export function TerminalPanel() {
                 onClick={() => setActive(session.id)}
                 className="flex items-center gap-1.5 rounded-md py-1 pr-1 pl-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <span
-                  aria-hidden="true"
+                <Beaver
+                  busy={busy.has(session.id)}
                   className={cn(
-                    'size-1.5 rounded-full',
-                    session.exitCode === null ? 'bg-success' : 'bg-border',
+                    session.exitCode !== null && 'opacity-40 grayscale',
                   )}
                 />
                 <span className="max-w-40 truncate">{label(session)}</span>
-                {session.exitCode !== null && (
+                {session.exitCode !== null ? (
                   <span className="sr-only">(exited)</span>
+                ) : (
+                  busy.has(session.id) && (
+                    <span className="sr-only">(working)</span>
+                  )
                 )}
               </button>
               <Tip label="End this session">
@@ -154,10 +158,10 @@ export function TerminalPanel() {
       </div>
       {sessions.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
-          <SquareTerminal className="size-6" aria-hidden="true" />
+          <Terminal className="size-6" aria-hidden="true" />
           <p>
             Click{' '}
-            <SquareTerminal
+            <Terminal
               className="inline size-4 align-text-bottom"
               aria-label="the terminal icon"
             />{' '}
