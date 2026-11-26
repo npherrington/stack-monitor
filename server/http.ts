@@ -4,6 +4,7 @@ import {
   type ServerResponse,
 } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import type { Duplex } from 'node:stream'
 
 import type { z } from 'zod'
 
@@ -14,12 +15,21 @@ export type Reply = [status: number, body: unknown]
 // raw: the query's fields for a GET, the parsed JSON body for anything else.
 export type Route = (raw: unknown) => Promise<Reply>
 export type Routes = Record<string, Route> // by "METHOD /path"
+// A WebSocket route, handed the upgrade once its Host and Origin pass.
+export type Upgrade = (
+  req: IncomingMessage,
+  socket: Duplex,
+  head: Buffer,
+  url: URL,
+) => void
+export type Upgrades = Record<string, Upgrade> // by path
 
 export interface ServeOptions {
   port: number // 0 for one the system picks
   page: Page
   routes: Routes
   maxBodyBytes: number // of the largest body a route takes
+  upgrades?: Upgrades
 }
 
 export interface Serving {
@@ -70,6 +80,24 @@ function rejectReason(req: IncomingMessage, port: number): string | null {
     return 'Content-Type must be application/json'
   }
   return null
+}
+
+// A browser always names the page opening a WebSocket, so one without an Origin isn't the page.
+function rejectUpgrade(req: IncomingMessage, port: number): string | null {
+  if (!allowedHosts(port).includes(req.headers.host ?? '')) {
+    return 'Host not allowed'
+  }
+  const { origin } = req.headers
+  if (origin === undefined || !allowedOrigins(port).includes(origin)) {
+    return 'Origin not allowed'
+  }
+  return null
+}
+
+function refuseUpgrade(socket: Duplex, status: string): void {
+  socket.end(
+    `HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`,
+  )
 }
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
@@ -157,6 +185,22 @@ export function serve(options: ServeOptions): Promise<Serving> {
       const message = errorMessage(error)
       sendJson(res, 500, failure(`The monitor hit an error: ${message}`))
     })
+  })
+  server.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+    if (rejectUpgrade(req, port) !== null) {
+      refuseUpgrade(socket, '403 Forbidden')
+      return
+    }
+    const url = URL.parse(req.url ?? '/', 'http://localhost')
+    const upgrade =
+      url !== null && Object.hasOwn(options.upgrades ?? {}, url.pathname)
+        ? options.upgrades?.[url.pathname]
+        : undefined
+    if (url === null || upgrade === undefined) {
+      refuseUpgrade(socket, '404 Not Found')
+      return
+    }
+    upgrade(req, socket, head, url)
   })
   const stop = () =>
     new Promise<void>((stopped) => {

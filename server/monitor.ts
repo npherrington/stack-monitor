@@ -1,6 +1,7 @@
 import { serve, type Serving } from './http.ts'
 import { makeRoutes, MAX_BODY_BYTES } from './routes.ts'
 import type { Page } from './static.ts'
+import { terminalSocket } from './terminal-socket.ts'
 
 export interface MonitorOptions extends Page {
   port: number // 0 for one the system picks
@@ -21,5 +22,6 @@ export function startMonitor({
     page,
     routes: makeRoutes({ seed, settings }),
     maxBodyBytes: MAX_BODY_BYTES,
+    upgrades: { '/api/terminals/socket': terminalSocket },
   })
 }

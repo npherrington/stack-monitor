@@ -71,7 +71,18 @@ import {
 } from '../core/stack/config.ts'
 import { detectServices } from '../core/stack/detect.ts'
 import { readRepoList, type Tracking } from '../core/settings.ts'
-import { failure, type ActionResult } from '../core/types.ts'
+import {
+  failure,
+  type ActionResult,
+  type TerminalsSnapshot,
+} from '../core/types.ts'
+import {
+  closeTerminal,
+  listTerminals,
+  OpenTerminalRequest,
+  openTerminal,
+  TerminalIdRequest,
+} from '../core/terminals/sessions.ts'
 import { readCheckouts } from '../core/worktrees/checkouts.ts'
 import {
   readRepoWorktrees,
@@ -213,6 +224,23 @@ export function makeRoutes(
       RemoveWorktreeRequest,
       '{ root, path, deleteBranch? }',
       async (body) => settled(await removeWorktree(tracking, body)),
+    ),
+    'GET /api/terminals': async () => {
+      const snapshot: TerminalsSnapshot = { sessions: listTerminals() }
+      return [200, snapshot]
+    },
+    'POST /api/terminals': route(
+      OpenTerminalRequest,
+      '{ root, path }',
+      async (body) => {
+        const opened = await openTerminal(tracking, body)
+        return 'ok' in opened ? settled(opened) : [200, opened]
+      },
+    ),
+    'POST /api/terminals/close': route(
+      TerminalIdRequest,
+      '{ id }',
+      async ({ id }) => settled(closeTerminal(id)),
     ),
     'GET /api/checkouts': async () => {
       const snapshot = await readCheckouts(tracking)
