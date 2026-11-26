@@ -1,5 +1,5 @@
 // What one person sets on the Checkouts page, per browser, keyed by checkout path: a pin, a
-// nickname, a colour, and the filters. Not the server's: the MCP server and other browsers don't
+// nickname, a colour, a place in the list, and the filters. Not the server's: the MCP server and other browsers don't
 // see them.
 
 export const SWATCHES = [
@@ -19,6 +19,7 @@ export interface CheckoutPref {
   colour?: Swatch
   pinned?: boolean
   nickname?: string
+  rank?: number // its place in its repo's list, once someone has moved a row there
 }
 
 export type CheckoutPrefs = Record<string, CheckoutPref>
@@ -53,6 +54,10 @@ function parsePref(value: unknown): CheckoutPref {
     colour: isSwatch(raw.colour) ? raw.colour : undefined,
     pinned: raw.pinned === true ? true : undefined,
     nickname: nickname === '' ? undefined : nickname,
+    rank:
+      typeof raw.rank === 'number' && Number.isFinite(raw.rank)
+        ? raw.rank
+        : undefined,
   }
 }
 

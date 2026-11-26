@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react'
+import { useRef, useState, type DragEvent } from 'react'
 
 import type {
   Checkout,
@@ -10,7 +11,11 @@ import { WorktreeRow } from '@/components/checkouts/worktree-row.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
 import { useTerminalPanel } from '@/contexts/terminal-context.ts'
-import { visibleCheckouts } from '@/lib/checkout-order.ts'
+import {
+  moveCheckout,
+  visibleCheckouts,
+  type Place,
+} from '@/lib/checkout-order.ts'
 import type {
   CheckoutFilters,
   CheckoutPref,
@@ -23,11 +28,33 @@ interface RepoSectionProps {
   filters: CheckoutFilters
   query: string // what the search box holds, matched against name and branch
   onPrefChange: (path: string, change: Partial<CheckoutPref>) => void
+  onReorder: (ranks: Record<string, number>) => void // after a row is moved
   latestRuns: Map<string, RunSummary> // by checkout path
   onRunHere: (target: RunHereTarget) => void
   onOpenRun: (id: string) => void
   onNewWorktree: () => void
   onRemove: (checkout: Checkout) => void
+}
+
+interface Drop {
+  target: string // the row it lands beside, by path
+  place: Place
+  top: number // where the line shows, from the top of the list
+}
+
+// The row a drag event is over, and which half of it.
+function rowAt(
+  event: DragEvent,
+): { path: string; place: Place; row: Element } | null {
+  const row = (event.target as Element).closest('li[data-path]')
+  const path = row?.getAttribute('data-path')
+  if (row === null || path === null || path === undefined) return null
+  const { top, height } = row.getBoundingClientRect()
+  return {
+    path,
+    place: event.clientY < top + height / 2 ? 'before' : 'after',
+    row,
+  }
 }
 
 function matches(checkout: Checkout, pref: CheckoutPref, query: string) {
@@ -44,6 +71,7 @@ export function RepoSection({
   filters,
   query,
   onPrefChange,
+  onReorder,
   latestRuns,
   onRunHere,
   onOpenRun,
@@ -55,6 +83,70 @@ export function RepoSection({
   )
   const hidden = repo.checkouts.length - shown.length
   const terminals = useTerminalPanel()
+  const list = useRef<HTMLDivElement>(null)
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [drop, setDrop] = useState<Drop | null>(null)
+
+  const move = (path: string, target: string, place: Place) => {
+    const ranks = moveCheckout(repo.checkouts, prefs, path, target, place)
+    if (ranks !== null) onReorder(ranks)
+  }
+  // The row next to this one in the list, while it's in the same pinned group.
+  const beside = (index: number, step: number) => {
+    const other = shown[index + step]
+    return other !== undefined &&
+      Boolean(prefs[other.path]?.pinned) ===
+        Boolean(prefs[shown[index].path]?.pinned)
+      ? other
+      : undefined
+  }
+
+  const moveBy = (index: number, step: number) => {
+    const other = beside(index, step)
+    return other === undefined
+      ? null
+      : () => move(shown[index].path, other.path, step < 0 ? 'before' : 'after')
+  }
+
+  const endDrag = () => {
+    setDragging(null)
+    setDrop(null)
+  }
+  const onDragStart = (event: DragEvent) => {
+    const over = rowAt(event)
+    if (over === null) return
+    setDragging(over.path)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', over.path)
+    event.dataTransfer.setDragImage(over.row, 16, 16)
+  }
+  const onDragOver = (event: DragEvent) => {
+    const over = rowAt(event)
+    const box = list.current?.getBoundingClientRect()
+    if (dragging === null || over === null || box === undefined) return
+    // Only where it would land somewhere new, within its pinned group.
+    if (
+      moveCheckout(repo.checkouts, prefs, dragging, over.path, over.place) ===
+      null
+    ) {
+      setDrop(null)
+      return
+    }
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    const edge = over.row.getBoundingClientRect()
+    const top = (over.place === 'before' ? edge.top : edge.bottom) - box.top
+    if (drop?.target !== over.path || drop.place !== over.place) {
+      setDrop({ target: over.path, place: over.place, top })
+    }
+  }
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault()
+    if (dragging !== null && drop !== null)
+      move(dragging, drop.target, drop.place)
+    endDrag()
+  }
+
   return (
     <section
       aria-labelledby={`repo-${repo.root}`}
@@ -93,10 +185,24 @@ export function RepoSection({
           {repo.problem}
         </p>
       ) : (
-        <div className="@container overflow-hidden rounded-xl border bg-card">
+        <div
+          ref={list}
+          className="@container relative overflow-hidden rounded-xl border bg-card"
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onDragEnd={endDrag}
+          onDragLeave={(event) => {
+            if (
+              !event.currentTarget.contains(event.relatedTarget as Node | null)
+            ) {
+              setDrop(null)
+            }
+          }}
+        >
           {shown.length > 0 && (
             <ul className="divide-y">
-              {shown.map((checkout) => (
+              {shown.map((checkout, index) => (
                 <WorktreeRow
                   key={checkout.path}
                   checkout={checkout}
@@ -117,9 +223,18 @@ export function RepoSection({
                     terminals.openFor({ root: repo.root, path: checkout.path })
                   }
                   onRemove={checkout.primary ? null : () => onRemove(checkout)}
+                  onMoveUp={moveBy(index, -1)}
+                  onMoveDown={moveBy(index, 1)}
                 />
               ))}
             </ul>
+          )}
+          {drop !== null && (
+            <div
+              aria-hidden="true"
+              style={{ top: drop.top - 1 }}
+              className="pointer-events-none absolute inset-x-2 h-0.5 rounded-full bg-primary"
+            />
           )}
           {hidden > 0 && (
             <p
