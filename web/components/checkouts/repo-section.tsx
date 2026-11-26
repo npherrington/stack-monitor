@@ -5,10 +5,10 @@ import type {
   RepoCheckouts,
   RunSummary,
 } from '../../../core/types.ts'
-import { CheckoutCard } from '@/components/checkouts/checkout-card.tsx'
 import type { RunHereTarget } from '@/components/checkouts/run-here-dialog.tsx'
+import { WorktreeRow } from '@/components/checkouts/worktree-row.tsx'
 import { Button } from '@/components/ui/button.tsx'
-import { Pill } from '@/components/ui/pill.tsx'
+import { Tip } from '@/components/ui/tooltip.tsx'
 import { visibleCheckouts } from '@/lib/checkout-order.ts'
 import type {
   CheckoutFilters,
@@ -20,6 +20,7 @@ interface RepoSectionProps {
   repo: RepoCheckouts
   prefs: CheckoutPrefs
   filters: CheckoutFilters
+  query: string // what the search box holds, matched against name and branch
   onPrefChange: (path: string, change: Partial<CheckoutPref>) => void
   latestRuns: Map<string, RunSummary> // by checkout path
   onRunHere: (target: RunHereTarget) => void
@@ -28,10 +29,19 @@ interface RepoSectionProps {
   onRemove: (checkout: Checkout) => void
 }
 
+function matches(checkout: Checkout, pref: CheckoutPref, query: string) {
+  if (query === '') return true
+  const needle = query.toLowerCase()
+  return [checkout.path.split('/').pop(), pref.nickname, checkout.branch].some(
+    (text) => text?.toLowerCase().includes(needle),
+  )
+}
+
 export function RepoSection({
   repo,
   prefs,
   filters,
+  query,
   onPrefChange,
   latestRuns,
   onRunHere,
@@ -39,70 +49,80 @@ export function RepoSection({
   onNewWorktree,
   onRemove,
 }: RepoSectionProps) {
-  const shown = visibleCheckouts(repo.checkouts, prefs, filters)
+  const shown = visibleCheckouts(repo.checkouts, prefs, filters).filter(
+    (checkout) => matches(checkout, prefs[checkout.path] ?? {}, query),
+  )
   const hidden = repo.checkouts.length - shown.length
   return (
     <section
       aria-labelledby={`repo-${repo.root}`}
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-2"
     >
-      <header className="flex items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-baseline gap-3">
-            <h2
-              id={`repo-${repo.root}`}
-              className="text-xl font-extrabold text-strong"
-            >
-              {repo.name}
-            </h2>
-            <Pill>
-              {repo.checkouts.length}{' '}
-              {repo.checkouts.length === 1 ? 'checkout' : 'checkouts'}
-            </Pill>
-          </div>
-          <span
-            className="truncate font-mono text-xs text-muted-foreground"
-            title={repo.root}
-          >
-            {repo.root}
-          </span>
-        </div>
+      <header className="flex items-center gap-2 px-1">
+        <h2
+          id={`repo-${repo.root}`}
+          className="text-sm font-semibold text-strong"
+          title={repo.root}
+        >
+          {repo.name}
+        </h2>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {repo.checkouts.length}
+        </span>
         {repo.problem === null && (
-          <Button size="sm" variant="outline" onClick={onNewWorktree}>
-            <Plus aria-hidden />
-            New worktree
-          </Button>
+          <Tip label={`New worktree in ${repo.name}`}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`New worktree in ${repo.name}`}
+              onClick={onNewWorktree}
+              className="ml-auto text-muted-foreground"
+            >
+              <Plus />
+            </Button>
+          </Tip>
         )}
       </header>
       {repo.problem !== null ? (
-        <p className="text-sm text-destructive" role="alert">
+        <p
+          className="rounded-xl border bg-card px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
           {repo.problem}
         </p>
       ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {shown.map((checkout) => (
-              <CheckoutCard
-                key={checkout.path}
-                checkout={checkout}
-                mainline={repo.mainline}
-                pref={prefs[checkout.path] ?? {}}
-                onChange={(change) => onPrefChange(checkout.path, change)}
-                latestRun={latestRuns.get(checkout.path) ?? null}
-                onRunHere={() =>
-                  onRunHere({ root: repo.root, checkout: checkout.path })
-                }
-                onOpenRun={onOpenRun}
-                onRemove={checkout.primary ? null : () => onRemove(checkout)}
-              />
-            ))}
-          </div>
+        <div className="overflow-hidden rounded-xl border bg-card">
+          {shown.length > 0 && (
+            <ul className="divide-y">
+              {shown.map((checkout) => (
+                <WorktreeRow
+                  key={checkout.path}
+                  checkout={checkout}
+                  mainline={repo.mainline}
+                  pref={prefs[checkout.path] ?? {}}
+                  onChange={(change) => onPrefChange(checkout.path, change)}
+                  latestRun={latestRuns.get(checkout.path) ?? null}
+                  onRunHere={() =>
+                    onRunHere({ root: repo.root, checkout: checkout.path })
+                  }
+                  onOpenRun={onOpenRun}
+                  onRemove={checkout.primary ? null : () => onRemove(checkout)}
+                />
+              ))}
+            </ul>
+          )}
           {hidden > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {hidden} hidden by the filters.
+            <p
+              className={
+                shown.length > 0
+                  ? 'border-t px-4 py-2 text-xs text-muted-foreground'
+                  : 'px-4 py-3 text-xs text-muted-foreground'
+              }
+            >
+              {hidden} hidden by the search or filters
             </p>
           )}
-        </>
+        </div>
       )}
     </section>
   )

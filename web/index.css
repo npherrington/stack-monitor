@@ -10,8 +10,7 @@
 @theme inline {
   --animate-intro-float: intro-float 3s ease-in-out infinite;
   --font-sans:
-    ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI',
-    sans-serif;
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -53,16 +52,15 @@
 
 :root {
   color-scheme: light;
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 }
 
 :root,
 :root[data-theme='blossom'] {
   --background: #fbf7ff;
-  --wash: linear-gradient(135deg, #fdf0f7 0%, #f3efff 45%, #ebfbf3 100%);
   --foreground: #4a4060;
   --strong: #2f2742;
-  --card: rgb(255 255 255 / 82%);
+  --card: #ffffff;
   --card-foreground: #4a4060;
   --popover: #ffffff;
   --popover-foreground: #4a4060;
@@ -80,15 +78,14 @@
   --border: #e8def7;
   --input: #e8def7;
   --ring: #b79ce6;
-  --sidebar: rgb(255 255 255 / 55%);
+  --sidebar: rgb(255 255 255 / 60%);
 }
 
 :root[data-theme='peach'] {
   --background: #fff8f3;
-  --wash: linear-gradient(135deg, #ffefe4 0%, #fff6e9 45%, #ffeaea 100%);
   --foreground: #5a4338;
   --strong: #3d2a22;
-  --card: rgb(255 255 255 / 82%);
+  --card: #ffffff;
   --card-foreground: #5a4338;
   --popover: #ffffff;
   --popover-foreground: #5a4338;
@@ -106,15 +103,14 @@
   --border: #f5e1d4;
   --input: #f5e1d4;
   --ring: #eaa587;
-  --sidebar: rgb(255 255 255 / 55%);
+  --sidebar: rgb(255 255 255 / 60%);
 }
 
 :root[data-theme='mint'] {
   --background: #f4fbf7;
-  --wash: linear-gradient(135deg, #e9f8f0 0%, #eef8f4 45%, #e6f6f8 100%);
   --foreground: #36524a;
   --strong: #213a33;
-  --card: rgb(255 255 255 / 82%);
+  --card: #ffffff;
   --card-foreground: #36524a;
   --popover: #ffffff;
   --popover-foreground: #36524a;
@@ -132,15 +128,14 @@
   --border: #d6ece2;
   --input: #d6ece2;
   --ring: #86c9ad;
-  --sidebar: rgb(255 255 255 / 55%);
+  --sidebar: rgb(255 255 255 / 60%);
 }
 
 :root[data-theme='lavender'] {
   --background: #f8f6ff;
-  --wash: linear-gradient(135deg, #f1edff 0%, #f6f0ff 45%, #fdeef5 100%);
   --foreground: #484262;
   --strong: #2c2745;
-  --card: rgb(255 255 255 / 82%);
+  --card: #ffffff;
   --card-foreground: #484262;
   --popover: #ffffff;
   --popover-foreground: #484262;
@@ -158,15 +153,14 @@
   --border: #e2ddf6;
   --input: #e2ddf6;
   --ring: #a99cf0;
-  --sidebar: rgb(255 255 255 / 55%);
+  --sidebar: rgb(255 255 255 / 60%);
 }
 
 :root[data-theme='sky'] {
   --background: #f5f9ff;
-  --wash: linear-gradient(135deg, #e9f3ff 0%, #eef7fb 45%, #f1edff 100%);
   --foreground: #3c4a63;
   --strong: #24314a;
-  --card: rgb(255 255 255 / 82%);
+  --card: #ffffff;
   --card-foreground: #3c4a63;
   --popover: #ffffff;
   --popover-foreground: #3c4a63;
@@ -184,15 +178,14 @@
   --border: #dbe6f5;
   --input: #dbe6f5;
   --ring: #8cbcf0;
-  --sidebar: rgb(255 255 255 / 55%);
+  --sidebar: rgb(255 255 255 / 60%);
 }
 
 :root[data-theme='lemon'] {
   --background: #fffdf2;
-  --wash: linear-gradient(135deg, #fffbe0 0%, #fff3e6 45%, #eefaf0 100%);
   --foreground: #554d33;
   --strong: #3a3420;
-  --card: rgb(255 255 255 / 82%);
+  --card: #ffffff;
   --card-foreground: #554d33;
   --popover: #ffffff;
   --popover-foreground: #554d33;
@@ -210,7 +203,7 @@
   --border: #f1e9c8;
   --input: #f1e9c8;
   --ring: #e3c45a;
-  --sidebar: rgb(255 255 255 / 55%);
+  --sidebar: rgb(255 255 255 / 60%);
 }
 
 @layer base {
@@ -218,8 +211,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply min-h-dvh font-sans text-foreground;
-    background: var(--wash) fixed var(--background);
+    @apply min-h-dvh bg-background font-sans text-foreground antialiased;
   }
   ::selection {
     @apply bg-accent text-strong;

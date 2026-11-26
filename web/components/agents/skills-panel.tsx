@@ -58,7 +58,7 @@ export function SkillsPanel({
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_1.1fr]">
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-extrabold text-strong">
+        <h2 className="text-lg font-semibold text-strong">
           Skills in this repo
         </h2>
         {isPending ? (
@@ -165,7 +165,7 @@ function NewSkill({
   return (
     <Card className="gap-4 px-6 py-6">
       <div>
-        <h2 className="text-lg font-extrabold text-strong">
+        <h2 className="text-lg font-semibold text-strong">
           Design a new skill
         </h2>
         <p className="text-sm text-muted-foreground">

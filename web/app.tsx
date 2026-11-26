@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router/dom'
 
 import { Toaster } from '@/components/ui/toast.tsx'
 import { ApiError } from '@/lib/api.ts'
+import { TooltipProvider } from '@/components/ui/tooltip.tsx'
 import { ThemeProvider } from '@/providers/theme-provider.tsx'
 import { router } from '@/router.tsx'
 
@@ -23,7 +24,9 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <Toaster limit={3}>
-          <RouterProvider router={router} />
+          <TooltipProvider>
+            <RouterProvider router={router} />
+          </TooltipProvider>
         </Toaster>
       </ThemeProvider>
     </QueryClientProvider>

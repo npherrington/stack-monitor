@@ -19,7 +19,7 @@ function Section({
   return (
     <Card className="gap-4 px-6 py-6">
       <div>
-        <h2 className="text-lg font-extrabold text-strong">{title}</h2>
+        <h2 className="text-lg font-semibold text-strong">{title}</h2>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       {children}
@@ -30,10 +30,10 @@ function Section({
 export function Settings() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-extrabold text-strong">Settings</h1>
+      <h1 className="text-2xl font-semibold text-strong">Settings</h1>
       <Section
         title="Repos"
-        description="The repos on this machine whose worktrees the Checkouts page shows."
+        description="The repos on this machine whose worktrees the Worktrees page shows."
       >
         <RepoList />
         <AddRepoForm />

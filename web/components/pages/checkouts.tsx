@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
@@ -22,11 +23,55 @@ import { NewWorktreeDialog } from '@/components/checkouts/new-worktree-dialog.ts
 import { RepoSection } from '@/components/checkouts/repo-section.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Card } from '@/components/ui/card.tsx'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useAgents } from '@/hooks/use-agents.ts'
 import { useCheckoutPrefs } from '@/hooks/use-checkout-prefs.ts'
 import { useCheckouts } from '@/hooks/use-checkouts.ts'
 import { useRuns } from '@/hooks/use-runs.ts'
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`
+}
+
+// One repo opens its dialog straight away; several ask which first.
+function NewWorktreeButton({
+  repos,
+  onPick,
+}: {
+  repos: RepoCheckouts[]
+  onPick: (repo: RepoCheckouts) => void
+}) {
+  if (repos.length === 0) return null
+  if (repos.length === 1) {
+    return (
+      <Button onClick={() => onPick(repos[0])}>
+        <Plus aria-hidden="true" />
+        New worktree
+      </Button>
+    )
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button />}>
+        <Plus aria-hidden="true" />
+        New worktree
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {repos.map((repo) => (
+          <DropdownMenuItem key={repo.root} onClick={() => onPick(repo)}>
+            {repo.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export function Checkouts() {
   const { repos, isPending, error, isStale } = useCheckouts()
@@ -41,6 +86,7 @@ export function Checkouts() {
   const [openRun, setOpenRun] = useState<string | null>(null)
   const [newIn, setNewIn] = useState<RepoCheckouts | null>(null)
   const [removing, setRemoving] = useState<RemoveTarget | null>(null)
+  const [query, setQuery] = useState('')
   // Runs come newest first, so the first one seen for a checkout is its latest.
   const latestRuns = useMemo(() => {
     const latest = new Map<string, RunSummary>()
@@ -59,28 +105,46 @@ export function Checkouts() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="text-2xl font-extrabold text-strong">Checkouts</h1>
-          {isStale && (
-            <p className="text-sm text-warning">
-              Couldn't refresh; showing the last read.
-            </p>
-          )}
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-strong">Worktrees</h1>
+            {repos.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {count(
+                  repos.reduce((sum, repo) => sum + repo.checkouts.length, 0),
+                  'worktree',
+                )}{' '}
+                in {count(repos.length, 'repo')}
+                {isStale && (
+                  <span className="text-warning">
+                    {' '}
+                    · couldn't refresh, showing the last read
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          <NewWorktreeButton
+            repos={repos.filter((repo) => repo.problem === null)}
+            onPick={setNewIn}
+          />
         </div>
         {repos.length > 0 && (
           <CheckoutFilters
             repos={repos}
             filters={{ ...filters, repo: repoFilter }}
             onChange={setFilters}
+            query={query}
+            onQueryChange={setQuery}
           />
         )}
       </header>
       {isPending ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-14" />
+          <Skeleton className="h-14" />
+          <Skeleton className="h-14" />
         </div>
       ) : error !== null ? (
         <p className="whitespace-pre-wrap text-destructive" role="alert">
@@ -88,7 +152,7 @@ export function Checkouts() {
         </p>
       ) : repos.length === 0 ? (
         <Card className="items-start gap-3 px-6 py-8">
-          <h2 className="text-lg font-extrabold text-strong">No repos yet</h2>
+          <h2 className="text-base font-semibold text-strong">No repos yet</h2>
           <p className="text-muted-foreground">
             Add the repos on this machine whose worktrees you want to see.
           </p>
@@ -103,6 +167,7 @@ export function Checkouts() {
             repo={repo}
             prefs={prefs}
             filters={filters}
+            query={query.trim()}
             onPrefChange={updatePref}
             latestRuns={latestRuns}
             onRunHere={setRunHere}

@@ -38,7 +38,7 @@ export function Schedules() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-extrabold text-strong">Schedules</h1>
+          <h1 className="text-2xl font-semibold text-strong">Schedules</h1>
           <p className="text-muted-foreground">
             A prompt or a workflow, started in one checkout on a cron timetable.
           </p>

@@ -22,7 +22,7 @@ export function WorktreeSettings() {
           <ArrowLeft className="size-4" aria-hidden="true" />
           Settings
         </Link>
-        <h1 className="text-2xl font-extrabold text-strong">
+        <h1 className="text-2xl font-semibold text-strong">
           {name}: worktrees
         </h1>
         <p className="text-muted-foreground">
