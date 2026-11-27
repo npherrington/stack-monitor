@@ -37,13 +37,18 @@ import {
   addLineComment,
   DeleteCommentRequest,
   deletePendingComment,
+  JobLogRequest,
   LineCommentRequest,
   listPulls,
   PullListRequest,
   PullRequest,
+  readChecks,
+  readJobLog,
   readPull,
   replyToThread,
   ReplyRequest,
+  RerunRequest,
+  rerunFailedJobs,
   ResolveRequest,
   resolveThread,
   submitReview,
@@ -361,6 +366,27 @@ export function makeRoutes(
         const pull = await readPull(tracking, root, number)
         return 'files' in pull ? [200, pull] : notRead(pull)
       },
+    ),
+    'GET /api/github/checks': route(
+      PullRequest,
+      '?root=&number=',
+      async ({ root, number }) => {
+        const checks = await readChecks(tracking, root, number)
+        return 'groups' in checks ? [200, checks] : notRead(checks)
+      },
+    ),
+    'GET /api/github/checks/log': route(
+      JobLogRequest,
+      '?root=&job=',
+      async ({ root, job }) => {
+        const log = await readJobLog(tracking, root, job)
+        return 'lines' in log ? [200, log] : notRead(log)
+      },
+    ),
+    'POST /api/github/checks/rerun': route(
+      RerunRequest,
+      '{ root, number, run }',
+      async (body) => settled(await rerunFailedJobs(tracking, body)),
     ),
     'POST /api/github/comment': route(
       LineCommentRequest,

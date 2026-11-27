@@ -4,7 +4,7 @@ export function repoPath(root: string): string {
   return `/github?repo=${encodeURIComponent(root)}`
 }
 
-export type PullTab = 'conversation' | 'files'
+export type PullTab = 'conversation' | 'files' | 'checks'
 
 export function pullPath(
   root: string,
@@ -12,11 +12,11 @@ export function pullPath(
   tab: PullTab = 'conversation',
 ): string {
   const path = `${repoPath(root)}&pr=${number}`
-  return tab === 'files' ? `${path}&tab=files` : path
+  return tab === 'conversation' ? path : `${path}&tab=${tab}`
 }
 
 export function readPullTab(value: string | null): PullTab {
-  return value === 'files' ? 'files' : 'conversation'
+  return value === 'files' || value === 'checks' ? value : 'conversation'
 }
 
 // The pr query value, when it's a PR number.

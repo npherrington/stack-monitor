@@ -1,0 +1,261 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "contexts": {
+                    "pageInfo": {
+                      "hasNextPage": false
+                    },
+                    "nodes": [
+                      {
+                        "databaseId": 140456415874,
+                        "name": "Lint",
+                        "title": null,
+                        "status": "COMPLETED",
+                        "conclusion": "SUCCESS",
+                        "startedAt": "2026-11-27T10:43:18Z",
+                        "completedAt": "2026-11-27T10:43:55Z",
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587/job/140456415874",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "FAILURE",
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465587,
+                            "runNumber": 68,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587",
+                            "workflow": {
+                              "name": "CI"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456415832,
+                        "name": "Test (ubuntu-latest)",
+                        "title": null,
+                        "status": "COMPLETED",
+                        "conclusion": "FAILURE",
+                        "startedAt": "2026-11-27T10:43:18Z",
+                        "completedAt": "2026-11-27T10:43:55Z",
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587/job/140456415832",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "FAILURE",
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465587,
+                            "runNumber": 68,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587",
+                            "workflow": {
+                              "name": "CI"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456415748,
+                        "name": "Test (macos-latest)",
+                        "title": null,
+                        "status": "COMPLETED",
+                        "conclusion": "SUCCESS",
+                        "startedAt": "2026-11-27T10:43:20Z",
+                        "completedAt": "2026-11-27T10:44:17Z",
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587/job/140456415748",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "FAILURE",
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465587,
+                            "runNumber": 68,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587",
+                            "workflow": {
+                              "name": "CI"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456415454,
+                        "name": "Build",
+                        "title": null,
+                        "status": "COMPLETED",
+                        "conclusion": "SUCCESS",
+                        "startedAt": "2026-11-27T10:43:18Z",
+                        "completedAt": "2026-11-27T10:43:55Z",
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587/job/140456415454",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "FAILURE",
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465587,
+                            "runNumber": 68,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465587",
+                            "workflow": {
+                              "name": "CI"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456416000,
+                        "name": "Deploy",
+                        "title": null,
+                        "status": "IN_PROGRESS",
+                        "conclusion": null,
+                        "startedAt": "2026-11-27T10:44:00Z",
+                        "completedAt": null,
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465600/job/140456416000",
+                        "checkSuite": {
+                          "status": "IN_PROGRESS",
+                          "conclusion": null,
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465600,
+                            "runNumber": 12,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465600",
+                            "workflow": {
+                              "name": "Deploy preview"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456416001,
+                        "name": "Smoke test",
+                        "title": null,
+                        "status": "QUEUED",
+                        "conclusion": null,
+                        "startedAt": null,
+                        "completedAt": null,
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465600/job/140456416001",
+                        "checkSuite": {
+                          "status": "IN_PROGRESS",
+                          "conclusion": null,
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465600,
+                            "runNumber": 12,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465600",
+                            "workflow": {
+                              "name": "Deploy preview"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456417000,
+                        "name": "Nightly e2e",
+                        "title": null,
+                        "status": "COMPLETED",
+                        "conclusion": "CANCELLED",
+                        "startedAt": "2026-11-27T10:40:00Z",
+                        "completedAt": "2026-11-27T10:41:30Z",
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984465700/job/140456417000",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "CANCELLED",
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984465700,
+                            "runNumber": 30,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984465700",
+                            "workflow": {
+                              "name": "Nightly"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456400000,
+                        "name": "Lint",
+                        "title": null,
+                        "status": "COMPLETED",
+                        "conclusion": "FAILURE",
+                        "startedAt": "2026-11-27T10:30:00Z",
+                        "completedAt": "2026-11-27T10:30:40Z",
+                        "detailsUrl": "https://github.com/npherrington/stack-monitor/actions/runs/45984400000/job/140456400000",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "FAILURE",
+                          "app": {
+                            "slug": "github-actions"
+                          },
+                          "workflowRun": {
+                            "databaseId": 45984400000,
+                            "runNumber": 67,
+                            "url": "https://github.com/npherrington/stack-monitor/actions/runs/45984400000",
+                            "workflow": {
+                              "name": "CI"
+                            }
+                          }
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "databaseId": 140456418000,
+                        "name": "Preview",
+                        "title": "Deployed",
+                        "status": "COMPLETED",
+                        "conclusion": "SUCCESS",
+                        "startedAt": "2026-11-27T10:43:00Z",
+                        "completedAt": "2026-11-27T10:43:30Z",
+                        "detailsUrl": "https://vercel.com/example/preview",
+                        "checkSuite": {
+                          "status": "COMPLETED",
+                          "conclusion": "SUCCESS",
+                          "app": {
+                            "slug": "vercel"
+                          },
+                          "workflowRun": null
+                        },
+                        "kind": "CheckRun"
+                      },
+                      {
+                        "context": "codecov/patch",
+                        "state": "PENDING",
+                        "description": "Waiting for coverage",
+                        "targetUrl": "javascript:alert(1)",
+                        "createdAt": "2026-11-27T10:43:10Z",
+                        "kind": "StatusContext"
+                      }
+                    ]
+                  }
+                },
+                "oid": "b0fc70f04c9a757936abd4f5dbb1af31005a4cda"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

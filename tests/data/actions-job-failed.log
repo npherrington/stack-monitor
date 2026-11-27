@@ -1,0 +1,50 @@
+﻿2026-11-25T23:07:07.7186890Z Current runner version: '2.338.2'
+2026-11-25T23:07:07.7208841Z ##[group]Runner Image Provisioner
+2026-11-25T23:07:07.7209639Z Hosted Compute Agent
+2026-11-25T23:07:08.7390245Z ##[group]Run actions/checkout@v7
+2026-11-25T23:07:08.7390952Z with:
+2026-11-25T23:07:08.7391345Z   repository: npherrington/stack-monitor
+2026-11-25T23:07:12.8807912Z ##[group]Run mise run test
+2026-11-25T23:07:12.8808187Z [36;1mmise run test[0m
+2026-11-25T23:07:12.8845105Z shell: /usr/bin/bash -e {0}
+2026-11-25T23:07:12.8845323Z env:
+2026-11-25T23:07:12.8845490Z   MISE_LOG_LEVEL: info
+2026-11-25T23:07:12.8845775Z   MISE_TRUSTED_CONFIG_PATHS: /home/runner/work/stack-monitor/stack-monitor
+2026-11-25T23:07:12.8846098Z   MISE_YES: 1
+2026-11-25T23:07:12.8846266Z ##[endgroup]
+2026-11-25T23:07:24.9291494Z 
+2026-11-25T23:07:24.9292458Z ✖ failing tests:
+2026-11-25T23:07:24.9293360Z 
+2026-11-25T23:07:24.9293510Z test at tests/agent-runs.test.ts:192:3
+2026-11-25T23:07:24.9294153Z ✖ SIGTERM stops the step running, and a second run waits until it has (343.018426ms)
+2026-11-25T23:07:24.9294995Z   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+2026-11-25T23:07:24.9295509Z   + actual - expected
+2026-11-25T23:07:24.9295786Z   
+2026-11-25T23:07:24.9296034Z   + 'Terminated\ngot TERM\n'
+2026-11-25T23:07:24.9296341Z   - 'got TERM\n'
+2026-11-25T23:07:24.9296587Z   
+2026-11-25T23:07:24.9297168Z       at TestContext.<anonymous> (file:///home/runner/work/stack-monitor/stack-monitor/tests/agent-runs.test.ts:214:12)
+2026-11-25T23:07:24.9298061Z       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-11-25T23:07:24.9299261Z       at async Test.run (node:internal/test_runner/test:1409:7)
+2026-11-25T23:07:24.9299891Z       at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+2026-11-25T23:07:24.9300450Z     generatedMessage: true,
+2026-11-25T23:07:24.9300765Z     code: 'ERR_ASSERTION',
+2026-11-25T23:07:24.9301080Z     actual: 'Terminated\ngot TERM\n',
+2026-11-25T23:07:24.9301435Z     expected: 'got TERM\n',
+2026-11-25T23:07:24.9301748Z     operator: 'strictEqual',
+2026-11-25T23:07:24.9302052Z     diff: 'simple'
+2026-11-25T23:07:24.9302312Z   }
+2026-11-25T23:07:24.9447092Z [2mFinished in 12.04s[0m
+2026-11-25T23:07:24.9447525Z [34m[test][0m [31mERROR[0m task failed
+2026-11-25T23:07:24.9486046Z ##[error]Process completed with exit code 1.
+2026-11-25T23:07:24.9630272Z Post job cleanup.
+2026-11-25T23:07:25.1320955Z Post job cleanup.
+2026-11-25T23:07:25.2209778Z [command]/usr/bin/git version
+2026-11-25T23:07:25.2263031Z git version 2.56.1
+2026-11-25T23:07:25.2298740Z Temporarily overriding HOME='/home/runner/work/_temp/c5a556dd-c7dc-4a4e-9eed-b9d414a6e288' before making global git config changes
+2026-11-25T23:07:25.2299909Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-25T23:07:25.2305222Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/stack-monitor/stack-monitor
+2026-11-25T23:07:25.2351621Z Removing SSH command configuration
+2026-11-25T23:07:25.2352308Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-25T23:07:25.2392394Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-25T23:07:25.2775938Z Removing HTTP extra header

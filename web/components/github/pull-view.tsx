@@ -2,6 +2,8 @@ import { ArrowDown, ArrowLeft, ExternalLink } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
+import { Checks } from '@/components/github/checks.tsx'
+import { ChecksPill } from '@/components/github/checks-pill.tsx'
 import { Conversation } from '@/components/github/conversation.tsx'
 import { FileDiff } from '@/components/github/file-diff.tsx'
 import { ReviewPanel } from '@/components/github/review-panel.tsx'
@@ -12,6 +14,7 @@ import { LabelPill } from '@/components/github/label-pill.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { usePull } from '@/hooks/use-pull.ts'
+import { usePullChecks } from '@/hooks/use-pull-checks.ts'
 import { repoPath, type PullTab } from '@/lib/github-links.ts'
 
 interface PullViewProps {
@@ -21,10 +24,11 @@ interface PullViewProps {
   onTabChange: (tab: PullTab) => void
 }
 
-// One PR, as github.com splits it: the conversation, and the changed files with the review box.
-// Every file starts folded.
+// One PR, as github.com splits it: the conversation, the changed files with the review box, and
+// the CI checks. Every file starts folded.
 export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
   const { pull, isPending, error, isStale } = usePull(root, number)
+  const { checks } = usePullChecks(root, number)
   const review = useRef<HTMLDivElement>(null)
   const [openFiles, setOpenFiles] = useState<ReadonlySet<string>>(new Set())
   // The file a Conversation link opened, scrolled to once Files changed has rendered it.
@@ -94,6 +98,17 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
               value: 'files',
               label: `Files changed (${pull.files.length})`,
             },
+            {
+              value: 'checks',
+              label:
+                checks === null
+                  ? 'Checks'
+                  : checks.failing > 0
+                    ? `Checks (${checks.failing} failing)`
+                    : checks.running
+                      ? 'Checks (running)'
+                      : 'Checks',
+            },
           ]}
           value={tab}
           onChange={onTabChange}
@@ -125,6 +140,7 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
       </div>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
         {pull.draft && <Pill>Draft</Pill>}
+        {checks !== null && <ChecksPill summary={checks.summary} />}
         <span className="font-medium text-foreground">{pull.author}</span>
         <span aria-hidden="true">·</span>
         <span className="min-w-0 truncate font-mono">
@@ -146,6 +162,8 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
       </div>
       {tab === 'conversation' ? (
         <Conversation root={root} pull={pull} onOpenFile={openFile} />
+      ) : tab === 'checks' ? (
+        <Checks root={root} number={pull.number} />
       ) : (
         <>
           <div className="flex justify-end gap-2">
