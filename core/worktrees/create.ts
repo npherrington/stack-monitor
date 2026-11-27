@@ -16,6 +16,7 @@ import { z } from 'zod'
 
 import { BRANCH, INDEX, type Config } from '../config/schema.ts'
 import { trackedRepo } from '../config/sections.ts'
+import { BranchName } from '../fields.ts'
 import { loadRepoConfig, PathText } from '../repos.ts'
 import { run, type RunResult } from '../run.ts'
 import { envReader, readIndex } from '../stack/status.ts'
@@ -26,17 +27,7 @@ import { listWorktrees } from './clone.ts'
 const COMMAND_TIMEOUT_MS = 10 * 60_000
 export const INSTALLS_ENV = 'STACK_MONITOR_INSTALLS'
 
-// Only characters that mean nothing to a shell, since the name goes into the repo's own command
-// as written. git check-ref-format has the last word on the rest.
-export const BranchName = z
-  .string()
-  .trim()
-  .min(1)
-  .max(120)
-  .regex(
-    /^[A-Za-z0-9][A-Za-z0-9._/-]*$/,
-    'must start with a letter or digit and hold only letters, digits and . _ / -',
-  )
+export { BranchName }
 
 export const CreateWorktreeRequest = z.strictObject({
   root: PathText,

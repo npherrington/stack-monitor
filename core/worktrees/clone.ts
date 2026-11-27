@@ -34,9 +34,12 @@ export async function whyUnreadable(root: string): Promise<string | null> {
 
 export interface Worktree {
   path: string // as git prints it
+  branch: string | null // null when detached
   locked: boolean // git worktree lock
   prunable: boolean // its directory is gone
 }
+
+const BRANCH_LINE = 'branch refs/heads/'
 
 // `git worktree list --porcelain`: a block per worktree, the main one first. Each starts with
 // `worktree <path>`, then an attribute a line: a bare word (`detached`) or a word and its value
@@ -46,9 +49,11 @@ export function parseWorktreeList(porcelain: string): Worktree[] {
     const [first = '', ...rest] = block.split('\n').filter(Boolean)
     if (!first.startsWith('worktree ')) return []
     const attributes = new Set(rest.map((line) => line.split(' ', 1)[0]))
+    const branch = rest.find((line) => line.startsWith(BRANCH_LINE))
     return [
       {
         path: first.slice('worktree '.length),
+        branch: branch?.slice(BRANCH_LINE.length) ?? null,
         locked: attributes.has('locked'),
         prunable: attributes.has('prunable'),
       },

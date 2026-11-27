@@ -16,6 +16,7 @@ import { join } from 'node:path'
 
 import { z } from 'zod'
 
+import { Prompt } from '../fields.ts'
 import { loadRepoConfig, PathText } from '../repos.ts'
 import { run } from '../run.ts'
 import { readRepoList, writeJsonFile, type Tracking } from '../settings.ts'
@@ -53,8 +54,6 @@ import {
 import { AgentIdSchema, ModelName, readAgentSettings } from './settings.ts'
 
 export const MAX_STEPS = 4
-// Four of them fit the server's 64 KB body cap.
-const MAX_PROMPT = 12_000
 const MAX_TITLE = 120
 export const LIST_LIMIT = 50
 const EVENTS_KEPT = 2000
@@ -65,7 +64,7 @@ const LAUNCHER = join(import.meta.dirname, 'launcher.ts')
 
 export const RunIdText = z.string().regex(RUN_ID, 'must be a run id')
 const Title = z.string().trim().min(1).max(MAX_TITLE)
-export const Prompt = z.string().trim().min(1).max(MAX_PROMPT)
+export { Prompt }
 export const PermissionsSchema = z.enum(['read', 'edit', 'full'])
 
 export const RunStepSchema = z.strictObject({

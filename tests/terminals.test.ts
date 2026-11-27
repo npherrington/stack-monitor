@@ -8,7 +8,6 @@ import WebSocket from 'ws'
 import { mcpLaunch } from '../core/mcp-launch.ts'
 import { writeJsonFile } from '../core/settings.ts'
 import {
-  attachTerminal,
   claudeOpenIn,
   closeTerminal,
   listTerminals,
@@ -23,6 +22,7 @@ import { startMonitor } from '../server/monitor.ts'
 import { fakeSessionClaude } from './agent-fakes.ts'
 import { git, gitRepo, tempDir } from './fixtures.ts'
 import { send, sendJson } from './http-client.ts'
+import { sessionArgs } from './session-args.ts'
 
 // Stands in for `claude`: says where it runs, then answers each line it's sent.
 function fakeClaude(dir: string): string {
@@ -258,21 +258,7 @@ describe('a session started with a task', () => {
       listTerminals().find((each) => each.id === opened.id),
       opened,
     )
-    let printed = ''
-    const attached = attachTerminal(opened.id, {
-      output: (data) => {
-        printed += data
-      },
-      exited: () => {},
-    })
-    assert.ok(attached !== null)
-    printed += attached.replay
-    await until(() => printed.includes('ready'), 'the fake to print its args')
-    const args = printed
-      .replaceAll('\r', '')
-      .split('\narg:')
-      .slice(1)
-      .map((arg) => arg.replace(/\nready[^]*$/, ''))
+    const args = await sessionArgs(opened.id)
     assert.deepEqual(args.slice(2), [
       '--append-system-prompt',
       'You file tickets.',
@@ -302,7 +288,6 @@ describe('a session started with a task', () => {
     })
     assert.ok('id' in plain)
     assert.equal(plain.id, opened.id)
-    attached.detach()
     assert.equal(closeTerminal(opened.id).ok, true)
     assert.equal(claudeOpenIn(primary), undefined)
   })

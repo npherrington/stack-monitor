@@ -4,7 +4,7 @@
 
 // A title, a name or a branch: on one line, clipped.
 export function oneLine(text: string, max: number): string {
-  // eslint-disable-next-line no-control-regex
+  // oxlint-disable-next-line no-control-regex -- control characters are what it takes out
   const flat = text.replace(/[\s\u0000-\u001f\u007f]+/g, ' ').trim()
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
 }
@@ -14,7 +14,7 @@ export function oneLine(text: string, max: number): string {
 export function fenced(tag: string, text: string, max: number): string {
   const closing = new RegExp(`<\\s*/\\s*${tag}\\s*>`, 'gi')
   const clean = text
-    // eslint-disable-next-line no-control-regex
+    // oxlint-disable-next-line no-control-regex -- control characters are what it takes out
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '')
     .replace(closing, '')
     .trim()

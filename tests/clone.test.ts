@@ -40,7 +40,7 @@ describe('the clone', () => {
     assert.equal(await primaryRoot(primary), primary)
   })
 
-  test('reads locked and prunable worktrees from the porcelain list', () => {
+  test('reads each worktree’s branch, and locked and prunable ones, from the porcelain list', () => {
     const porcelain = [
       'worktree /src/app\nHEAD abc\nbranch refs/heads/main',
       'worktree /src/app-wt1\nHEAD def\ndetached\nlocked in use',
@@ -48,9 +48,9 @@ describe('the clone', () => {
       '',
     ].join('\n\n')
     assert.deepEqual(parseWorktreeList(porcelain), [
-      { path: '/src/app', locked: false, prunable: false },
-      { path: '/src/app-wt1', locked: true, prunable: false },
-      { path: '/src/gone', locked: false, prunable: true },
+      { path: '/src/app', branch: 'main', locked: false, prunable: false },
+      { path: '/src/app-wt1', branch: null, locked: true, prunable: false },
+      { path: '/src/gone', branch: 'x', locked: false, prunable: true },
     ])
   })
 })
