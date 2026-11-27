@@ -124,6 +124,11 @@ export function useTerminalProviderState(): TerminalContextValue {
     [apply],
   )
 
+  const showSession = useCallback(
+    (id: string) => apply((current) => placeSession(current, id, newId)),
+    [apply],
+  )
+
   const focusPane = useCallback(
     (pane: string) => apply((current) => focusPaneIn(current, pane)),
     [apply],
@@ -214,6 +219,7 @@ export function useTerminalProviderState(): TerminalContextValue {
       confirmClose,
       cancelClose,
       focusSession,
+      showSession,
       focusPane,
       split,
       moveTab,
@@ -235,6 +241,7 @@ export function useTerminalProviderState(): TerminalContextValue {
       confirmClose,
       cancelClose,
       focusSession,
+      showSession,
       focusPane,
       split,
       moveTab,

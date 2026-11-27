@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Bot, Plus } from 'lucide-react'
 import { useState } from 'react'
 
 import type {
@@ -19,8 +19,10 @@ import { DeleteColumnDialog } from '@/components/board/delete-column-dialog.tsx'
 import { deleteProjectQuestion } from '@/components/board/delete-project.ts'
 import { LabelsDialog } from '@/components/board/labels-dialog.tsx'
 import { NewTicketDialog } from '@/components/board/new-ticket-dialog.tsx'
+import { ProductSessionDialog } from '@/components/board/product-session-dialog.tsx'
 import { ProjectDialog } from '@/components/board/project-dialog.tsx'
 import { ProjectMenu } from '@/components/board/project-menu.tsx'
+import { WorkTicketDialog } from '@/components/board/work-ticket-dialog.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useBoardFilters } from '@/hooks/use-board-filters.ts'
@@ -34,9 +36,10 @@ interface BoardViewProps {
   project: BoardProject
 }
 
-type Open = 'edit' | 'labels' | 'archived' | 'delete' | null
+type Open = 'edit' | 'labels' | 'archived' | 'delete' | 'product' | null
 
-// One project's board: the search and filters, the lanes, and every dialog its menus open.
+// One project's board: the search and filters, the lanes, and every dialog its menus open,
+// including the two that start a Claude Code session (on a ticket, or for product management).
 export function BoardView({ project }: BoardViewProps) {
   const { board, isPending, error, isStale } = useProjectBoard(project.id)
   const view = useBoardFilters(board)
@@ -52,6 +55,7 @@ export function BoardView({ project }: BoardViewProps) {
   const [deletingTicket, setDeletingTicket] = useState<TicketSummary | null>(
     null,
   )
+  const [working, setWorking] = useState<TicketSummary | null>(null)
 
   if (isPending) {
     return (
@@ -75,6 +79,7 @@ export function BoardView({ project }: BoardViewProps) {
     setPriority: (ticket, priority) => updateTicket({ id: ticket, priority }),
     archive: (ticket) => quietly(archiveTicket(ticket.id, true)),
     remove: setDeletingTicket,
+    work: setWorking,
   }
   const columnActions: ColumnActions = {
     addTicket: (column) => setNewTicketIn(column.id),
@@ -117,6 +122,10 @@ export function BoardView({ project }: BoardViewProps) {
           onClear={view.clear}
         />
         <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" onClick={() => setOpen('product')}>
+            <Bot />
+            Product management
+          </Button>
           <Button onClick={() => setNewTicketIn(first.id)}>
             <Plus />
             New ticket
@@ -198,6 +207,16 @@ export function BoardView({ project }: BoardViewProps) {
           open === 'delete' ? deleteProjectQuestion(board.project) : null
         }
         onConfirm={() => removeProject(project.id)}
+        onClose={() => setOpen(null)}
+      />
+      <WorkTicketDialog
+        project={board.project}
+        ticket={working}
+        onClose={() => setWorking(null)}
+      />
+      <ProductSessionDialog
+        open={open === 'product'}
+        project={board.project}
         onClose={() => setOpen(null)}
       />
       <ConfirmDeleteDialog

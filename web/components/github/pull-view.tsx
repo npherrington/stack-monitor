@@ -1,7 +1,8 @@
-import { ArrowDown, ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowDown, ArrowLeft, Bot, ExternalLink } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
+import { AgenticReviewDialog } from '@/components/github/agentic-review-dialog.tsx'
 import { Checks } from '@/components/github/checks.tsx'
 import { ChecksPill } from '@/components/github/checks-pill.tsx'
 import { Conversation } from '@/components/github/conversation.tsx'
@@ -25,12 +26,13 @@ interface PullViewProps {
 }
 
 // One PR, as github.com splits it: the conversation, the changed files with the review box, and
-// the CI checks. Every file starts folded.
+// the CI checks. Every file starts folded. Agentic review hands the PR to a Claude Code session.
 export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
   const { pull, isPending, error, isStale } = usePull(root, number)
   const { checks } = usePullChecks(root, number)
   const review = useRef<HTMLDivElement>(null)
   const [openFiles, setOpenFiles] = useState<ReadonlySet<string>>(new Set())
+  const [isReviewing, setIsReviewing] = useState(false)
   // The file a Conversation link opened, scrolled to once Files changed has rendered it.
   const focus = useRef<string | null>(null)
   useEffect(() => {
@@ -129,6 +131,13 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
             <ArrowDown /> Jump to review
           </Button>
         )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setIsReviewing(true)}
+        >
+          <Bot /> Agentic review
+        </Button>
         <a
           href={pull.url}
           target="_blank"
@@ -138,6 +147,12 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
           On GitHub <ExternalLink />
         </a>
       </div>
+      <AgenticReviewDialog
+        root={root}
+        pull={pull}
+        open={isReviewing}
+        onClose={() => setIsReviewing(false)}
+      />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
         {pull.draft && <Pill>Draft</Pill>}
         {checks !== null && <ChecksPill summary={checks.summary} />}

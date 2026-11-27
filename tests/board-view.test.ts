@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import type { BoardColumn, Priority, TicketSummary } from '../core/types.ts'
+import { BranchName } from '../core/fields.ts'
+import { ticketBranch } from '../web/lib/board-branch.ts'
 import { matchesTicket, NO_FILTERS } from '../web/lib/board-filter.ts'
 import { dropFor, stepFor } from '../web/lib/board-order.ts'
 
@@ -138,5 +140,27 @@ describe('what the filters show', () => {
     assert.equal(shows('roast', [bug.id], ['high']), true)
     assert.equal(shows('roast', [bug.id], ['low']), false)
     assert.equal(shows('grind', [bug.id], ['high']), false)
+  })
+})
+
+describe("a ticket's branch", () => {
+  test("a ticket's branch is its key and a slug of its title, and passes BranchName", () => {
+    for (const [title, branch] of [
+      ['Add a dark theme', 'beans-3-add-a-dark-theme'],
+      [
+        "Don't lose the user's draft (again)!",
+        'beans-3-don-t-lose-the-user-s-draft-again',
+      ],
+      ['  --force; rm -rf $HOME  ', 'beans-3-force-rm-rf-home'],
+      ['テーマを追加', 'beans-3'],
+      [
+        'Rework the checkout page so the address form validates before the payment step loads',
+        'beans-3-rework-the-checkout-page-so-the-address-form',
+      ],
+    ] as const) {
+      assert.equal(ticketBranch('BEANS-3', title), branch)
+      assert.equal(BranchName.safeParse(branch).success, true, branch)
+      assert.ok(branch.length <= 60, branch)
+    }
   })
 })

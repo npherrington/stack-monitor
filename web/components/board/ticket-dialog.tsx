@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, Bot, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import type { BoardProject } from '../../../core/types.ts'
@@ -6,6 +6,7 @@ import { CommentThread } from '@/components/board/comment-thread.tsx'
 import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
 import { TicketEditForm } from '@/components/board/ticket-edit-form.tsx'
 import { TicketProperties } from '@/components/board/ticket-properties.tsx'
+import { WorkTicketDialog } from '@/components/board/work-ticket-dialog.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
   Dialog,
@@ -57,6 +58,7 @@ function Ticket({ project, number }: TicketProps) {
   const { shelveTicket, removeTicket, isShelving } = useBoardFlow()
   const { archiveTicket, isArchiving } = useTicketMutations()
   const [deleting, setDeleting] = useState(false)
+  const [working, setWorking] = useState(false)
 
   if (isPending || board.isPending) {
     return (
@@ -123,6 +125,12 @@ function Ticket({ project, number }: TicketProps) {
           <TicketProperties ticket={ticket} board={board.board} />
           <div className="flex flex-wrap gap-2">
             {!ticket.archived && (
+              <Button size="sm" onClick={() => setWorking(true)}>
+                <Bot />
+                Work this ticket
+              </Button>
+            )}
+            {!ticket.archived && (
               <Button
                 variant="outline"
                 size="sm"
@@ -157,6 +165,11 @@ function Ticket({ project, number }: TicketProps) {
         }
         onConfirm={() => removeTicket(ref)}
         onClose={() => setDeleting(false)}
+      />
+      <WorkTicketDialog
+        project={project}
+        ticket={working ? ticket : null}
+        onClose={() => setWorking(false)}
       />
     </>
   )

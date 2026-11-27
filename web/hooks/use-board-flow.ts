@@ -1,9 +1,16 @@
 import { useCallback, useMemo } from 'react'
 
 import type { SaveProject } from '../../core/board/schema.ts'
+import { useTerminalLayout } from '@/contexts/terminal-context.ts'
 import { useBoardRoute } from '@/hooks/use-board-route.ts'
+import {
+  useBoardSessions,
+  type ProductSessionStart,
+  type WorkTicketStart,
+} from '@/hooks/use-board-sessions.ts'
 import { useProjectMutations } from '@/hooks/use-project-mutations.ts'
 import { useTicketMutations } from '@/hooks/use-ticket-mutations.ts'
+import { storeLastRepo } from '@/lib/board-prefs.ts'
 
 interface TicketRef {
   id: number
@@ -16,12 +23,16 @@ interface UseBoardFlowResult {
   removeProject: (id: number) => Promise<void>
   shelveTicket: (ticket: TicketRef) => Promise<void>
   removeTicket: (ticket: TicketRef) => Promise<void>
+  workTicket: (request: WorkTicketStart) => Promise<void>
+  startProduct: (request: ProductSessionStart) => Promise<void>
   isShelving: boolean // a project or a ticket is being archived
 }
 
 // The board's actions that end somewhere else: a new project opens, an archived or deleted one is
-// left, and an archived or deleted ticket's dialog closes. Each rejects when the action failed,
-// after the mutation's own toast, so the dialog that asked stays open.
+// left, an archived or deleted ticket's dialog closes, and a session started on a ticket or for
+// product management shows its terminal tab, with its repo remembered for the project. Each
+// rejects when the action failed, after the mutation's own toast, so the dialog that asked stays
+// open.
 export function useBoardFlow(): UseBoardFlowResult {
   const { openProject, leaveProject, closeTicket } = useBoardRoute()
   const {
@@ -36,6 +47,8 @@ export function useBoardFlow(): UseBoardFlowResult {
     isArchiving: isShelvingTicket,
   } = useTicketMutations()
   const isShelving = isShelvingProject || isShelvingTicket
+  const { workTicket: openWork, startProduct: openProduct } = useBoardSessions()
+  const { showSession } = useTerminalLayout()
 
   const createProject = useCallback(
     async (project: SaveProject) => {
@@ -73,6 +86,23 @@ export function useBoardFlow(): UseBoardFlowResult {
     [deleteTicket, closeTicket],
   )
 
+  const workTicket = useCallback(
+    async (request: WorkTicketStart) => {
+      const session = await openWork(request)
+      storeLastRepo(request.project, request.root)
+      showSession(session.id)
+    },
+    [openWork, showSession],
+  )
+  const startProduct = useCallback(
+    async (request: ProductSessionStart) => {
+      const session = await openProduct(request)
+      storeLastRepo(request.project, request.root)
+      showSession(session.id)
+    },
+    [openProduct, showSession],
+  )
+
   return useMemo(
     () => ({
       createProject,
@@ -80,6 +110,8 @@ export function useBoardFlow(): UseBoardFlowResult {
       removeProject,
       shelveTicket,
       removeTicket,
+      workTicket,
+      startProduct,
       isShelving,
     }),
     [
@@ -88,6 +120,8 @@ export function useBoardFlow(): UseBoardFlowResult {
       removeProject,
       shelveTicket,
       removeTicket,
+      workTicket,
+      startProduct,
       isShelving,
     ],
   )
