@@ -13,6 +13,7 @@ import {
 } from '@/components/checkouts/worktree-row.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
+import { usePulls } from '@/hooks/use-pulls.ts'
 import {
   useTerminalPanel,
   type TerminalContextValue,
@@ -27,6 +28,7 @@ import type {
   CheckoutPref,
   CheckoutPrefs,
 } from '@/lib/checkout-prefs.ts'
+import { pullPath } from '@/lib/github-links.ts'
 
 interface RepoSectionProps {
   repo: RepoCheckouts
@@ -84,6 +86,16 @@ function matches(checkout: Checkout, pref: CheckoutPref, query: string) {
   )
 }
 
+function pullLink(
+  root: string,
+  checkout: Checkout,
+  pullOf: Map<string, number>,
+): { number: number; to: string } | null {
+  const number =
+    checkout.branch === null ? undefined : pullOf.get(checkout.branch)
+  return number === undefined ? null : { number, to: pullPath(root, number) }
+}
+
 export function RepoSection({
   repo,
   prefs,
@@ -97,6 +109,13 @@ export function RepoSection({
   onNewWorktree,
   onRemove,
 }: RepoSectionProps) {
+  // A fork's branch can share a name with one here, so only the repo's own PRs count.
+  const { list: pulls } = usePulls(repo.root)
+  const pullOf = new Map(
+    (pulls?.pulls ?? [])
+      .filter((pull) => !pull.crossRepository)
+      .map((pull) => [pull.branch, pull.number]),
+  )
   const shown = visibleCheckouts(repo.checkouts, prefs, filters).filter(
     (checkout) => matches(checkout, prefs[checkout.path] ?? {}, query),
   )
@@ -226,6 +245,7 @@ export function RepoSection({
                   key={checkout.path}
                   checkout={checkout}
                   mainline={repo.mainline}
+                  pull={pullLink(repo.root, checkout, pullOf)}
                   pref={prefs[checkout.path] ?? {}}
                   onChange={(change) => onPrefChange(checkout.path, change)}
                   latestRun={latestRuns.get(checkout.path) ?? null}

@@ -431,6 +431,25 @@ describe('the routes', () => {
     }
   })
 
+  test('the GitHub routes refuse a repo that is not tracked, and a review GitHub has no event for', async () => {
+    const elsewhere = encodeURIComponent(join(root, 'nowhere'))
+    for (const path of [
+      `/api/github/pulls?root=${elsewhere}`,
+      `/api/github/pull?root=${elsewhere}&number=1`,
+    ]) {
+      const { status, body } = await get(path)
+      assert.equal(status, 409, path)
+      assert.match(body.message, /isn't in the list$/)
+    }
+    const review = await post('/api/github/review', {
+      root: primary,
+      number: 1,
+      event: 'MERGE',
+    })
+    assert.equal(review.status, 400)
+    assert.match(review.body.message, /^Expected .*: event: /)
+  })
+
   // Last: it breaks the settings file for the tests after it.
   test('a settings file that is not valid is reported by every route that reads it', async () => {
     writeFileSync(settings, '{ "repos": [{}] }')

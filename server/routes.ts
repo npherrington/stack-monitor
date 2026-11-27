@@ -33,6 +33,22 @@ import {
   SaveWorkflowRequest,
   WorkflowsRequest,
 } from '../core/agents/workflows.ts'
+import {
+  addLineComment,
+  DeleteCommentRequest,
+  deletePendingComment,
+  LineCommentRequest,
+  listPulls,
+  PullListRequest,
+  PullRequest,
+  readPull,
+  replyToThread,
+  ReplyRequest,
+  ResolveRequest,
+  resolveThread,
+  submitReview,
+  SubmitReviewRequest,
+} from '../core/github/github.ts'
 import { MONITOR_HOME, type Health } from '../core/monitor-address.ts'
 import {
   addRepo,
@@ -329,6 +345,47 @@ export function makeRoutes(
       RunClaudeWorkflowSchema,
       '{ checkout, name, testRun?, notes?, argument?, permissions? }',
       async (body) => settled(await runClaudeWorkflow(tracking, body)),
+    ),
+    'GET /api/github/pulls': route(
+      PullListRequest,
+      '?root=',
+      async ({ root }) => {
+        const list = await listPulls(tracking, root)
+        return 'pulls' in list ? [200, list] : notRead(list)
+      },
+    ),
+    'GET /api/github/pull': route(
+      PullRequest,
+      '?root=&number=',
+      async ({ root, number }) => {
+        const pull = await readPull(tracking, root, number)
+        return 'files' in pull ? [200, pull] : notRead(pull)
+      },
+    ),
+    'POST /api/github/comment': route(
+      LineCommentRequest,
+      "{ root, number, path, line, side: 'LEFT' | 'RIGHT', body }",
+      async (body) => settled(await addLineComment(tracking, body)),
+    ),
+    'POST /api/github/comment/delete': route(
+      DeleteCommentRequest,
+      '{ root, comment }',
+      async (body) => settled(await deletePendingComment(tracking, body)),
+    ),
+    'POST /api/github/reply': route(
+      ReplyRequest,
+      '{ root, number, thread, body }',
+      async (body) => settled(await replyToThread(tracking, body)),
+    ),
+    'POST /api/github/resolve': route(
+      ResolveRequest,
+      '{ root, thread, resolved }',
+      async (body) => settled(await resolveThread(tracking, body)),
+    ),
+    'POST /api/github/review': route(
+      SubmitReviewRequest,
+      "{ root, number, event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT', body? }",
+      async (body) => settled(await submitReview(tracking, body)),
     ),
     'GET /api/schedules': async () => {
       const list = await listSchedules(tracking, schedules)

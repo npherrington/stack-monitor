@@ -393,3 +393,92 @@ export interface TerminalSession {
 export interface TerminalsSnapshot {
   sessions: TerminalSession[]
 }
+
+// ---- GitHub: a repo's open PRs, their diffs and reviews, read through `gh` as its login ----
+
+// GET /api/github?root=: whether the GitHub tab works for a repo, and as whom.
+export type GithubStatus =
+  | { ok: true; repo: string; url: string; viewer: string } // repo: owner/name
+  | { ok: false; problem: string } // gh missing, not logged in, or no GitHub remote
+
+export type ReviewDecision =
+  'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
+
+export interface PullSummary {
+  number: number
+  title: string
+  author: string
+  branch: string // the head branch
+  base: string
+  crossRepository: boolean // the head branch lives in a fork
+  draft: boolean
+  url: string
+  reviewDecision: ReviewDecision
+  updatedAt: string // ISO
+  additions: number
+  deletions: number
+  changedFiles: number
+}
+
+// GET /api/github/pulls?root=: every open PR, most recently updated first.
+export interface PullList {
+  repo: string
+  viewer: string
+  pulls: PullSummary[]
+}
+
+export type DiffSide = 'LEFT' | 'RIGHT' // LEFT: the base's line, RIGHT: the head's
+
+// One line of a file's diff. old/new: its line number on each side, null on the side it isn't on.
+export interface DiffLine {
+  kind: 'context' | 'add' | 'del'
+  old: number | null
+  new: number | null
+  text: string // without the leading +, - or space
+}
+
+export interface DiffHunk {
+  header: string // the @@ line
+  lines: DiffLine[]
+}
+
+export interface PullFile {
+  path: string
+  previousPath: string | null // set when renamed
+  status: string // added, removed, modified, renamed, copied, changed, unchanged
+  additions: number
+  deletions: number
+  hunks: DiffHunk[] | null // null when GitHub sends no patch (binary, or too large)
+}
+
+export interface ReviewComment {
+  id: string // node id
+  author: string
+  body: string // markdown
+  createdAt: string
+  url: string
+  pending: boolean // in the viewer's unsubmitted review
+  mine: boolean
+}
+
+export interface ReviewThread {
+  id: string
+  path: string
+  line: number | null // null when outdated: the line is no longer in the diff
+  side: DiffSide
+  resolved: boolean
+  outdated: boolean
+  comments: ReviewComment[] // oldest first
+}
+
+// GET /api/github/pull?root=&number=
+export interface PullDetail extends PullSummary {
+  body: string // markdown
+  viewer: string
+  files: PullFile[]
+  threads: ReviewThread[]
+  pendingReview: string | null // the viewer's unsubmitted review's node id
+  pendingComments: number
+}
+
+export type ReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'

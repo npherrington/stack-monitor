@@ -7,6 +7,7 @@ import {
   GripVertical,
   FolderX,
   GitBranch,
+  GitPullRequest,
   House,
   Lock,
   Palette,
@@ -20,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { useState, type FormEvent, type ReactElement } from 'react'
+import { Link } from 'react-router'
 
 import type { Checkout, RunSummary } from '../../../core/types.ts'
 import { RunStateIcon } from '@/components/agents/run-state.tsx'
@@ -62,6 +64,7 @@ const TERMINAL_TIPS: Record<TerminalState, string> = {
 interface WorktreeRowProps {
   checkout: Checkout
   mainline: string
+  pull: { number: number; to: string } | null // the branch's open PR, in the GitHub tab
   pref: CheckoutPref
   onChange: (change: Partial<CheckoutPref>) => void
   latestRun: RunSummary | null
@@ -100,6 +103,7 @@ function Marker({
 export function WorktreeRow({
   checkout,
   mainline,
+  pull,
   pref,
   onChange,
   latestRun,
@@ -186,6 +190,16 @@ export function WorktreeRow({
           <span className="truncate">
             {checkout.branch ?? `detached at ${checkout.head}`}
           </span>
+          {pull !== null && (
+            <Link
+              to={pull.to}
+              aria-label={`Open PR #${pull.number}`}
+              className="inline-flex shrink-0 items-center gap-0.5 rounded font-semibold text-primary hover:underline focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <GitPullRequest className="size-3" aria-hidden="true" />#
+              {pull.number}
+            </Link>
+          )}
         </p>
       </div>
 
