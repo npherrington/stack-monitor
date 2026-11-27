@@ -2,6 +2,7 @@ import {
   Bot,
   CalendarClock,
   FolderGit2,
+  GitPullRequest,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -29,6 +30,7 @@ const LINKS = [
   { to: '/', label: 'Worktrees', icon: FolderGit2, end: true },
   { to: '/agents', label: 'Agents', icon: Bot, end: false },
   { to: '/schedules', label: 'Schedules', icon: CalendarClock, end: false },
+  { to: '/github', label: 'GitHub', icon: GitPullRequest, end: false },
   { to: '/settings', label: 'Settings', icon: Settings, end: false },
 ] as const
 
