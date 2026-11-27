@@ -23,5 +23,10 @@
     "noFallthroughCasesInSwitch": true
   },
   /* The core files the page imports: the same list as mise.toml's build sources */
-  "include": ["web", "core/types.ts", "core/config/schema.ts"]
+  "include": [
+    "web",
+    "core/types.ts",
+    "core/config/schema.ts",
+    "core/board/schema.ts"
+  ]
 }

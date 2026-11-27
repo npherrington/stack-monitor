@@ -8,7 +8,7 @@ import type {
   ReviewState,
   TimelineItem,
 } from '../../../core/types.ts'
-import { Markdown } from '@/components/github/markdown.tsx'
+import { Markdown } from '@/components/ui/markdown.tsx'
 import { ReviewThread } from '@/components/github/review-thread.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Card } from '@/components/ui/card.tsx'

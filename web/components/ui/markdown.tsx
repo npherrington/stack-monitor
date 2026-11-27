@@ -3,7 +3,7 @@ import remarkGfm from 'remark-gfm'
 
 const SAFE_LINK = /^(https?:|mailto:)/i
 
-// Other people's markdown, built as React elements. Raw HTML in it (an HTML comment, a bot's
+// Markdown someone wrote, built as React elements. Raw HTML in it (an HTML comment, a bot's
 // <details>) is skipped, so neither runs nor shows as text; what's between the tags still shows.
 const COMPONENTS: Components = {
   a: ({ href, children }) =>
@@ -19,7 +19,7 @@ const COMPONENTS: Components = {
     ) : (
       <span>{children}</span>
     ),
-  // The CSP blocks remote images, which would tell their host when the PR was read: a link instead.
+  // The CSP blocks remote images, which would tell their host when the page was read: a link instead.
   img: ({ src, alt }) =>
     typeof src === 'string' && SAFE_LINK.test(src) ? (
       <a

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import type { ReviewThread as Thread } from '../../../core/types.ts'
 import { CommentForm } from '@/components/github/comment-form.tsx'
-import { Markdown } from '@/components/github/markdown.tsx'
+import { Markdown } from '@/components/ui/markdown.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 

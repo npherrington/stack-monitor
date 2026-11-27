@@ -49,6 +49,47 @@ import {
   submitReview,
   SubmitReviewRequest,
 } from '../core/github/github.ts'
+import { boardContext, boardFile, type BoardContext } from '../core/board/db.ts'
+import { deleteLabel, saveLabel } from '../core/board/labels.ts'
+import {
+  archiveProject,
+  deleteColumn,
+  deleteProject,
+  reorderColumns,
+  saveColumn,
+  saveProject,
+} from '../core/board/projects.ts'
+import {
+  readArchivedTickets,
+  readBoard,
+  readProjectBoard,
+  readTicket,
+} from '../core/board/read.ts'
+import {
+  ArchivedQuery,
+  ArchiveRequest,
+  CreateTicketRequest,
+  DeleteColumnRequest,
+  IdRequest,
+  MoveTicketRequest,
+  ProjectQuery,
+  ReorderColumnsRequest,
+  SaveColumnRequest,
+  SaveCommentRequest,
+  SaveLabelRequest,
+  SaveProjectRequest,
+  TicketQuery,
+  UpdateTicketRequest,
+} from '../core/board/schema.ts'
+import {
+  archiveTicket,
+  createTicket,
+  deleteComment,
+  deleteTicket,
+  moveTicket,
+  saveComment,
+  updateTicket,
+} from '../core/board/tickets.ts'
 import { MONITOR_HOME, type Health } from '../core/monitor-address.ts'
 import {
   addRepo,
@@ -90,7 +131,11 @@ import { readRepoList, type Tracking } from '../core/settings.ts'
 import {
   failure,
   type ActionResult,
+  type ArchivedTickets,
+  type BoardOverview,
+  type ProjectBoard,
   type TerminalsSnapshot,
+  type TicketDetail,
 } from '../core/types.ts'
 import {
   closeTerminal,
@@ -139,11 +184,23 @@ function notRead(why: Unlisted): Reply {
   return 'problem' in why ? unlisted(why) : [409, failure(why.refused)]
 }
 
+type BoardRead = BoardOverview | ProjectBoard | TicketDetail | ArchivedTickets
+
+// A board read: 500 when the file can't be read, 404 when it holds no such row.
+function boardRead(
+  found: BoardRead | { problem: string } | null,
+  missing: string,
+): Reply {
+  if (found === null) return [404, failure(missing)]
+  return 'problem' in found ? unlisted(found) : [200, found]
+}
+
 // tracking.seed: the repo the monitor was started for, the whole list until the settings file is
 // first written.
 export function makeRoutes(
   tracking: Tracking,
   schedules: ScheduleContext = scheduleContext(schedulesDir()),
+  board: BoardContext = boardContext(boardFile()),
 ): Routes {
   return {
     'GET /api/health': async () => {
@@ -405,6 +462,103 @@ export function makeRoutes(
       ScheduleIdRequest,
       '{ id }',
       async ({ id }) => settled(await runScheduleNow(tracking, id, schedules)),
+    ),
+    'GET /api/board': async () => boardRead(readBoard(board), ''),
+    'GET /api/board/project': route(ProjectQuery, '?id=', async ({ id }) =>
+      boardRead(readProjectBoard(id, board), `There's no project ${id}`),
+    ),
+    'GET /api/board/ticket': route(
+      TicketQuery,
+      '?project=&number=',
+      async ({ project, number }) =>
+        boardRead(
+          readTicket(project, number, board),
+          `There's no ticket ${number} in that project`,
+        ),
+    ),
+    'GET /api/board/archived': route(
+      ArchivedQuery,
+      '?project=',
+      async ({ project }) =>
+        boardRead(
+          readArchivedTickets(project, board),
+          `There's no project ${project}`,
+        ),
+    ),
+    'POST /api/board/projects/save': route(
+      SaveProjectRequest,
+      '{ id?, name, prefix?, colour? }',
+      async (body) => settled(saveProject(body, board)),
+    ),
+    'POST /api/board/projects/archive': route(
+      ArchiveRequest,
+      '{ id, archived }',
+      async (body) => settled(archiveProject(body, board)),
+    ),
+    'POST /api/board/projects/delete': route(
+      IdRequest,
+      '{ id }',
+      async ({ id }) => settled(deleteProject(id, board)),
+    ),
+    'POST /api/board/columns/save': route(
+      SaveColumnRequest,
+      '{ id?, project, name, colour? }',
+      async (body) => settled(saveColumn(body, board)),
+    ),
+    'POST /api/board/columns/reorder': route(
+      ReorderColumnsRequest,
+      '{ project, order }',
+      async (body) => settled(reorderColumns(body, board)),
+    ),
+    'POST /api/board/columns/delete': route(
+      DeleteColumnRequest,
+      '{ id, moveTo? }',
+      async (body) => settled(deleteColumn(body, board)),
+    ),
+    'POST /api/board/labels/save': route(
+      SaveLabelRequest,
+      '{ id?, project, name, colour? }',
+      async (body) => settled(saveLabel(body, board)),
+    ),
+    'POST /api/board/labels/delete': route(
+      IdRequest,
+      '{ id }',
+      async ({ id }) => settled(deleteLabel(id, board)),
+    ),
+    'POST /api/board/tickets/create': route(
+      CreateTicketRequest,
+      '{ project, column?, title, description?, priority?, dueOn?, labels? }',
+      async (body) => settled(createTicket(body, board)),
+    ),
+    'POST /api/board/tickets/update': route(
+      UpdateTicketRequest,
+      '{ id, title?, description?, priority?, dueOn?, labels? }',
+      async (body) => settled(updateTicket(body, board)),
+    ),
+    'POST /api/board/tickets/move': route(
+      MoveTicketRequest,
+      "{ id, column, beside, place: 'before' | 'after' }",
+      async (body) => settled(moveTicket(body, board)),
+    ),
+    'POST /api/board/tickets/archive': route(
+      ArchiveRequest,
+      '{ id, archived }',
+      async (body) => settled(archiveTicket(body, board)),
+    ),
+    'POST /api/board/tickets/delete': route(
+      IdRequest,
+      '{ id }',
+      async ({ id }) => settled(deleteTicket(id, board)),
+    ),
+    'POST /api/board/comments/save': route(
+      SaveCommentRequest,
+      '{ id?, ticket, body }',
+      async (body) => settled(saveComment(body, board)),
+    ),
+    'POST /api/board/comments/delete': route(
+      IdRequest,
+      '{ id }',
+      async ({ id }) => settled(deleteComment(id, board)),
     ),
   }
 }

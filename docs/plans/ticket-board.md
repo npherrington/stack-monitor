@@ -327,7 +327,10 @@ export const Prefix = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(/^[A-Z]{1,10}$/, 'Use 1 to 10 letters, A to Z')
+  .regex(
+    /^[A-Z][A-Z0-9]{0,9}$/,
+    'Start with a letter; up to 10 letters and digits',
+  )
 export const Title = z
   .string()
   .trim()
@@ -1059,9 +1062,9 @@ restore it to the top; then `mise run check`.
   pane for one route is its own change.
 - **Filters and search aren't remembered across a reload; the last project is.** Recommended and
   assumed: a filter that comes back on its own hides tickets with no sign why.
-- **Prefix rule: 1 to 10 letters A to Z**, so every id matches PLAN.md's example
-  `agents.arguments.ticket` pattern `^[A-Z]+-\d+$`. A renamed prefix frees the old one, and old ids
-  don't redirect. Recommended and assumed; matters once a workflow takes a ticket id.
+- **Prefix rule: a letter, then up to nine more letters or digits** (`WEB2`). Changed in review
+  from letters only, which refused a prefix the user might well choose. A renamed prefix frees the
+  old one, and old ids don't redirect.
 - **An archived project's tickets can still be written through the routes**; only the page stops
   offering it. Recommended and assumed: no refusal in core, since nothing is lost either way.
 - **Moves and changes made straight on a ticket raise no success toast**, though

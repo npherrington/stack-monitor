@@ -525,3 +525,114 @@ export interface PullDetail extends PullSummary {
 }
 
 export type ReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
+
+// ---- Ticket board ----
+
+// The colours a project, a column or a label can take: the page's swatches (web/lib/swatches.ts).
+export const BOARD_COLOURS = [
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'teal',
+  'blue',
+  'purple',
+  'pink',
+  'coral',
+  'lime',
+  'sky',
+  'indigo',
+  'sand',
+  'slate',
+] as const
+export type BoardColour = (typeof BOARD_COLOURS)[number]
+
+export const PRIORITIES = ['urgent', 'high', 'medium', 'low', 'none'] as const
+export type Priority = (typeof PRIORITIES)[number]
+
+export interface BoardProject {
+  id: number
+  name: string
+  prefix: string // BEANS in BEANS-12; unique across projects
+  colour: BoardColour | null
+  archived: boolean
+  tickets: number // on the board
+  archivedTickets: number
+}
+
+// GET /api/board: unarchived projects first, each group oldest first.
+export interface BoardOverview {
+  projects: BoardProject[]
+}
+
+export interface BoardLabel {
+  id: number
+  project: number | null // null: shared, usable in every project
+  name: string
+  colour: BoardColour | null
+  uses: number // tickets carrying it in any project, archived ones included
+}
+
+export type TicketLabel = Pick<BoardLabel, 'id' | 'name' | 'colour'>
+
+export interface TicketSummary {
+  id: number
+  number: number
+  key: string // BEANS-12: the project's prefix as it is now, and the number
+  title: string
+  column: number
+  priority: Priority
+  dueOn: string | null // YYYY-MM-DD
+  overdue: boolean // dueOn is before today on this machine
+  labels: TicketLabel[] // by name
+  commentCount: number
+}
+
+export interface BoardColumn {
+  id: number
+  name: string
+  colour: BoardColour | null
+  tickets: TicketSummary[] // top first, unarchived only
+}
+
+// GET /api/board/project?id=: labels are the shared ones, then the project's, each by name.
+export interface ProjectBoard {
+  project: BoardProject
+  columns: BoardColumn[] // left to right
+  labels: BoardLabel[]
+}
+
+export interface TicketComment {
+  id: number
+  body: string // markdown
+  createdAt: string // ISO
+  editedAt: string | null
+}
+
+// GET /api/board/ticket?project=&number=
+export interface TicketDetail extends TicketSummary {
+  description: string // markdown
+  archived: boolean
+  createdAt: string
+  comments: TicketComment[] // oldest first
+}
+
+export interface ArchivedTicket extends TicketSummary {
+  archivedAt: string
+  columnName: string // where Restore puts it
+}
+
+// GET /api/board/archived?project=: most recently archived first.
+export interface ArchivedTickets {
+  tickets: ArchivedTicket[]
+}
+
+// POST /api/board/projects/save
+export interface SaveProjectResult extends ActionResult {
+  id: number | null
+}
+
+// POST /api/board/tickets/create
+export interface CreateTicketResult extends ActionResult {
+  number: number | null
+}
