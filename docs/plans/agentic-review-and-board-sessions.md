@@ -1412,8 +1412,9 @@ Each takes the recommended answer, which the plan assumes.
 
 - **Plan check against the code (`plan-iterator`, one unattended pass).** The cited shapes and
   files hold. One gap found and fixed above: the tools refuse an archived project, which core's
-  `createTicket` doesn't. One thing still unverified until the browser step: that an interactive
-  `claude` takes its first message after `--` (the spike proved it for `claude -p`). Two adds
+  `createTicket` doesn't. That an interactive `claude` takes its first message after `--` was then
+  tried in a pty against Claude Code 2.1.332: the message ran, the appended system prompt
+  applied and an allowed MCP tool was called unasked. Two adds
   nobody asked for are left in as `creep`, small and cheap to drop: the dialog's line about a
   draft review already on the PR, and "Work this ticket" in the ticket dialog as well as on the
   card's menu.
