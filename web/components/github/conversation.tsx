@@ -249,15 +249,27 @@ export function Conversation({ root, pull, onOpenFile }: ConversationProps) {
   return (
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_16rem_17rem]">
       <div className="flex min-w-0 flex-col gap-3">
-        <Post
-          author={pull.author}
-          at={pull.createdAt}
-          url={pull.url}
-          body={pull.body.trim() === '' ? '_No description._' : pull.body}
-        />
-        {pull.timeline.map((item) => (
-          <Entry key={item.id} item={item} />
-        ))}
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-strong">Summary</h2>
+          <Post
+            author={pull.author}
+            at={pull.createdAt}
+            url={pull.url}
+            body={pull.body.trim() === '' ? '_No description._' : pull.body}
+          />
+        </section>
+        {pull.timeline.length > 0 && (
+          <section className="flex flex-col gap-2 pt-2">
+            <h2 className="text-sm font-semibold text-strong">
+              Comments ({pull.timeline.length})
+            </h2>
+            <div className="flex flex-col gap-3">
+              {pull.timeline.map((item) => (
+                <Entry key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+        )}
         {pull.threads.length > 0 && (
           <section className="flex flex-col gap-3 pt-2">
             <h2 className="text-sm font-semibold text-strong">
