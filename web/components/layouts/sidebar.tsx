@@ -6,33 +6,49 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  Terminal,
 } from 'lucide-react'
 import type { ReactElement, RefObject } from 'react'
 import { NavLink } from 'react-router'
 
 import { ThemePicker } from '@/components/settings/theme-picker.tsx'
-import { Beaver } from '@/components/terminals/beaver.tsx'
+import { SessionList } from '@/components/terminals/session-list.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover.tsx'
+import { Separator } from '@/components/ui/separator.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
-import { useTerminalPanel } from '@/contexts/terminal-context.ts'
+import { useTerminalLayout } from '@/contexts/terminal-context.ts'
 import { useTheme } from '@/contexts/theme-context.ts'
 import { useSidebarState } from '@/hooks/use-sidebar-state.ts'
 import { THEMES, themeIcon } from '@/lib/theme.ts'
 import { cn } from '@/lib/utils.ts'
 
-const LINKS = [
-  { to: '/', label: 'Worktrees', icon: FolderGit2, end: true },
-  { to: '/agents', label: 'Agents', icon: Bot, end: false },
-  { to: '/schedules', label: 'Schedules', icon: CalendarClock, end: false },
-  { to: '/github', label: 'GitHub', icon: GitPullRequest, end: false },
-  { to: '/settings', label: 'Settings', icon: Settings, end: false },
+const GROUPS = [
+  {
+    heading: 'Work',
+    links: [
+      { to: '/', label: 'Worktrees', icon: FolderGit2, end: true },
+      { to: '/github', label: 'GitHub', icon: GitPullRequest, end: false },
+    ],
+  },
+  {
+    heading: 'Automation',
+    links: [
+      { to: '/agents', label: 'Agents', icon: Bot, end: false },
+      { to: '/schedules', label: 'Schedules', icon: CalendarClock, end: false },
+    ],
+  },
 ] as const
+
+const SETTINGS = {
+  to: '/settings',
+  label: 'Settings',
+  icon: Settings,
+  end: false,
+} as const
 
 interface SidebarProps {
   logoRef: RefObject<HTMLImageElement | null> // where the intro's beaver lands
@@ -55,8 +71,9 @@ function RailTip({ collapsed, label, children }: RailTipProps) {
   )
 }
 
-// The pages, the Terminal and the theme. Collapsed, it's a rail of their icons on a wide screen;
-// a narrow one always shows the bar across the top.
+// The pages in their groups, the terminal sessions, then Settings and the theme at the foot.
+// Collapsed, it's a rail of their icons on a wide screen; a narrow one always shows the bar across
+// the top.
 export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
   const { theme } = useTheme()
   const { collapsed, toggle } = useSidebarState()
@@ -66,7 +83,7 @@ export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
     <nav
       aria-label="Pages"
       className={cn(
-        'flex flex-col gap-5 border-b bg-sidebar p-3 md:sticky md:top-0 md:h-dvh md:shrink-0 md:overflow-x-hidden md:border-r md:border-b-0 md:motion-safe:transition-[width]',
+        'flex flex-col gap-3 border-b bg-sidebar p-3 md:h-dvh md:shrink-0 md:gap-5 md:overflow-x-hidden md:border-r md:border-b-0 md:motion-safe:transition-[width]',
         collapsed ? 'md:w-14 md:px-2' : 'md:w-56',
       )}
     >
@@ -91,36 +108,50 @@ export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
           Stack monitor
         </span>
       </div>
-      <ul className="-mx-1 flex gap-0.5 overflow-x-auto px-1 md:mx-0 md:flex-col md:overflow-visible md:px-0">
-        {LINKS.map(({ to, label: text, icon: Icon, end }) => (
-          <li key={to}>
-            <RailTip collapsed={collapsed} label={text}>
-              <NavLink
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-strong',
-                    isActive && 'bg-muted text-strong',
-                    collapsed && 'md:justify-center md:px-0',
-                  )
-                }
-              >
-                <Icon className="size-4 shrink-0" aria-hidden="true" />
-                <span className={label}>{text}</span>
-              </NavLink>
-            </RailTip>
-          </li>
+      <div className="-mx-1 flex min-h-0 items-center gap-0.5 overflow-x-auto px-1 md:mx-0 md:flex-1 md:flex-col md:items-stretch md:gap-5 md:overflow-x-hidden md:overflow-y-auto md:px-0">
+        {GROUPS.map(({ heading, links }, at) => (
+          <section
+            key={heading}
+            aria-label={heading}
+            className="flex md:flex-col md:gap-1"
+          >
+            <h2
+              aria-hidden="true"
+              className={cn(
+                'hidden px-2.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase md:block',
+                collapsed && 'md:hidden',
+              )}
+            >
+              {heading}
+            </h2>
+            {collapsed && at > 0 && (
+              <Separator className="mb-1 hidden md:block" />
+            )}
+            <ul className="flex gap-0.5 md:flex-col">
+              {links.map((link) => (
+                <li key={link.to}>
+                  <PageLink link={link} collapsed={collapsed} />
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-        <li>
-          <RailTip collapsed={collapsed} label="Terminal">
-            <TerminalButton collapsed={collapsed} />
-          </RailTip>
-        </li>
-      </ul>
+        <div className="md:hidden">
+          <PageLink link={SETTINGS} collapsed={collapsed} />
+        </div>
+        <SessionList collapsed={collapsed} />
+      </div>
       <div
         className={cn(
-          'mt-auto hidden gap-1 md:flex',
+          'hidden md:block',
+          collapsed && 'md:flex md:justify-center',
+        )}
+      >
+        <PageLink link={SETTINGS} collapsed={collapsed} />
+      </div>
+      <div
+        className={cn(
+          'hidden gap-1 md:flex',
           collapsed ? 'flex-col items-center' : 'items-center',
         )}
       >
@@ -148,46 +179,38 @@ export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
   )
 }
 
-interface TerminalButtonProps {
+interface PageLinkProps {
+  link: {
+    to: string
+    label: string
+    icon: typeof Settings
+    end: boolean
+  }
   collapsed: boolean
 }
 
-// Not a page: it shows or hides the Terminal panel beside whichever page is open. The rest of its
-// props come from a tooltip that wraps it.
-function TerminalButton({ collapsed, ...trigger }: TerminalButtonProps) {
-  const { sessions, shown, setShown, busy } = useTerminalPanel()
-  const running = sessions.filter((session) => session.exitCode === null).length
+// A page in the sidebar. Following it also brings the page back if a pane menu hid it.
+function PageLink({ link, collapsed }: PageLinkProps) {
+  const { setHidden } = useTerminalLayout()
+  const { to, label: text, icon: Icon, end } = link
   return (
-    <button
-      {...trigger}
-      type="button"
-      aria-pressed={shown}
-      onClick={() => setShown(!shown)}
-      className={cn(
-        'relative flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-strong focus-visible:ring-2 focus-visible:ring-ring',
-        shown && 'bg-muted text-strong',
-        collapsed && 'md:justify-center md:px-0',
-      )}
-    >
-      {busy.size > 0 ? (
-        <Beaver busy />
-      ) : (
-        <Terminal className="size-4 shrink-0" aria-hidden="true" />
-      )}
-      <span className={cn(collapsed && 'md:sr-only')}>Terminal</span>
-      {running > 0 && (
-        <span
-          className={cn(
-            'ml-auto rounded-full bg-success/15 px-1.5 text-xs text-success tabular-nums',
-            collapsed &&
-              'md:absolute md:top-0 md:right-0 md:ml-0 md:px-1 md:text-[10px] md:leading-4',
-          )}
-        >
-          {running}
-          <span className="sr-only"> running</span>
-        </span>
-      )}
-    </button>
+    <RailTip collapsed={collapsed} label={text}>
+      <NavLink
+        to={to}
+        end={end}
+        onClick={() => setHidden('page', false)}
+        className={({ isActive }) =>
+          cn(
+            'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-strong',
+            isActive && 'bg-muted text-strong',
+            collapsed && 'md:justify-center md:px-0',
+          )
+        }
+      >
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+        <span className={cn(collapsed && 'md:sr-only')}>{text}</span>
+      </NavLink>
+    </RailTip>
   )
 }
 

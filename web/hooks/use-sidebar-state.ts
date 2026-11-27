@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { typingInField } from '@/lib/keys.ts'
+
 const COLLAPSED_KEY = 'stack-monitor:sidebar-collapsed'
 
 function readCollapsed(): boolean {
@@ -16,15 +18,6 @@ function storeCollapsed(collapsed: boolean): void {
   } catch {
     // A convenience: without storage the sidebar opens wide next time.
   }
-}
-
-// Keys typed into a field, or into the terminal (xterm reads them through a hidden textarea).
-function typing(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      target.closest('input, textarea, select, .xterm') !== null)
-  )
 }
 
 interface UseSidebarStateResult {
@@ -44,7 +37,11 @@ export function useSidebarState(): UseSidebarStateResult {
     const handleKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() !== 'b' || event.shiftKey || event.altKey)
         return
-      if (!(event.metaKey || event.ctrlKey) || typing(event.target)) return
+      if (
+        !(event.metaKey || event.ctrlKey) ||
+        typingInField(event.target, true)
+      )
+        return
       event.preventDefault()
       toggle()
     }

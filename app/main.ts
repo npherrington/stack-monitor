@@ -161,7 +161,11 @@ function setMenu(): void {
         { role: 'quit' },
       ],
     },
-    { role: 'fileMenu' },
+    // Close Window moves to ⌘⇧W: ⌘W reaches the page, which closes the focused pane's tab.
+    {
+      label: 'File',
+      submenu: [{ role: 'close', accelerator: 'CommandOrControl+Shift+W' }],
+    },
     { role: 'editMenu' },
     { role: 'viewMenu' },
     { role: 'windowMenu' },

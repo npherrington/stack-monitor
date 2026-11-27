@@ -10,7 +10,6 @@ import {
   GitPullRequest,
   House,
   Lock,
-  Palette,
   Pencil,
   Pin,
   PinOff,
@@ -33,23 +32,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.tsx'
 import { Input } from '@/components/ui/input.tsx'
-import { swatchFill, swatchTint } from '@/components/ui/swatch-variants.ts'
+import { swatchTint } from '@/components/ui/swatch-variants.ts'
 import { toast } from '@/components/ui/toast-manager.ts'
 import { Tip } from '@/components/ui/tooltip.tsx'
-import {
-  SWATCHES,
-  type CheckoutPref,
-  type Swatch,
-} from '@/lib/checkout-prefs.ts'
+import { ColourMenu } from '@/components/ui/colour-menu.tsx'
+import type { CheckoutPref } from '@/lib/checkout-prefs.ts'
 import { cn } from '@/lib/utils.ts'
 
 // Whether a `claude` session runs in the worktree, and whether Claude is working in it.
@@ -336,46 +327,6 @@ export function WorktreeRow({
         </DropdownMenu>
       </div>
     </li>
-  )
-}
-
-interface ColourMenuProps {
-  colour: Swatch | undefined
-  onPick: (colour: Swatch | undefined) => void
-}
-
-function ColourMenu({ colour, onPick }: ColourMenuProps) {
-  return (
-    <DropdownMenuSub>
-      <DropdownMenuSubTrigger>
-        <Palette />
-        Colour
-      </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-40">
-        <DropdownMenuRadioGroup
-          value={colour ?? 'none'}
-          onValueChange={(value: Swatch | 'none') =>
-            onPick(value === 'none' ? undefined : value)
-          }
-        >
-          {(['none', ...SWATCHES] as const).map((swatch) => (
-            <DropdownMenuRadioItem key={swatch} value={swatch}>
-              <span
-                aria-hidden="true"
-                className={cn(
-                  swatchFill({ colour: swatch }),
-                  'size-3 rounded-full',
-                  swatch === 'none' && 'border border-dashed border-border',
-                )}
-              />
-              <span className={swatch === 'none' ? undefined : 'capitalize'}>
-                {swatch === 'none' ? 'No colour' : swatch}
-              </span>
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuSubContent>
-    </DropdownMenuSub>
   )
 }
 
