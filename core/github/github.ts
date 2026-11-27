@@ -158,6 +158,8 @@ const Decision = z
   .nullable()
   .transform((value) => (value === '' ? null : value))
 
+const GhLabel = z.object({ name: z.string(), color: z.string() })
+
 const SUMMARY_FIELDS =
   'number,title,author,headRefName,baseRefName,isCrossRepository,isDraft,url,reviewDecision,labels,updatedAt,additions,deletions,changedFiles'
 
@@ -171,9 +173,7 @@ const GhPull = z.object({
   isDraft: z.boolean(),
   url: z.string(),
   reviewDecision: Decision,
-  labels: z
-    .array(z.object({ name: z.string() }))
-    .or(z.object({ nodes: z.array(z.object({ name: z.string() })) })),
+  labels: z.array(GhLabel).or(z.object({ nodes: z.array(GhLabel) })),
   updatedAt: z.string(),
   additions: z.number(),
   deletions: z.number(),
@@ -192,7 +192,11 @@ function summary(pull: z.infer<typeof GhPull>): PullSummary {
     url: pull.url,
     reviewDecision: pull.reviewDecision,
     labels: ('nodes' in pull.labels ? pull.labels.nodes : pull.labels).map(
-      (label) => label.name,
+      ({ name, color }) => ({
+        name,
+        // It ends up in a style on the page, so only a plain colour gets through.
+        color: /^[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : null,
+      }),
     ),
     updatedAt: pull.updatedAt,
     additions: pull.additions,
@@ -274,7 +278,7 @@ const DETAIL_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
       id number title body url isDraft isCrossRepository updatedAt reviewDecision
       additions deletions changedFiles headRefName baseRefName
       author { login }
-      labels(first: 20) { nodes { name } }
+      labels(first: 20) { nodes { name color } }
       reviews(states: PENDING, first: 1) { nodes { id comments { totalCount } } }
       submitted: reviews(states: [APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED], last: 100) {
         nodes { id state body submittedAt url author { login } }

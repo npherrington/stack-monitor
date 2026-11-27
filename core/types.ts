@@ -404,6 +404,11 @@ export type GithubStatus =
 export type ReviewDecision =
   'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
 
+export interface PullLabel {
+  name: string
+  color: string | null // six hex digits, no #; null when GitHub's isn't one
+}
+
 export interface PullSummary {
   number: number
   title: string
@@ -414,7 +419,7 @@ export interface PullSummary {
   draft: boolean
   url: string
   reviewDecision: ReviewDecision
-  labels: string[] // label names
+  labels: PullLabel[]
   updatedAt: string // ISO
   additions: number
   deletions: number

@@ -5,6 +5,7 @@ import type { PullList as List, ReviewDecision } from '../../../core/types.ts'
 import { Segmented } from '@/components/stack/segmented.tsx'
 import { Card } from '@/components/ui/card.tsx'
 import { Input } from '@/components/ui/input.tsx'
+import { LabelPill } from '@/components/github/label-pill.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { pullPath } from '@/lib/github-links.ts'
 
@@ -79,7 +80,7 @@ export function PullList({ root, list }: PullListProps) {
                     </span>
                     {pull.draft && <Pill>Draft</Pill>}
                     {pull.labels.map((label) => (
-                      <Pill key={label}>{label}</Pill>
+                      <LabelPill key={label.name} label={label} />
                     ))}
                     {pull.reviewDecision !== null && (
                       <Pill tone={DECISION[pull.reviewDecision].tone}>

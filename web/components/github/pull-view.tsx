@@ -8,6 +8,7 @@ import { ReviewPanel } from '@/components/github/review-panel.tsx'
 import { Segmented } from '@/components/stack/segmented.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { buttonVariants } from '@/components/ui/button-variants.ts'
+import { LabelPill } from '@/components/github/label-pill.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { usePull } from '@/hooks/use-pull.ts'
@@ -84,7 +85,7 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
             −{pull.deletions}
           </span>
           {pull.labels.map((label) => (
-            <Pill key={label}>{label}</Pill>
+            <LabelPill key={label.name} label={label} />
           ))}
         </div>
       </header>
