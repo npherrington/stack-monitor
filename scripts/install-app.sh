@@ -55,7 +55,11 @@ PLIST
   printf 'root=%q\n' "$root"
   printf 'mise_bin=%q\n' "$mise_bin"
   printf 'export PATH=%q\n' "$PATH"
+  # What "Update from main…" reopens once it's done (scripts/update-app.sh).
+  printf 'export STACK_MONITOR_APP=%q\n' "$app"
   cat <<'LAUNCHER'
+# Waited for by the update, so it reopens the app only once this launcher has exited.
+export STACK_MONITOR_LAUNCHER_PID=$$
 logs="$HOME/Library/Logs/Stack monitor"
 mkdir -p "$logs"
 log="$logs/app.log"
