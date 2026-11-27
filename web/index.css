@@ -34,6 +34,11 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-sidebar: var(--sidebar);
+  --color-game-space: var(--game-space);
+  --color-game-hull: var(--game-hull);
+  --color-game-trim: var(--game-trim);
+  --color-game-bullet: var(--game-bullet);
+  --color-game-star: var(--game-star);
   /* A checkout's colour (web/lib/checkout-prefs.ts): set below, deeper on the dark varieties */
   --color-swatch-red: var(--swatch-red);
   --color-swatch-orange: var(--swatch-orange);
@@ -548,6 +553,40 @@
   --input: #24393f;
   --ring: #68bec4;
   --sidebar: rgb(15 26 30 / 70%);
+}
+
+/* Toryn, the sidebar game (web/lib/toryn-draw.ts, web/components/toryn/), from each variety's
+   own colours: a light variety plays on its darkest ink, a dark one on its background. */
+:root {
+  --game-space: var(--strong);
+  --game-star: var(--background);
+  --game-star-dim: var(--muted-foreground);
+  --game-hull: var(--primary);
+  --game-trim: color-mix(
+    in oklab,
+    var(--game-hull) 55%,
+    var(--game-space)
+  ); /* hull in shade */
+  --game-cockpit: var(--accent);
+  --game-flame: var(--swatch-orange);
+  --game-bullet: var(--swatch-yellow);
+  --game-shot: var(--swatch-pink);
+  --game-dart: var(--swatch-red);
+  --game-saucer: var(--swatch-green);
+  --game-brute: var(--swatch-purple);
+  --game-eye: var(--background);
+}
+
+:root[data-mode='dark'] {
+  --game-space: var(--background);
+  --game-star: var(--strong);
+  --game-cockpit: var(--strong);
+  --game-flame: var(--warning);
+  --game-bullet: var(--warning);
+  --game-shot: var(--destructive);
+  --game-dart: var(--destructive);
+  --game-saucer: var(--success);
+  --game-eye: var(--strong);
 }
 
 @layer base {

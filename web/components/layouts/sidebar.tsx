@@ -12,6 +12,7 @@ import { NavLink } from 'react-router'
 
 import { ThemePicker } from '@/components/settings/theme-picker.tsx'
 import { SessionList } from '@/components/terminals/session-list.tsx'
+import { Toryn } from '@/components/toryn/toryn.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
   Popover,
@@ -71,7 +72,8 @@ function RailTip({ collapsed, label, children }: RailTipProps) {
   )
 }
 
-// The pages in their groups, the terminal sessions, then Settings and the theme at the foot.
+// The pages in their groups, the terminal sessions, the game, then Settings and the theme at
+// the foot.
 // Collapsed, it's a rail of their icons on a wide screen; a narrow one always shows the bar across
 // the top.
 export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
@@ -141,6 +143,11 @@ export function Sidebar({ logoRef, hideLogo }: SidebarProps) {
         </div>
         <SessionList collapsed={collapsed} />
       </div>
+      {!collapsed && (
+        <div className="hidden md:block">
+          <Toryn />
+        </div>
+      )}
       <div
         className={cn(
           'hidden md:block',
