@@ -6,7 +6,8 @@ A local page and MCP server for working across a repo's git worktrees: each chec
 the dev stack it runs, and the coding agents working in it.
 
 **Status: early, and in daily use.** Worktrees, the stack, agent runs, schedules, a Claude Code
-terminal per worktree and a ticket board are in; the feature map comes next ([PLAN.md](PLAN.md)). It runs as a Mac
+terminal per worktree, a ticket board, and sessions that start on a ticket or a PR review are in;
+the feature map comes next ([PLAN.md](PLAN.md)). It runs as a Mac
 app (`mise run app`) or a local server you open in a browser.
 
 ![Every worktree across your repos, one row each, with its git state, stack and last run](docs/screenshots/worktrees.png)
@@ -92,6 +93,29 @@ or one project's own), a priority, a due date and comments; the board filters by
 priority and searches titles and ids. Tickets and projects can be archived and restored, or
 deleted for good. It's all in one SQLite file, `~/.local/state/stack-monitor/board.db`, or the
 file `STACK_MONITOR_BOARD` names: copy it to back the board up or move it to another machine.
+
+Two buttons on the board open Claude Code with the board's tools. **Work this ticket** (a card's
+menu, or the ticket) asks which repo, a new worktree or one you have, and which of the repo's
+skills to use (`work-ticket` when it has one), then starts the session on the ticket: the agent
+reads it, moves it to In progress and comments as it goes. **Product management** starts a session
+that interviews you, reads the code and files tickets into the project. Filing and commenting
+don't ask first; changing or moving a ticket does. The board refreshes while such a session is
+open.
+
+**Agentic review.** On a PR in the GitHub page, **Agentic review** asks where to review (a new
+review worktree, which the monitor puts at the PR's head on no branch, or a checkout you pick),
+which skill to use (`peer-code-review` when the repo has it) and what to look at hardest, then
+opens Claude Code there with the PR's details in its first message. Reading the PR runs without
+asking. The agent finishes by posting one review, headed "Agentic review", with its findings as
+line comments; the monitor never approves that post for you, so Claude Code asks first unless
+your own permission mode lets it through. A fork's PR gets a review worktree without the repo's
+setup and install, which would run its code.
+
+**MCP.** `mcp/main.ts` is a stdio MCP server with the board's tools: `board_list_projects`,
+`board_list_tickets`, `board_get_ticket`, `board_create_ticket`, `board_update_ticket`,
+`board_move_ticket` and `board_add_comment`. Sessions the monitor starts from the board get it
+without setup. For your own sessions: `claude mcp add stack-monitor -- node <clone>/mcp/main.ts`.
+Nothing in it deletes a ticket or starts a run.
 
 Pins, names and colours you give worktrees, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.

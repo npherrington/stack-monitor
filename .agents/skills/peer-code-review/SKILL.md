@@ -1,6 +1,6 @@
 ---
 name: peer-code-review
-description: Review someone else's PR branch as a peer reviewer. Reconstructs intent from the PR, diffs it against main, routes the changed files through the focused review skills, and reports plain-language reviewer notes plus ranked findings ready to paste into the PR. Read-only, including git: locally the user checks the branch out; only in a cloud session does the skill run the checkout itself. Use when asked to "review this PR", "review <branch>", "peer review", or when reviewing a colleague's or a contributor's branch in a review worktree. For your own just-written code in the same session, use `skeptical-code-reviewer` instead.
+description: Review someone else's PR branch as a peer reviewer. Reconstructs intent from the PR, diffs it against main, routes the changed files through the focused review skills, and reports plain-language reviewer notes plus ranked findings ready to paste into the PR, or posts them as one review when the stack monitor's Agentic review started the session. Read-only, including git: locally the user checks the branch out; only in a cloud session does the skill run the checkout itself. Use when asked to "review this PR", "review <branch>", "peer review", or when reviewing a colleague's or a contributor's branch in a review worktree. For your own just-written code in the same session, use `skeptical-code-reviewer` instead.
 ---
 
 # Review PR
@@ -19,6 +19,14 @@ peer review has to recover it.
 `style-guide-check` and `frontend-security-coder` in review.
 
 ## Step 0: Ask the user to check out the branch
+
+**Started by the stack monitor's Agentic review?** The session's first message
+says where the worktree stands. When it says the monitor put this worktree at
+the PR's head, the checkout and the fetch are done: skip the rest of this step,
+name the PR by number in every `gh` command below (`gh pr view <n>`: the head
+is detached, so the branch form finds nothing), and diff against the base ref
+the message names. When it says the monitor changed nothing in the checkout,
+this step runs as written.
 
 **The user drives every checkout.** Your git vocabulary here is read-only:
 `status`, `branch`, `log`, `diff`, `show`.
@@ -90,13 +98,14 @@ You weren't there. Before reading a line of code, establish what the change is
 _supposed_ to do:
 
 ```bash
-gh pr view --json title,body,files,labels,isDraft   # no number needed: reads the current branch's PR
+gh pr view --json title,body,files,labels,isDraft,closingIssuesReferences   # no number needed: reads the current branch's PR
 git log --oneline origin/main..HEAD
 ```
 
 Then read whatever the PR points at: a doc under `docs/plans/` or
-`docs/summaries/`, the issue it closes (`gh issue view <n> --comments`), the
-PLAN.md step it builds. If the PR body is empty and the commits say "fix
+`docs/summaries/`, every issue it closes (`gh issue view <n> --comments`), the
+PLAN.md step it builds. Hold on to the problem those describe: the reviewer
+notes say whether the change solves it. If the PR body is empty and the commits say "fix
 stuff", that is itself the first finding: **a reviewer who can't tell what a
 change is for can't tell whether it works.** Ask the author rather than
 guessing at intent and reviewing the wrong thing.
@@ -232,7 +241,8 @@ high-conviction findings beat a long list.
 
 Before the findings, write a short **reviewer notes** section: what this change
 does, in your own words, the way you'd explain it to another engineer at their
-desk. Three or four sentences. It does two jobs: it proves you understood the
+desk, ending on whether it solves the problem Step 1 found it was for. Three or
+four sentences. It does two jobs: it proves you understood the
 change before critiquing it, and it gives the author a chance to say "that's not
 what it does", which is the most useful correction a review can get.
 
@@ -299,6 +309,34 @@ Omit any section that's empty. If the branch is clean, say so plainly and say
 what you checked ("read the diff across 6 files, ran `style-guide-check` and
 `frontend-security-coder`, CI green"), not a bare LGTM.
 
+## Posting the review
+
+Only when the session's first message asks for it, as the stack monitor's
+Agentic review does. Otherwise the review stays in the chat for the user to
+paste.
+
+Post once, as one review:
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<n>/reviews --method POST --input - <<'JSON'
+{ "commit_id": "<the commit reviewed>", "event": "COMMENT",
+  "body": "## Agentic review\n\n<reviewer notes, CI, findings with no line>",
+  "comments": [{ "path": "core/run.ts", "line": 42, "side": "RIGHT", "body": "**Critical**: ..." }] }
+JSON
+```
+
+- **Body**: `## Agentic review`, then the output format from its reviewer notes
+  down, holding every finding that has no line of its own.
+- **Comments**: each finding on a line the diff shows, one comment each, with
+  its severity prefix. `side` is `RIGHT` and the line's number in the new file
+  for an added or unchanged line, `LEFT` and its number in the old file for a
+  removed one. A finding on a line the diff doesn't show goes in the body:
+  GitHub refuses the whole review over one comment off the diff.
+- **Event** is always `COMMENT`. Approving and requesting changes are the
+  user's.
+- GitHub keeps one pending review per person per PR. When it refuses the post
+  for that, say so and stop: the user's draft is theirs to submit or discard.
+
 ## Voice
 
 Write like an engineer explaining their work to another engineer: plain,
@@ -327,9 +365,11 @@ author has context you don't and pushes back, defer.
 
 - **Read-only git, always:** `status`, `branch`, `log`, `diff`, `show`. The
   user drives the checkout; you hand them the command and wait. Cloud
-  exception: `git fetch origin` and `gh pr checkout`, per Step 0.
-- **Read-only files.** No edits to the branch, no commits, no pushes, no PR
-  comments posted unless the user explicitly asks.
+  exception: `git fetch origin` and `gh pr checkout`, per Step 0. A worktree
+  the monitor already put at the PR's head needs neither.
+- **Read-only files.** No edits to the branch, no commits, no pushes. A review
+  is posted to the PR only when the user explicitly asks or § Posting the
+  review applies.
 - **Diff-scoped.** Pre-existing problems are FYI, not review items.
 - **Cite or drop it.** Style findings cite the guide and section; principle
   findings cite PLAN.md § Principles; correctness findings name the file, line,

@@ -1,11 +1,13 @@
 ---
 name: work-ticket
-description: Work a GitHub issue end to end, unattended, through to a PR ready for review, or a draft awaiting a decision. Use when asked to take a named issue to a PR without stopping ("work #123 end to end"), or to "grab a ready-for-agent issue". A bare issue URL or "start on this issue" stays with CLAUDE.md's attended flow.
+description: Work a GitHub issue end to end, unattended, through to a PR ready for review, or a draft awaiting a decision. Use when asked to take a named issue to a PR without stopping ("work #123 end to end"), to "grab a ready-for-agent issue", or when the session's first message names a board ticket (`BEANS-3`). A bare issue URL or "start on this issue" stays with CLAUDE.md's attended flow.
 ---
 
 # Issue to PR
 
 One issue, from pick-up to PR, **unattended**. Every decision gate in the skills below takes the answer `docs/agents/unattended.md` gives, recorded where that file says, whether or not `STACK_MONITOR_UNATTENDED` is set. A destructive action is still a stop. This skill only sequences: each step's skill or section owns its rules.
+
+**A board ticket** (an id shaped `PREFIX-N`) takes `docs/agents/issue-tracker.md` § Board tickets in place of every issue read, comment and status below, and skips step 1.
 
 ## Orchestrate
 
@@ -47,11 +49,11 @@ Skip this step when the request names an issue. Otherwise list open issues label
 
 `CLAUDE.md` § Starting from an issue, steps 1 and 2, including its unattended `ready-for-agent` check.
 
-**Done when** the issue is assigned to the user, or that section left it alone and the run has stopped.
+**Done when** the issue is assigned to the user, or that section left it alone and the run has stopped. A board ticket: it is read and in "In progress".
 
 ## 3. Branch and monitor
 
-Run `create-branch` with the issue's number in the name, then `mise run sync`. When the issue needs the running monitor, start `mise run dev` in the background with `STACK_MONITOR_PORT` set to a free port (the default 7420 is likely the user's own monitor) and `STACK_MONITOR_REPO` pointed at the repo the issue's behaviour needs: a throwaway repo built by a script in the scratchpad, or, unset, the worktree itself. List what you started in the handoff for step 6, including any worktree `mise run worktree` added. `fix-bug` § Running the monitor has the details.
+Run `create-branch` with the issue's number, or the ticket's key, in the name. When the first message says the monitor made this worktree and its branch, keep that branch instead of cutting one: `git fetch origin`, then `git merge --ff-only origin/main` while the branch has no commits of its own. Either way, `mise run sync` next. When the issue needs the running monitor, start `mise run dev` in the background with `STACK_MONITOR_PORT` set to a free port (the default 7420 is likely the user's own monitor) and `STACK_MONITOR_REPO` pointed at the repo the issue's behaviour needs: a throwaway repo built by a script in the scratchpad, or, unset, the worktree itself. List what you started in the handoff for step 6, including any worktree `mise run worktree` added. `fix-bug` § Running the monitor has the details.
 
 **Done when** the branch is cut from a freshly fetched `origin/main`, its dependencies are installed, and, when the issue needs it, `curl -s http://127.0.0.1:<port>/api/health` answers from this worktree's server.
 
@@ -78,7 +80,7 @@ Run `create-branch` with the issue's number in the name, then `mise run sync`. W
 - After the fix round, one **re-review**: `skeptical-code-reviewer` again, briefed with the fix diff, the issue and the findings the fixes answer. A Critical it still reports takes the unattended table's Open finding row, and everything else goes in the closing comment. The run ships after it, with no second fix round.
 - A **ship** phase runs `ship-it`. For a bug, this step replaces `fix-bug` § 6, and the body carries § 6's before and after sections from the files already saved. The ship brief's whole spec for the PR body is `pull-request`'s § Body and `docs/agents/unattended.md` § PR body and closing comment.
 
-**Done when** the run is at the end state `docs/agents/unattended.md` gives (its Run finished row, or its Open finding row), with the closing issue comment posted from the handoff.
+**Done when** the run is at the end state `docs/agents/unattended.md` gives (its Run finished row, or its Open finding row), with the closing issue comment posted from the handoff. A board ticket takes that comment and is in "In review".
 
 ## 6. Tear down
 
