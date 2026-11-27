@@ -55,6 +55,8 @@ PLIST
   printf 'root=%q\n' "$root"
   printf 'mise_bin=%q\n' "$mise_bin"
   printf 'export PATH=%q\n' "$PATH"
+  # What "Update from main…" reopens once it's done (scripts/update-app.sh).
+  printf 'export STACK_MONITOR_APP=%q\n' "$app"
   cat <<'LAUNCHER'
 logs="$HOME/Library/Logs/Stack monitor"
 mkdir -p "$logs"

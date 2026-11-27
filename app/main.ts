@@ -5,14 +5,24 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { app, BrowserWindow, dialog, nativeImage, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  Menu,
+  nativeImage,
+  shell,
+  type MenuItemConstructorOptions,
+} from 'electron'
 
 import { launchMonitor } from '../server/launch.ts'
+import { decideUpdate, readUpdateState } from './update.ts'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const DIST = join(ROOT, 'dist')
 const ICON = join(ROOT, 'public', 'icon-dock.png')
 const RELOAD_DEBOUNCE_MS = 300
+const UPDATE_ITEM = 'update-from-main'
 
 let url = ''
 let window: BrowserWindow | null = null
@@ -73,8 +83,84 @@ function watchPage(): void {
   })
 }
 
+// Checked here, so a refusal or "up to date" leaves the app running. The update itself runs in
+// scripts/update-app.sh once the app has quit, since npm ci replaces the Electron it runs from.
+async function updateFromMain(): Promise<void> {
+  const item = Menu.getApplicationMenu()?.getMenuItemById(UPDATE_ITEM)
+  if (item) item.enabled = false
+  try {
+    const decision = decideUpdate(await readUpdateState(ROOT))
+    if (decision.kind === 'refuse') {
+      await dialog.showMessageBox({
+        type: 'warning',
+        message: "Stack monitor can't update",
+        detail: decision.message,
+      })
+      return
+    }
+    if (decision.kind === 'current') {
+      await dialog.showMessageBox({
+        message: 'Stack monitor is up to date',
+        detail: 'main is level with origin/main.',
+      })
+      return
+    }
+    const { target, behind, commits } = decision
+    const more =
+      behind > commits.length ? `\n…and ${behind - commits.length} more` : ''
+    const { response } = await dialog.showMessageBox({
+      message: `Update to ${behind} new commit${behind === 1 ? '' : 's'} on main?`,
+      detail: `${commits.join('\n')}${more}\n\nStack monitor quits as Quit does, installs and builds, then opens again. Don't open it until it does. If a step fails, an alert says which and where its log is.`,
+      buttons: ['Update and Restart', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+    })
+    if (response !== 0) return
+    const pids = [process.pid, watcher?.pid].filter((pid) => pid !== undefined)
+    spawn(
+      '/bin/bash',
+      [join(ROOT, 'scripts', 'update-app.sh'), target, ...pids.map(String)],
+      { cwd: ROOT, detached: true, stdio: 'ignore' },
+    ).unref()
+    app.quit()
+  } finally {
+    if (item) item.enabled = true
+  }
+}
+
+// The default macOS menu, with the app menu written out so the update item can go after About.
+function setMenu(): void {
+  const template: MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        {
+          id: UPDATE_ITEM,
+          label: 'Update from main…',
+          click: () => void updateFromMain(),
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    { role: 'fileMenu' },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
 async function start(): Promise<void> {
   app.dock?.setIcon(nativeImage.createFromPath(ICON))
+  setMenu()
   const launched = await launchMonitor(
     { dist: DIST, unbuilt: "The page isn't built. Run mise run build." },
     process.cwd(),
