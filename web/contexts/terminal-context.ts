@@ -26,6 +26,8 @@ export interface TerminalContextValue {
   confirmClose: () => void
   cancelClose: () => void
   focusSession: (id: string) => void // shows its tab, focuses its pane, shows the terminals
+  // A session another route just opened (a ticket, a review): into the focused pane, in front.
+  showSession: (id: string) => void
   focusPane: (pane: string) => void
   split: (pane: string, edge: 'right' | 'bottom') => void // a new shell in its active tab's worktree
   moveTab: (id: string, to: TabTarget) => void

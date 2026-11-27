@@ -11,9 +11,15 @@ import { ADAPTERS } from '../agents/adapters/index.ts'
 import { findProgram } from '../agents/detect.ts'
 import { readAgentSettings } from '../agents/settings.ts'
 import { trackedRepo } from '../config/sections.ts'
+import { mcpConfig, type McpLaunch } from '../mcp-launch.ts'
 import { PathText } from '../repos.ts'
 import type { Tracking } from '../settings.ts'
-import { failure, type ActionResult, type TerminalSession } from '../types.ts'
+import {
+  failure,
+  type ActionResult,
+  type SessionTaskKind,
+  type TerminalSession,
+} from '../types.ts'
 import { canonical, listWorktrees } from '../worktrees/clone.ts'
 
 export const OpenTerminalRequest = z.strictObject({
@@ -70,6 +76,33 @@ const CLAUDE_ARGS = [
   }),
 ]
 
+// What a session is started to do. Only core passes one: the page sends ids and choices, and the
+// monitor writes the message.
+export interface SessionTask {
+  kind: SessionTaskKind
+  title: string
+  message: string // the session's first message
+  systemPrompt?: string // appended to Claude Code's own
+  mcp?: McpLaunch // for a session that uses the monitor's tools
+  allowedTools?: readonly string[] // permission rules that run without asking
+}
+
+// What a task adds to claude's argv. --mcp-config and --allowedTools each take as many values as
+// follow them, so the message goes last, after --.
+export function taskArgs(task: SessionTask): string[] {
+  return [
+    ...(task.systemPrompt === undefined
+      ? []
+      : ['--append-system-prompt', task.systemPrompt]),
+    ...(task.mcp === undefined ? [] : ['--mcp-config', mcpConfig(task.mcp)]),
+    ...(task.allowedTools === undefined || task.allowedTools.length === 0
+      ? []
+      : ['--allowedTools', ...task.allowedTools]),
+    '--',
+    task.message,
+  ]
+}
+
 export interface Viewer {
   output: (data: string) => void
   exited: (code: number) => void
@@ -90,8 +123,30 @@ function summary({
   path,
   startedAt,
   exitCode,
+  title,
+  task,
 }: Session): TerminalSession {
-  return { id, kind, root, path, startedAt, exitCode }
+  return { id, kind, root, path, startedAt, exitCode, title, task }
+}
+
+function liveClaudeIn(path: string): Session | undefined {
+  const wanted = canonical(path)
+  return [...sessions.values()].find(
+    (each) =>
+      each.kind === 'claude' &&
+      each.exitCode === null &&
+      canonical(each.path) === wanted,
+  )
+}
+
+// The live claude session in a worktree, which can't be handed a task.
+export function claudeOpenIn(path: string): TerminalSession | undefined {
+  const running = liveClaudeIn(path)
+  return running === undefined ? undefined : summary(running)
+}
+
+export function alreadyOpen(path: string): string {
+  return `Claude Code is already open in ${path}. Close that session or pick another checkout: a session can't be given a task once it has started.`
 }
 
 // A login shell, so it has the PATH and prompt a new Terminal window would.
@@ -118,10 +173,12 @@ export function listTerminals(): TerminalSession[] {
 }
 
 // The worktree's running `claude`, or a new one started in it; a shell is new each time, as a
-// new Terminal tab is.
+// new Terminal tab is. With a task, claude starts on it, and a worktree that already has claude
+// open is refused.
 export async function openTerminal(
   tracking: Tracking,
   request: z.output<typeof OpenTerminalRequest>,
+  task?: SessionTask,
 ): Promise<TerminalSession | ActionResult> {
   const repo = trackedRepo(tracking, request.root)
   if ('problem' in repo) return failure(repo.problem)
@@ -138,20 +195,20 @@ export async function openTerminal(
       `${worktree.path} is gone: git still lists it, but its folder isn't there`,
     )
   }
-  const { kind } = request
-  const running = [...sessions.values()].find(
-    (each) =>
-      kind === 'claude' &&
-      each.kind === 'claude' &&
-      each.exitCode === null &&
-      canonical(each.path) === wanted,
-  )
-  if (running !== undefined) return summary(running)
+  const kind = task === undefined ? request.kind : 'claude'
+  const running = kind === 'claude' ? liveClaudeIn(worktree.path) : undefined
+  if (running !== undefined) {
+    return task === undefined
+      ? summary(running)
+      : failure(alreadyOpen(worktree.path))
+  }
 
   const command =
     kind === 'shell' ? shellProgram() : await claudeProgram(tracking)
   if ('ok' in command) return command
-  const { program, args } = command
+  const { program } = command
+  const args =
+    task === undefined ? command.args : [...command.args, ...taskArgs(task)]
   let pty: IPty
   try {
     pty = spawn(program, args, {
@@ -171,6 +228,8 @@ export async function openTerminal(
     path: worktree.path,
     startedAt: new Date().toISOString(),
     exitCode: null,
+    title: task?.title ?? null,
+    task: task?.kind ?? null,
     pty,
     scrollback: '',
     viewers: new Set(),

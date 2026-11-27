@@ -85,7 +85,10 @@ function Confirm({
         <p className="text-muted-foreground">
           Runs the repo's teardown, if it has one, then{' '}
           <code>git worktree remove</code>: the folder goes, ignored files like{' '}
-          <code>node_modules</code> with it. Commits stay on the branch.
+          <code>node_modules</code> with it.{' '}
+          {checkout.branch === null
+            ? "It's on no branch, so it goes only if a branch or a fetched PR still holds its commit."
+            : 'Commits stay on the branch.'}
         </p>
         {checkout.changed > 0 && (
           <p role="alert" className="rounded-xl bg-warning/10 p-2 text-warning">

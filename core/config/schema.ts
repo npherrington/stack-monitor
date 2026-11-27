@@ -9,7 +9,7 @@ export const BRANCH = '{branch}'
 export const DEFAULT_MAINLINE = 'origin/main'
 
 // Handed to git as an argument, so it can't start with '-'.
-const Ref = z
+export const Ref = z
   .string()
   .regex(/^\w[\w./-]*$/, 'must be a git ref such as origin/main')
 

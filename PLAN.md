@@ -5,7 +5,8 @@
 A local page and an MCP server for working across a repo's git worktrees: each checkout's git
 state, the dev stack it runs, and the coding agents working in it. From one page you start and stop
 a checkout's services, create and remove worktrees, start headless agent runs, put runs on a
-schedule, sketch how a feature moves through the stack, and keep a board of tickets.
+schedule, sketch how a feature moves through the stack, keep a board of tickets, and hand a Claude
+Code session a ticket to work or a PR to review.
 
 It started inside one private product repo, built around that repo's stack and conventions, where
 it still runs. This repo is the generic version. What's particular to a repo is declared in a config
@@ -136,6 +137,29 @@ manifest names its agent.
 
 Claude Code is the first adapter. A second proves the interface (see Open decisions).
 
+A session can start with a task. The page's terminal sessions are interactive `claude` in a
+worktree; three buttons start one with its first message already written by the monitor, from ids
+and choices the page sends. The one piece of the user's own text in a message is a review's
+focus:
+
+- **Work this ticket** (the board): in a new worktree or a checkout you pick, with the board's MCP
+  tools. Reading a ticket, moving it and commenting on it run without asking.
+- **Product management** (the board): a mode whose system prompt the monitor writes, so it works
+  in a repo with no skills. Filing tickets and commenting run without asking; changing or moving
+  one asks.
+- **Agentic review** (a PR on the GitHub page): in a review worktree the monitor puts at the PR's
+  head, detached, or a checkout you pick. Reading the PR through `gh` runs without asking. The
+  agent posts one review through `gh`; the monitor never pre-approves that, and posts nothing
+  itself. The monitor never checks a fork's PR out: an agent loads the `CLAUDE.md`, skills, hooks
+  and settings of the checkout it starts in, so the review worktree stays on the base branch and
+  the PR's head is fetched beside it to be read with `git diff` and `git show`. A checkout you
+  pick that already sits on a fork PR's commit is refused.
+
+A worktree with `claude` already open refuses a task, since a first message can't be put into a
+session that has started. Text a stranger wrote (a PR's title and description) goes into a message
+on one line or fenced, and labelled as data. A detached worktree is removed only while a ref holds
+its commit, so a commit made in a review worktree isn't lost with it.
+
 ### Feature map
 
 A canvas of blocks and arrows, for sketching a feature before anyone writes it, saved as a markdown
@@ -163,8 +187,14 @@ person, not to a repo: it reads no checkout, has no section in the config, and i
   a name.
 
 It is kept in one SQLite file, `~/.local/state/stack-monitor/board.db` (`$STACK_MONITOR_BOARD`),
-through Node's own `node:sqlite` (`docs/decisions/board-sqlite.md`). There is no MCP tool for it
-yet.
+through Node's own `node:sqlite` (`docs/decisions/board-sqlite.md`).
+
+The MCP server (`docs/decisions/mcp-stdio-by-hand.md`) offers the board to an agent:
+`board_list_projects`, `board_list_tickets`, `board_get_ticket`, `board_create_ticket`,
+`board_update_ticket`, `board_move_ticket` and `board_add_comment`. A ticket is named by its id, a
+column or a label by its name. No tool deletes or archives. The two sessions the board starts
+(Agents, above) are what use them; the page refreshes the board every few seconds while one is
+open.
 
 ## Config
 
@@ -243,9 +273,11 @@ core/
   agents/       the adapter interface, adapters/claude, runs, run logs
   schedules/    launchd jobs, fires, locks
   feature-map/  blocks, sketch layout, the file format
-  board/        the ticket board's SQLite file, projects, columns, labels, tickets
+  board/        the ticket board's SQLite file, projects, columns, labels, tickets, its sessions
+  terminals/    claude and shell sessions in a worktree, and the task a session starts with
+  github/       a repo's PRs, checks and reviews through gh; the agentic review session
 server/         node:http, the route table, the built page
-mcp/            stdio MCP server over core/
+mcp/            stdio MCP server over core/: the board's tools
 web/            the page: components/{ui,layouts,pages,<feature>}, hooks, providers, lib
 tests/          node:test, against fixture repos
 docs/           style-guides, decisions, plans, agents (how the skills use the tracker)
@@ -286,6 +318,9 @@ with their module, their fixtures rewritten to a generic repo.
 
 9. **Ticket board.** Projects, columns, labels, tickets and comments in a SQLite file of the
    monitor's own, and the board page: drag a card between columns, filter and search, archive.
+10. **Board sessions and agentic review.** The MCP server with the board's tools, and Claude Code
+    sessions that start on a ticket, in product management mode, or on a PR review. The `stack_*`
+    tools steps 1 and 2 name are still to come.
 
 Keep the clone out of `~/Desktop`, `~/Documents` and `~/Downloads`: macOS keeps launchd jobs out of
 those folders, so schedules would fail there.
@@ -300,9 +335,10 @@ those folders, so schedules would fail there.
 - **Create a skill / Create a workflow.** The original has pages that start a run to write a new
   agent skill or saved workflow, following that repo's own authoring skills. They're out for now;
   they could come back as an extra of the Claude adapter.
-- **Starting a workflow from a ticket.** The board stands alone for now. A ticket's id already
-  matches the `agents.arguments.ticket` pattern a repo can declare, so a ticket could offer the
-  repo's workflows and hand them its id, and show the branch or PR that comes of it.
+- **A headless run from a ticket.** A ticket starts an interactive session today. Its id already
+  matches the `agents.arguments.ticket` pattern a repo can declare, so a ticket could also offer
+  the repo's workflows and hand them its id; the run adapters would need the MCP config and
+  allowed tools a session gets. A card could show the branch or PR that comes of it.
 - **Shipping the app to others.** A download that macOS opens without a warning has to be signed
   with an Apple Developer ID and notarised. Until then it's built from source.
 - **Linux.** `lsof` and `ps` work there; schedules and the login job would need systemd user units

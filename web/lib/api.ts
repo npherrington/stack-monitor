@@ -1,4 +1,8 @@
-import type { ActionResult } from '../../core/types.ts'
+import type {
+  ActionResult,
+  StartedSession,
+  TerminalSession,
+} from '../../core/types.ts'
 
 // A non-2xx answer. message is the server's copy for a person; status and log are for the code
 // and the log link.
@@ -74,4 +78,16 @@ export async function postAction(
   const result = await postJson<ActionResult>(path, body)
   if (!result.ok) throw new ApiError(200, result.message, result.log)
   return result
+}
+
+// A session launch answers the session it opened; a refusal fails the call, as an action's does.
+export async function postSession(
+  path: string,
+  body: unknown,
+): Promise<StartedSession & { session: TerminalSession }> {
+  const result = await postJson<StartedSession>(path, body)
+  if (!result.ok || result.session === null) {
+    throw new ApiError(200, result.message, result.log)
+  }
+  return { ...result, session: result.session }
 }

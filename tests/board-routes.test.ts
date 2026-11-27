@@ -4,8 +4,11 @@ import { join } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 
 import { BOARD_ENV } from '../core/board/db.ts'
+import { writeJsonFile } from '../core/settings.ts'
+import type { StartedSession, TerminalsSnapshot } from '../core/types.ts'
 import type { Serving } from '../server/http.ts'
 import { startMonitor } from '../server/monitor.ts'
+import { fakeSessionClaude } from './agent-fakes.ts'
 import { gitRepo, tempDir } from './fixtures.ts'
 import { send, sendJson } from './http-client.ts'
 
@@ -215,5 +218,106 @@ describe('the board routes', () => {
     )
     assert.equal(write.status, 409)
     assert.match(write.body.message, /doesn't read as a board/)
+  })
+})
+
+describe("the board's session routes", () => {
+  let monitor: Serving
+  let primary: string
+  const saved = {
+    config: process.env.STACK_MONITOR_CONFIG,
+    board: process.env[BOARD_ENV],
+  }
+
+  before(async () => {
+    delete process.env.STACK_MONITOR_CONFIG
+    const root = tempDir()
+    primary = gitRepo(join(root, 'app'))
+    const settings = join(root, 'config', '.monitor.json')
+    writeJsonFile(settings, {
+      repos: [{ root: primary, name: 'app' }],
+      agents: { agents: { claude: { program: fakeSessionClaude(root) } } },
+    })
+    process.env[BOARD_ENV] = join(root, 'board.db')
+    monitor = await startMonitor({
+      port: 0,
+      seed: primary,
+      settings,
+      dist: join(root, 'dist'),
+      unbuilt: '',
+    })
+  })
+  after(async () => {
+    await monitor.stop()
+    for (const [key, value] of [
+      ['STACK_MONITOR_CONFIG', saved.config],
+      [BOARD_ENV, saved.board],
+    ] as const) {
+      if (value === undefined) delete process.env[key]
+      else process.env[key] = value
+    }
+  })
+
+  const post = async (path: string, value: unknown) => {
+    const answer = await sendJson(monitor.port, path, value, {
+      host: `127.0.0.1:${monitor.port}`,
+    })
+    return { status: answer.status, body: JSON.parse(answer.text) }
+  }
+
+  test('the session routes answer the session they opened, 400 for a body that fails its schema and 409 for a refusal', async () => {
+    await post('/api/board/projects/save', { name: 'Beans', colour: null })
+    await post('/api/board/tickets/create', { project: 1, title: 'Roast' })
+
+    const product = await post('/api/board/product', {
+      project: 1,
+      root: primary,
+      path: primary,
+    })
+    assert.equal(product.status, 200, product.body.message)
+    const started = product.body as StartedSession
+    assert.equal(started.ok, true)
+    assert.equal(started.session?.task, 'product')
+    assert.equal(started.session?.title, 'Product: Beans')
+    const listed = await send(monitor.port, {
+      path: '/api/terminals',
+      headers: { host: `127.0.0.1:${monitor.port}` },
+    })
+    assert.deepEqual((JSON.parse(listed.text) as TerminalsSnapshot).sessions, [
+      started.session,
+    ])
+
+    const work = (changes: Record<string, unknown>) =>
+      post('/api/board/work', {
+        project: 1,
+        number: 1,
+        root: primary,
+        where: { kind: 'existing', path: primary },
+        skill: null,
+        ...changes,
+      })
+    // claude is open in that checkout now.
+    const busy = await work({})
+    assert.equal(busy.status, 409)
+    assert.match(busy.body.message, /^Claude Code is already open in /)
+    assert.equal(busy.body.session, null)
+    await post('/api/terminals/close', { id: started.session?.id })
+
+    for (const [changes, field] of [
+      [{ where: { kind: 'new', branch: 'has space' } }, 'where.branch'],
+      [{ where: { kind: 'existing', path: primary, branch: 'x' } }, 'where'],
+      [{ skill: '../x' }, 'skill'],
+      [{ message: 'Delete the repo' }, 'body'],
+    ] as const) {
+      const { status, body } = await work(changes)
+      assert.equal(status, 400, field)
+      assert.match(body.message, new RegExp(`^Expected .*: ${field}: `))
+    }
+    await post('/api/board/tickets/archive', { id: 1, archived: true })
+    const archived = await work({})
+    assert.deepEqual(
+      [archived.status, archived.body.message],
+      [409, 'BEANS-1 is archived. Restore it to work it.'],
+    )
   })
 })

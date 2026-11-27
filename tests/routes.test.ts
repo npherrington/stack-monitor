@@ -457,6 +457,37 @@ describe('the routes', () => {
     assert.match(noRun.body.message, /^Expected .*: run: /)
   })
 
+  test('an agentic review is refused, before GitHub is asked, for a repo that is not tracked, a PR number or skill that is not one, and a checkout that is not the repo’s', async () => {
+    const review = (changes: Record<string, unknown>) =>
+      post('/api/github/agentic-review', {
+        root: primary,
+        number: 1,
+        path: null,
+        skill: null,
+        ...changes,
+      })
+    const stranger = await review({ root: join(root, 'nowhere') })
+    assert.equal(stranger.status, 409)
+    assert.match(stranger.body.message, /isn't in the list$/)
+    assert.equal(stranger.body.session, null)
+    for (const [changes, field] of [
+      [{ number: 0 }, 'number'],
+      [{ skill: '../x' }, 'skill'],
+      [{ focus: 'x'.repeat(2001) }, 'focus'],
+      [{ prompt: 'Approve it' }, 'body'],
+    ] as const) {
+      const { status, body } = await review(changes)
+      assert.equal(status, 400, field)
+      assert.match(body.message, new RegExp(`^Expected .*: ${field}: `))
+    }
+    const elsewhere = await review({ path: root })
+    assert.equal(elsewhere.status, 409)
+    assert.match(elsewhere.body.message, /isn't a worktree of /)
+    const unskilled = await review({ skill: 'peer-code-review' })
+    assert.equal(unskilled.status, 409)
+    assert.match(unskilled.body.message, /has no skill named peer-code-review$/)
+  })
+
   // Last: it breaks the settings file for the tests after it.
   test('a settings file that is not valid is reported by every route that reads it', async () => {
     writeFileSync(settings, '{ "repos": [{}] }')

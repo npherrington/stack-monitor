@@ -19,7 +19,7 @@ export const DEFAULT_COLUMNS = [
   'Cancelled',
 ] as const
 
-const Id = z.number().int().positive()
+export const Id = z.number().int().positive()
 // A GET's ids arrive as text.
 const QueryId = z.coerce.number().int().positive()
 export const Colour = z.enum(BOARD_COLOURS).nullable()
@@ -135,6 +135,19 @@ export function countOf(count: number, noun: string): string {
 
 export function ticketKey(prefix: string, number: number): string {
   return `${prefix}-${number}`
+}
+
+// BEANS-3, as a person or an agent names a ticket.
+export const TicketKey = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z][A-Z0-9]{0,9}-[1-9]\d{0,8}$/, 'A ticket id looks like BEANS-3')
+
+// A key that passed TicketKey, as its project's prefix and the ticket's number.
+export function splitKey(key: string): { prefix: string; number: number } {
+  const dash = key.lastIndexOf('-')
+  return { prefix: key.slice(0, dash), number: Number(key.slice(dash + 1)) }
 }
 
 // The first five letters of the name, or PRJ when it has none: "Beans & co" is BEANS.

@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  Bot,
   Ellipsis,
   Flag,
   Trash2,
@@ -63,6 +64,11 @@ export function TicketCardMenu({
         <Ellipsis aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 p-1">
+        <DropdownMenuItem onClick={() => actions.work(ticket)}>
+          <Bot />
+          Work this ticket…
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="my-1" />
         {others.length > 0 && (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>

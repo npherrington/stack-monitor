@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 
 import type { TicketDetail } from '../../core/types.ts'
 import { boardKey } from '@/hooks/use-board.ts'
+import { useBoardInterval } from '@/hooks/use-board-interval.ts'
 import { ApiError, getJson } from '@/lib/api.ts'
 
 export const boardTicketKey = (project: number, number: number) =>
@@ -14,11 +15,13 @@ interface UseTicketResult {
   error: Error | null
 }
 
-// One ticket with its description and comments. number null: no ticket is open.
+// One ticket with its description and comments. number null: no ticket is open. It polls only
+// while a session started from the board is open (useBoardInterval).
 export function useTicket(
   project: number,
   number: number | null,
 ): UseTicketResult {
+  const interval = useBoardInterval()
   const { data, isPending, error } = useQuery({
     queryKey: boardTicketKey(project, number ?? 0),
     queryFn: () =>
@@ -26,6 +29,8 @@ export function useTicket(
         `/api/board/ticket?project=${project}&number=${number ?? 0}`,
       ),
     enabled: number !== null,
+    refetchInterval: (query) =>
+      query.state.status === 'error' ? false : interval,
   })
   // A ticket deleted since it was last read: the copy kept from then isn't shown as if it were
   // still there (Back onto a deleted ticket's link reads it from the cache first).

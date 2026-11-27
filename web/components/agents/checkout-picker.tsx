@@ -12,16 +12,22 @@ function folder(path: string): string {
   return path.split('/').filter(Boolean).pop() ?? path
 }
 
-// Which worktree of the repo a run goes in; primary first, as git lists them.
+interface CheckoutPickerProps {
+  repo: RepoCheckouts | undefined
+  value: string | null
+  onChange: (checkout: string) => void
+  id?: string
+  label?: string
+}
+
+// Which worktree of the repo a run or a session goes in; primary first, as git lists them.
 export function CheckoutPicker({
   repo,
   value,
   onChange,
-}: {
-  repo: RepoCheckouts | undefined
-  value: string | null
-  onChange: (checkout: string) => void
-}) {
+  id = 'run-in',
+  label = 'Run in',
+}: CheckoutPickerProps) {
   if (repo === undefined || repo.checkouts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No checkouts to run in.</p>
@@ -36,7 +42,7 @@ export function CheckoutPicker({
   }))
   return (
     <Field className="w-72 max-w-full">
-      <FieldLabel htmlFor="run-in">Run in</FieldLabel>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Select
         items={items}
         value={value ?? repo.checkouts[0].path}
@@ -44,7 +50,7 @@ export function CheckoutPicker({
           if (next !== null) onChange(next)
         }}
       >
-        <SelectTrigger id="run-in" className="w-full">
+        <SelectTrigger id={id} className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

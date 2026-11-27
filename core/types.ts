@@ -380,6 +380,10 @@ export interface SaveScheduleResult extends ActionResult {
 // `claude`, or the user's own shell.
 export type TerminalKind = 'claude' | 'shell'
 
+// What a session was started to do, when it was started with a first message: work a board
+// ticket, file tickets for a project, or review a PR.
+export type SessionTaskKind = 'ticket' | 'product' | 'review'
+
 export interface TerminalSession {
   id: string
   kind: TerminalKind
@@ -387,6 +391,13 @@ export interface TerminalSession {
   path: string // the worktree it runs in
   startedAt: string
   exitCode: number | null
+  title: string | null // what its tab says when it was started with a task: BEANS-3
+  task: SessionTaskKind | null // null for one opened plain
+}
+
+// POST /api/board/work, /api/board/product and /api/github/agentic-review
+export interface StartedSession extends ActionResult {
+  session: TerminalSession | null // null when refused
 }
 
 // GET /api/terminals: the sessions, oldest first. POST /api/terminals answers one.
@@ -571,6 +582,8 @@ export type TimelineItem =
 
 // GET /api/github/pull?root=&number=
 export interface PullDetail extends PullSummary {
+  repo: string // owner/name, as gh resolved it
+  head: string // the head commit's full sha
   body: string // markdown
   createdAt: string
   viewer: string

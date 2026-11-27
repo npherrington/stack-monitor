@@ -135,10 +135,14 @@ the page reads anything else as the monitor being down.
 
 ### `mcp`: `mcp/**`, the stdio MCP server
 
-A tool calls the same `core/` function the matching route does. **Runs that
-spend money start from the page**: a tool reads status, starts and stops
-services, and creates and removes worktrees, and never starts an agent run or
-a schedule.
+The protocol is written by hand, with no SDK
+(`docs/decisions/mcp-stdio-by-hand.md`): `mcp/protocol.ts` is the pure
+line-in, line-out part, and stdout carries protocol lines only. The tools so
+far are the board's (`mcp/board-tools.ts`). A tool calls the same `core/`
+function the matching route does. **Runs that spend money start from the
+page**: a tool reads status, starts and stops services, creates and removes
+worktrees, and reads and writes tickets, and never starts an agent run, a
+schedule or a session.
 
 ## The rest of the gate (`tests/`, `scripts/`, workflows, hooks)
 

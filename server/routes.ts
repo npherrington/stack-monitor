@@ -55,6 +55,12 @@ import {
   SubmitReviewRequest,
 } from '../core/github/github.ts'
 import { boardContext, boardFile, type BoardContext } from '../core/board/db.ts'
+import {
+  ProductSessionRequest,
+  startProductSession,
+  workTicket,
+  WorkTicketRequest,
+} from '../core/board/sessions.ts'
 import { deleteLabel, saveLabel } from '../core/board/labels.ts'
 import {
   archiveProject,
@@ -95,6 +101,10 @@ import {
   saveComment,
   updateTicket,
 } from '../core/board/tickets.ts'
+import {
+  AgenticReviewRequest,
+  startAgenticReview,
+} from '../core/github/review-session.ts'
 import { MONITOR_HOME, type Health } from '../core/monitor-address.ts'
 import {
   addRepo,
@@ -470,6 +480,11 @@ export function makeRoutes(
       "{ root, number, event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT', body? }",
       async (body) => settled(await submitReview(tracking, body)),
     ),
+    'POST /api/github/agentic-review': route(
+      AgenticReviewRequest,
+      '{ root, number, path, skill, focus? }',
+      async (body) => settled(await startAgenticReview(tracking, body)),
+    ),
     'GET /api/schedules': async () => {
       const list = await listSchedules(tracking, schedules)
       return 'problem' in list ? unlisted(list) : [200, list]
@@ -585,6 +600,16 @@ export function makeRoutes(
       IdRequest,
       '{ id }',
       async ({ id }) => settled(deleteComment(id, board)),
+    ),
+    'POST /api/board/work': route(
+      WorkTicketRequest,
+      "{ project, number, root, where: { kind: 'new', branch } | { kind: 'existing', path }, skill }",
+      async (body) => settled(await workTicket(tracking, body, board)),
+    ),
+    'POST /api/board/product': route(
+      ProductSessionRequest,
+      '{ project, root, path }',
+      async (body) => settled(await startProductSession(tracking, body, board)),
     ),
   }
 }

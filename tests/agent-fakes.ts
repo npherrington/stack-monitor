@@ -58,3 +58,16 @@ echo '{"type":"step_finish","sessionID":"ses_fake","part":{"type":"step-finish",
 `,
   )
 }
+
+// Stands in for an interactive `claude`: prints each argument it was started with on a line of its
+// own (a multi-line one runs on), then answers each line it's sent.
+export function fakeSessionClaude(dir: string): string {
+  return script(
+    join(dir, 'fake-session-claude'),
+    String.raw`echo "cwd=$(pwd)"
+for arg; do printf 'arg:%s\n' "$arg"; done
+echo "ready"
+while read line; do echo "got:$line"; done
+`,
+  )
+}

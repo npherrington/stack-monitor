@@ -24,7 +24,7 @@ import {
   type BoardContext,
   type Problem,
 } from './db.ts'
-import { ticketKey } from './schema.ts'
+import { splitKey, ticketKey } from './schema.ts'
 
 // A colour or priority this version doesn't know reads as none.
 function asColour(value: string | null): BoardColour | null {
@@ -256,6 +256,50 @@ export function readTicket(
         editedAt: comment.edited_at,
       })),
     }
+  })
+}
+
+export interface TicketRef {
+  id: number
+  project: number
+  number: number
+}
+
+// The ticket a key names now; null when no project has that prefix or it has no such number.
+export function findTicket(
+  key: string,
+  context: BoardContext,
+): TicketRef | Problem | null {
+  const { prefix, number } = splitKey(key)
+  return read(context, (db) => {
+    const row = get<{ id: number; project_id: number }>(
+      db,
+      `SELECT t.id, t.project_id
+        FROM ticket t JOIN project p ON p.id = t.project_id
+        WHERE p.prefix = ? AND t.number = ?`,
+      prefix,
+      number,
+    )
+    return row === undefined
+      ? null
+      : { id: row.id, project: row.project_id, number }
+  })
+}
+
+// A project by its prefix, archived ones included; null when none has it.
+export function findProject(
+  prefix: string,
+  context: BoardContext,
+): { id: number; archived: boolean } | Problem | null {
+  return read(context, (db) => {
+    const row = get<{ id: number; archived_at: string | null }>(
+      db,
+      'SELECT id, archived_at FROM project WHERE prefix = ?',
+      prefix,
+    )
+    return row === undefined
+      ? null
+      : { id: row.id, archived: row.archived_at !== null }
   })
 }
 

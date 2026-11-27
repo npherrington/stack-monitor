@@ -13,6 +13,7 @@ export interface TicketActions {
   setPriority: (ticket: number, priority: Priority) => void
   archive: (ticket: TicketSummary) => void
   remove: (ticket: TicketSummary) => void // asks first
+  work: (ticket: TicketSummary) => void // asks where, then starts a session on it
 }
 
 // What a lane's header can do to its column.

@@ -1,9 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
-import type { ActionResult, DiffSide, ReviewEvent } from '../../core/types.ts'
+import type {
+  ActionResult,
+  DiffSide,
+  ReviewEvent,
+  TerminalSession,
+} from '../../core/types.ts'
 import { toast } from '@/components/ui/toast-manager.ts'
-import { postAction } from '@/lib/api.ts'
+import { checkoutsKey } from '@/hooks/use-checkouts.ts'
+import { terminalsKey } from '@/hooks/use-terminals.ts'
+import { postAction, postSession } from '@/lib/api.ts'
 import { toastFailure } from '@/lib/toast-failure.ts'
 import { pullKey } from '@/hooks/use-pull.ts'
 import { pullsKey } from '@/hooks/use-pulls.ts'
@@ -15,12 +22,20 @@ export interface LineComment {
   body: string
 }
 
+// What the Agentic review dialog chose. path null: a review worktree the monitor makes or moves.
+export interface ReviewSessionRequest {
+  path: string | null
+  skill: string | null
+  focus: string
+}
+
 interface UseReviewMutationsResult {
   comment: (comment: LineComment) => Promise<ActionResult>
   reply: (thread: string, body: string) => Promise<ActionResult>
   resolve: (thread: string, resolved: boolean) => void
   deleteComment: (comment: string) => void
   submit: (event: ReviewEvent, body: string) => Promise<ActionResult>
+  startSession: (request: ReviewSessionRequest) => Promise<TerminalSession>
   isResolving: boolean
   isDeleting: boolean
 }
@@ -29,8 +44,10 @@ const success = (result: ActionResult) =>
   toast.add({ title: result.message, type: 'success' })
 
 // Reviewing one PR. Every action refreshes the PR, since GitHub holds the pending review; a
-// submit also refreshes the list, whose review decision it may change. The forms await comment,
-// reply and submit, and raise the failure toast themselves so they can keep what was typed.
+// submit also refreshes the list, whose review decision it may change. An agentic review opens a
+// terminal session, in a worktree it may have made, so it refreshes those lists instead. The forms
+// await comment, reply, submit and startSession, and raise the failure toast themselves so they
+// can keep what was typed.
 export function useReviewMutations(
   root: string,
   number: number,
@@ -75,11 +92,33 @@ export function useReviewMutations(
       ]),
   })
 
+  const session = useMutation({
+    mutationFn: (request: ReviewSessionRequest) =>
+      postSession('/api/github/agentic-review', { root, number, ...request }),
+    onSuccess: (result) =>
+      toast.add({
+        title: 'Review session opened',
+        description: result.message,
+        type: 'success',
+      }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: terminalsKey }),
+        queryClient.invalidateQueries({ queryKey: checkoutsKey }),
+      ]),
+  })
+
   const { mutateAsync: addComment } = comment
   const { mutateAsync: addReply } = reply
   const { mutate: changeThread, isPending: isResolving } = resolve
   const { mutate: deleteComment, isPending: isDeleting } = remove
   const { mutateAsync: submitReview } = submit
+  const { mutateAsync: openSession } = session
+  const startSession = useCallback(
+    async (request: ReviewSessionRequest) =>
+      (await openSession(request)).session,
+    [openSession],
+  )
   return useMemo(
     () => ({
       comment: addComment,
@@ -89,6 +128,7 @@ export function useReviewMutations(
       deleteComment,
       submit: (event: ReviewEvent, body: string) =>
         submitReview({ event, body }),
+      startSession,
       isResolving,
       isDeleting,
     }),
@@ -98,6 +138,7 @@ export function useReviewMutations(
       changeThread,
       deleteComment,
       submitReview,
+      startSession,
       isResolving,
       isDeleting,
     ],
