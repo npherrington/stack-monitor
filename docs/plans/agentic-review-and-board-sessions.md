@@ -34,8 +34,9 @@ dependency.
   - The session's first message, written by the monitor, carries the PR's facts, the skill, the
     focus, where the worktree stands, and how to post.
   - The agent posts, through `gh`, one review with event `COMMENT`, a body starting
-    `## Agentic review`, and its findings inline. The post is never pre-allowed, so the user reads
-    it and approves it in the terminal. Read-only `git` and `gh` commands run without asking.
+    `## Agentic review`, and its findings inline. The post is never pre-allowed, so Claude Code asks
+    before it unless the user's own permission mode lets it through. Read-only `git` and `gh`
+    commands run without asking.
 - **Work a ticket**
   - "Work this ticket" on a card's menu and in the ticket dialog opens a react-hook-form dialog:
     repo (the last one used for this project is remembered per browser), where (a new worktree on
@@ -1346,7 +1347,7 @@ Each takes the recommended answer, which the plan assumes.
   a JSON block parsed from its report, a card on the PR and a post route) is dropped whole.
 - **Who posts the review?** It was first put to the user as a "Post review" button on the page.
   With a session, the agent posts through `gh` and the user approves the call in the terminal,
-  where they can read the JSON. Taken: never pre-allowed, never automatic.
+  where they can read the JSON. Taken: never pre-allowed by the monitor (see "What running it showed" below for auto mode).
 - **MCP: the SDK or by hand?** The user was first told the SDK was the recommendation, before its
   dependency tree was read. Lightest: by hand (five methods, no dependency). The SDK falls short
   on the tool's "no framework in the server" stance, not on function. Taken: by hand, recorded in
@@ -1418,6 +1419,22 @@ Each takes the recommended answer, which the plan assumes.
   nobody asked for are left in as `creep`, small and cheap to drop: the dialog's line about a
   draft review already on the PR, and "Work this ticket" in the ticket dialog as well as on the
   card's menu.
+
+- **What running it showed** (a throwaway repo, a stand-in `gh`, real Claude Code sessions):
+  - The three launches work end to end: a ticket moved to In progress and commented on by the
+    agent, a ticket filed in product mode and shown on the board by the poll, and one `COMMENT`
+    review headed "Agentic review" with an inline comment on the right line.
+  - **Whether the review's post asks is the user's permission mode's call, not the monitor's.**
+    The monitor never pre-allows it. In Claude Code's default mode the post stops at "This command
+    requires approval"; in auto mode it goes through unasked. The dialog, README and PLAN.md say
+    so. Forcing the default mode for review sessions is the heavier option, left out: a person
+    who runs in auto mode chose that.
+  - An agent's first call to a board tool guessed an argument's name, since Claude Code loads an
+    MCP tool's schema late. The messages now spell the arguments out (`key: "BEANS-3"`).
+  - A skill kept only under `.agents/skills` isn't in Claude Code's skill list. The messages now
+    name the skill's file as well.
+  - Claude Code's folder-trust prompt defaults to "No" in a new worktree: the first thing a
+    session in one asks is whether to trust the folder.
 
 ## Style Guide Suggestions
 
