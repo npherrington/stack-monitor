@@ -1,36 +1,32 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 
-import type { PullList as List, ReviewDecision } from '../../../core/types.ts'
-import { ChecksPill } from '@/components/github/checks-pill.tsx'
+import type { PullList as List } from '../../../core/types.ts'
+import { PullRow } from '@/components/github/pull-row.tsx'
 import { Segmented } from '@/components/stack/segmented.tsx'
 import { Card } from '@/components/ui/card.tsx'
 import { Input } from '@/components/ui/input.tsx'
-import { LabelPill } from '@/components/github/label-pill.tsx'
-import { Pill } from '@/components/ui/pill.tsx'
+import { usePullPrefs } from '@/hooks/use-pull-prefs.ts'
+import { useRowDrag } from '@/hooks/use-row-drag.ts'
 import { pullPath } from '@/lib/github-links.ts'
+import { movePull, orderedPulls } from '@/lib/pull-order.ts'
+import { pullPrefKey } from '@/lib/pull-prefs.ts'
+import type { Place } from '@/lib/row-order.ts'
 
 type Scope = 'all' | 'mine' | 'others'
-
-const DECISION: Record<
-  Exclude<ReviewDecision, null>,
-  { label: string; tone: 'good' | 'problem' | 'neutral' }
-> = {
-  APPROVED: { label: 'Approved', tone: 'good' },
-  CHANGES_REQUESTED: { label: 'Changes requested', tone: 'problem' },
-  REVIEW_REQUIRED: { label: 'Review required', tone: 'neutral' },
-}
 
 interface PullListProps {
   root: string
   list: List
 }
 
+// A repo's open PRs: pinned ones first, then in the order their reader gave them, then GitHub's.
 export function PullList({ root, list }: PullListProps) {
+  const { prefs, updatePref, setRanks } = usePullPrefs()
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<Scope>('all')
   const needle = search.trim().toLowerCase()
-  const pulls = list.pulls.filter(
+  const keyOf = (number: number) => pullPrefKey(root, number)
+  const pulls = orderedPulls(root, list.pulls, prefs).filter(
     (pull) =>
       (scope === 'all' ||
         (scope === 'mine') === (pull.author === list.viewer)) &&
@@ -39,6 +35,29 @@ export function PullList({ root, list }: PullListProps) {
           .toLowerCase()
           .includes(needle)),
   )
+
+  const ranksFor = (number: number, target: number, place: Place) =>
+    movePull(root, list.pulls, prefs, number, target, place)
+  // Up or down one row of what's showing; null where that isn't a move (the top, or across pinning).
+  const moveBy = (index: number, step: number) => {
+    const other = pulls[index + step]
+    if (other === undefined) return null
+    const ranks = ranksFor(
+      pulls[index].number,
+      other.number,
+      step < 0 ? 'before' : 'after',
+    )
+    return ranks === null ? null : () => setRanks(ranks)
+  }
+  // The drag names rows by data-row, which holds the PR's number.
+  const drag = useRowDrag({
+    canMove: (number, target, place) =>
+      ranksFor(Number(number), Number(target), place) !== null,
+    onMove: (number, target, place) => {
+      const ranks = ranksFor(Number(number), Number(target), place)
+      if (ranks !== null) setRanks(ranks)
+    },
+  })
 
   return (
     <div className="flex flex-col gap-3">
@@ -68,48 +87,28 @@ export function PullList({ root, list }: PullListProps) {
         <p className="text-muted-foreground">No open PR matches.</p>
       ) : (
         <Card className="gap-0 py-0">
-          <ul className="divide-y">
-            {pulls.map((pull) => (
-              <li key={pull.number}>
-                <Link
+          <div className="relative" {...drag.handlers}>
+            <ul className="divide-y">
+              {pulls.map((pull, index) => (
+                <PullRow
+                  key={pull.number}
                   to={pullPath(root, pull.number)}
-                  className="flex flex-col gap-1 px-4 py-3 outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
-                >
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-strong">
-                      {pull.title}
-                    </span>
-                    {pull.draft && <Pill>Draft</Pill>}
-                    {pull.labels.map((label) => (
-                      <LabelPill key={label.name} label={label} />
-                    ))}
-                    {pull.reviewDecision !== null && (
-                      <Pill tone={DECISION[pull.reviewDecision].tone}>
-                        {DECISION[pull.reviewDecision].label}
-                      </Pill>
-                    )}
-                    <ChecksPill summary={pull.checks} />
-                  </span>
-                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span>#{pull.number}</span>
-                    <span>{pull.author}</span>
-                    <span className="font-mono">
-                      {pull.branch} → {pull.base}
-                    </span>
-                    <span className="text-success tabular-nums">
-                      +{pull.additions}
-                    </span>
-                    <span className="text-destructive tabular-nums">
-                      −{pull.deletions}
-                    </span>
-                    <span>
-                      updated {new Date(pull.updatedAt).toLocaleString()}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  pull={pull}
+                  pref={prefs[keyOf(pull.number)] ?? {}}
+                  onChange={(change) => updatePref(keyOf(pull.number), change)}
+                  onMoveUp={moveBy(index, -1)}
+                  onMoveDown={moveBy(index, 1)}
+                />
+              ))}
+            </ul>
+            {drag.dropTop !== null && (
+              <div
+                aria-hidden="true"
+                style={{ top: drag.dropTop - 1 }}
+                className="pointer-events-none absolute inset-x-2 h-0.5 rounded-full bg-primary"
+              />
+            )}
+          </div>
         </Card>
       )}
     </div>

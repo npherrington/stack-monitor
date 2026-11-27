@@ -205,7 +205,9 @@ function FileList({ files, threadsOn, onOpen }: FileListProps) {
                     <span className="min-w-0 truncate text-muted-foreground">
                       {folder}
                     </span>
-                    <span className="shrink-0 text-foreground">{name}</span>
+                    <span className="max-w-full shrink-0 truncate text-foreground">
+                      {name}
+                    </span>
                   </span>
                   {threads > 0 && (
                     <span className="inline-flex shrink-0 items-center gap-0.5 text-muted-foreground">
