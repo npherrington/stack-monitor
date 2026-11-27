@@ -1,0 +1,8 @@
+{
+  "$schema": "./schema/stack-monitor.schema.json",
+  "mainline": "origin/main",
+  "worktrees": {
+    "setup": "mise trust --quiet mise.toml",
+    "install": "mise run sync"
+  }
+}
