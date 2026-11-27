@@ -7,7 +7,7 @@ import type { PullDetail, SkillInfo } from '../types.ts'
 import type { ReviewWorktree } from '../worktrees/review.ts'
 
 // What a review session runs without Claude Code asking first: reads of git and of GitHub. The
-// post is never among them, so the user reads the review and approves it in the terminal.
+// post is never among them: whether it asks is the user's own permission mode's call.
 export const REVIEW_TOOLS = [
   'Bash(git diff:*)',
   'Bash(git log:*)',

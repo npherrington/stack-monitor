@@ -1,6 +1,6 @@
 // An agentic review: a Claude Code session, in a review worktree the monitor makes or a checkout
 // the user picked, whose first message carries the PR and how to post the review. The agent posts
-// through gh, behind Claude Code's own permission prompt; the monitor posts nothing.
+// through gh, under Claude Code's own permission rules; the monitor posts nothing.
 import { z } from 'zod'
 
 import { listSkills, SkillName } from '../agents/skills.ts'

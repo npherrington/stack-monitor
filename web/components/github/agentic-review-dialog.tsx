@@ -68,7 +68,7 @@ interface AgenticReviewDialogProps {
 
 // Starts a Claude Code session that reviews this PR: in a worktree the monitor puts at the PR's
 // head, or a checkout the user picks, with the skill to use and the PR's details in its first
-// message. The agent posts the review from the terminal, after asking.
+// message. The agent posts the review from the terminal; the monitor approves nothing for it.
 export function AgenticReviewDialog({
   root,
   pull,

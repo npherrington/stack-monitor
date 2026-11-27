@@ -145,7 +145,6 @@ describe('a review worktree', () => {
     const refusal = async () => {
       const result = await review(7)
       assert.ok('refused' in result, 'expected a refusal')
-      // Nothing moved.
       return result.refused
     }
 

@@ -29,7 +29,6 @@ export const WorkTicketRequest = z.strictObject({
   project: Id,
   number: Id,
   root: PathText,
-  // A new worktree on a new branch, or a checkout the repo already has.
   where: z.discriminatedUnion('kind', [
     z.strictObject({ kind: z.literal('new'), branch: BranchName }),
     z.strictObject({ kind: z.literal('existing'), path: PathText }),
