@@ -121,7 +121,9 @@ export async function workTicket(
         ticket,
         project.name,
         skill,
-        where.kind === 'new' ? where.branch : null,
+        where.kind === 'new' && made !== null
+          ? { branch: where.branch, installLog: made.log }
+          : null,
       ),
       mcp: mcpLaunch(board.file),
       allowedTools: WORK_TOOLS.map(toolRule),

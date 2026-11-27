@@ -16,6 +16,7 @@ import { INSTALLS_ENV } from '../core/worktrees/create.ts'
 import { removeWorktree } from '../core/worktrees/remove.ts'
 import {
   makeReviewWorktree,
+  pullRef,
   reviewWorktreePath,
   type ReviewWorktree,
 } from '../core/worktrees/review.ts'
@@ -31,7 +32,8 @@ delete process.env.STACK_MONITOR_CONFIG
 
 function fixture(worktrees: Record<string, unknown> = {}) {
   const root = tempDir()
-  const { primary } = cloneWithOrigin(root)
+  const clone = cloneWithOrigin(root)
+  const { primary } = clone
   writeJson(join(primary, 'stack-monitor.json'), { worktrees })
   process.env[INSTALLS_ENV] = join(root, 'installs')
   const tracking: Tracking = {
@@ -39,14 +41,21 @@ function fixture(worktrees: Record<string, unknown> = {}) {
     seed: primary,
   }
   const runs = join(root, 'runs')
+  // head: the commit GitHub names; by default, the one the origin holds for the PR now.
   const review = (
     number: number,
-    target: { base?: string; fork?: boolean } = {},
+    target: { base?: string; fork?: boolean; head?: string } = {},
   ) =>
     makeReviewWorktree(
       tracking,
       primary,
-      { number, base: 'main', fork: false, ...target },
+      {
+        number,
+        base: 'main',
+        fork: false,
+        head: pulled(clone.origin, number),
+        ...target,
+      },
       { runs },
     )
   return { root, primary, tracking, runs, review }
@@ -58,6 +67,14 @@ function made(result: ReviewWorktree | { refused: string }): ReviewWorktree {
 }
 
 const headOf = (path: string) => git(path, 'rev-parse', 'HEAD').trim()
+// The PR's head as the bare origin holds it; '' when it has no such PR.
+function pulled(origin: string, number: number): string {
+  try {
+    return git(origin, 'rev-parse', `refs/pull/${number}/head`).trim()
+  } catch {
+    return ''
+  }
+}
 const branchOf = (path: string) =>
   git(path, 'rev-parse', '--abbrev-ref', 'HEAD').trim()
 
@@ -74,7 +91,13 @@ describe('a review worktree', () => {
     assert.match(worktree.path, /app-review-pr-7$/)
     assert.equal(worktree.head, sha)
     assert.equal(worktree.base, 'origin/main')
+    assert.equal(worktree.stands, 'head')
     assert.equal(headOf(worktree.path), sha)
+    // Kept where a pruning fetch leaves it, and no remote branch is made up for it.
+    assert.equal(git(primary, 'rev-parse', pullRef(7)).trim(), sha)
+    git(primary, 'fetch', '-q', '--prune', 'origin')
+    assert.equal(git(primary, 'rev-parse', pullRef(7)).trim(), sha)
+    assert.equal(git(primary, 'branch', '-r', '--list', '*pr/*').trim(), '')
     assert.equal(branchOf(worktree.path), 'HEAD', 'detached')
     assert.equal(
       readFileSync(join(worktree.path, '.env.local'), 'utf8'),
@@ -94,24 +117,39 @@ describe('a review worktree', () => {
     assert.equal(git(primary, 'branch', '--list', '*review*').trim(), '')
   })
 
-  test("a fork's PR gets its index and neither setup nor install", async () => {
+  test("a fork's PR is never checked out: the worktree stands on the base, with the PR's head fetched beside it", async () => {
     const { primary, review } = fixture({
-      index: { file: '.env.local', key: 'WT' },
-      setup: 'touch setup-ran',
-      install: 'touch install-ran',
+      setup: 'git rev-parse HEAD > ../setup-ran-at.txt',
     })
-    pushPull(primary, 8, 'from a fork')
+    const sha = pushPull(primary, 8, 'from a fork')
+    const base = git(primary, 'rev-parse', 'origin/main').trim()
     const worktree = made(await review(8, { fork: true }))
+    assert.equal(worktree.stands, 'base')
+    assert.equal(worktree.head, sha)
+    assert.equal(headOf(worktree.path), base)
+    assert.equal(branchOf(worktree.path), 'HEAD')
+    // The PR's commit is there to read, and nothing of its tree is on disk.
+    assert.equal(git(primary, 'rev-parse', pullRef(8)).trim(), sha)
     assert.equal(
-      readFileSync(join(worktree.path, '.env.local'), 'utf8'),
-      'WT=1\n',
+      git(worktree.path, 'diff', '--stat', 'HEAD').trim(),
+      '',
+      'the working tree is the base',
     )
-    assert.equal(existsSync(join(worktree.path, 'setup-ran')), false)
-    assert.equal(worktree.log, null)
-    assert.match(
+    // Setup ran what the base holds, the repo's own.
+    assert.equal(
+      readFileSync(join(primary, '..', 'setup-ran-at.txt'), 'utf8').trim(),
+      base,
+    )
+    assert.equal(
       worktree.message,
-      /It's a fork's PR, so the repo's setup and install weren't run$/,
+      `Made ${worktree.path} at origin/main, with #8's head ${sha.slice(0, 7)} fetched to read from there (a fork's PR isn't checked out)`,
     )
+
+    // A later push moves only what is fetched; the worktree stays on the base.
+    const later = pushPull(primary, 8, 'the fork pushed again')
+    const again = made(await review(8, { fork: true }))
+    assert.equal(again.head, later)
+    assert.equal(headOf(again.path), base)
   })
 
   test("a second review moves the worktree to the PR's new head, a forced update included", async () => {
@@ -128,8 +166,12 @@ describe('a review worktree', () => {
     assert.equal(branchOf(path), 'HEAD')
     assert.equal(
       moved.message,
-      `Moved ${path} to #7's head, ${second.slice(0, 7)}`,
+      `Put ${path} at #7's head, ${second.slice(0, 7)}`,
     )
+    // A pruning fetch in between doesn't make the worktree look like it holds work of its own.
+    git(primary, 'fetch', '-q', '--prune', 'origin')
+    const third = pushPull(primary, 7, 'third push')
+    assert.equal(made(await review(7)).head, third)
     // Setup ran when it was made, and not again.
     assert.equal(
       readFileSync(join(primary, '..', 'setups.txt'), 'utf8'),
@@ -211,6 +253,15 @@ describe('a review worktree', () => {
     assert.match(missing.refused, /^Couldn't fetch #99 from origin: /)
     assert.equal(existsSync(reviewWorktreePath(primary, 99)), false)
 
+    // The remote's PR #7 isn't the commit GitHub names: another repo's PR of the same number.
+    const other = await review(7, { head: 'f'.repeat(40) })
+    assert.ok('refused' in other)
+    assert.match(
+      other.refused,
+      /^origin holds [0-9a-f]{7} for #7, and GitHub names fffffff as its head\. /,
+    )
+    assert.equal(existsSync(reviewWorktreePath(primary, 7)), false)
+
     mkdirSync(reviewWorktreePath(primary, 7))
     assert.deepEqual(await review(7), {
       refused: `${reviewWorktreePath(primary, 7)} already exists and isn't a worktree of ${primary}`,
@@ -229,13 +280,40 @@ describe('a review worktree', () => {
     assert.equal(checkout.head, sha.slice(0, 7))
     assert.equal(checkout.ahead, 1)
 
-    const removed = await removeWorktree(
-      tracking,
-      { root: primary, path, deleteBranch: true },
-      { runs },
+    // A commit made in it is on no branch: removing the worktree would leave it to the reflog.
+    git(path, 'commit', '-q', '--allow-empty', '-m', 'a fix of my own')
+    const mine = headOf(path)
+    const remove = () =>
+      removeWorktree(
+        tracking,
+        { root: primary, path, deleteBranch: true },
+        { runs },
+      )
+    const kept = await remove()
+    assert.equal(kept.ok, false)
+    assert.match(
+      kept.message,
+      /is on no branch, at a commit nothing else holds\. Put it on a branch/,
     )
+    assert.ok(existsSync(path))
+    // Once a branch holds the commit, the worktree goes and the commit stays.
+    git(primary, 'branch', 'my-fix', mine)
+    const removed = await remove()
     assert.equal(removed.ok, true, removed.message)
     assert.equal(removed.message, `Removed ${path}`)
     assert.equal(existsSync(path), false)
+    assert.equal(git(primary, 'rev-parse', 'my-fix').trim(), mine)
+  })
+
+  test('a setup that fails takes the detached worktree back, with no branch to delete', async () => {
+    const { primary, review } = fixture({ setup: 'echo nope >&2; exit 3' })
+    pushPull(primary, 7, 'the change')
+    const result = await review(7)
+    assert.ok('refused' in result)
+    assert.match(
+      result.refused,
+      /^Setup failed, so the worktree was taken back: nope/,
+    )
+    assert.equal(existsSync(reviewWorktreePath(primary, 7)), false)
   })
 })

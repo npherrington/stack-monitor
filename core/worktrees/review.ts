@@ -1,6 +1,9 @@
-// A worktree for reviewing a PR: beside the primary, detached at the PR's head as the remote has
-// it now. Detached, so there's no branch to clean up, and the usual removal takes it. One that is
-// already there is moved to the PR's latest head, when nothing in it would be lost.
+// A worktree for reviewing a PR, beside the primary and on no branch, so there's no branch to
+// clean up and the usual removal takes it. For a PR from the repo itself it stands at the PR's
+// head. For a fork's PR it stands on the base branch with the PR's head fetched beside it: an
+// agent started in a checkout loads that checkout's CLAUDE.md, skills, hooks and settings, and a
+// stranger's must never be on disk there. One that's already there is moved, when nothing in it
+// would be lost.
 import { existsSync } from 'node:fs'
 
 import { listRuns } from '../agents/runs.ts'
@@ -9,7 +12,7 @@ import { Ref, type Config } from '../config/schema.ts'
 import { loadRepoConfig } from '../repos.ts'
 import { run } from '../run.ts'
 import type { Tracking } from '../settings.ts'
-import { canonical, listWorktrees, type Worktree } from './clone.ts'
+import { canonical, headIsHeld, listWorktrees, type Worktree } from './clone.ts'
 import {
   alreadyMaking,
   finishWorktree,
@@ -24,13 +27,15 @@ const FETCH_TIMEOUT_MS = 2 * 60_000
 export interface ReviewTarget {
   number: number
   base: string // the PR's base branch, as GitHub names it
+  head: string // the PR's head commit, as GitHub names it
   fork: boolean // its head is in another repo
 }
 
 export interface ReviewWorktree {
   path: string
-  head: string // the commit it is at: the PR's head as fetched
+  head: string // the PR's head as fetched: what the review reads
   base: string // the ref the base branch was fetched into: origin/main
+  stands: 'head' | 'base' // where the worktree is: base for a fork's PR
   message: string // what was made or moved
   log: string | null // the background install's log
 }
@@ -40,6 +45,12 @@ type Refused = { refused: string }
 // app-review-pr-21 beside /code/app.
 export function reviewWorktreePath(root: string, number: number): string {
   return worktreePath(root, `review-pr-${number}`)
+}
+
+// Where a PR's head is kept once fetched. Outside refs/remotes, so a pruning fetch leaves it and
+// it can't meet a real branch named pr/<n>.
+export function pullRef(number: number): string {
+  return `refs/stack-monitor/pr/${number}`
 }
 
 // The remote PR refs are fetched from: the mainline's when it names one the clone has, else
@@ -55,8 +66,21 @@ async function pullRemote(
   return remotes.includes('origin') ? 'origin' : null
 }
 
+async function commitAt(root: string, ref: string): Promise<string | null> {
+  const read = await run('git', [
+    '-C',
+    root,
+    'rev-parse',
+    '--verify',
+    '--quiet',
+    `${ref}^{commit}`,
+  ])
+  const commit = read.stdout.trim()
+  return read.code === 0 && commit !== '' ? commit : null
+}
+
 // Why a review worktree that's already there can't be moved, or whether a ref holds its HEAD:
-// asked before the fetch, since a forced update takes the PR's old head out of its tracking ref.
+// asked before the fetch, since a forced update takes the PR's old head out of its ref.
 async function movable(
   root: string,
   worktree: Worktree,
@@ -97,15 +121,7 @@ async function movable(
       refused: `"${going.title}" is running in ${path}. Stop it or wait for it to end.`,
     }
   }
-  const holding = await run('git', [
-    '-C',
-    path,
-    'for-each-ref',
-    '--contains',
-    'HEAD',
-    '--count=1',
-  ])
-  return { held: holding.code === 0 && holding.stdout.trim() !== '' }
+  return { held: await headIsHeld(path) }
 }
 
 export async function makeReviewWorktree(
@@ -132,7 +148,7 @@ export async function makeReviewWorktree(
     return { refused: `${root} has no remote to fetch #${number} from` }
   }
   const path = reviewWorktreePath(root, number)
-  const tracked = `refs/remotes/${remote}/pr/${number}`
+  const baseRef = `${remote}/${base}`
 
   return makingIn<ReviewWorktree | Refused>(
     root,
@@ -159,8 +175,8 @@ export async function makeReviewWorktree(
           '--no-tags',
           '--quiet',
           remote,
-          `+refs/pull/${number}/head:${tracked}`,
-          `+refs/heads/${base}:refs/remotes/${remote}/${base}`,
+          `+refs/pull/${number}/head:${pullRef(number)}`,
+          `+refs/heads/${base}:refs/remotes/${baseRef}`,
         ],
         { timeoutMs: FETCH_TIMEOUT_MS },
       )
@@ -169,20 +185,25 @@ export async function makeReviewWorktree(
           refused: `Couldn't fetch #${number} from ${remote}: ${tail(fetched)}`,
         }
       }
-      const read = await run('git', [
-        '-C',
-        root,
-        'rev-parse',
-        '--verify',
-        '--quiet',
-        `${tracked}^{commit}`,
-      ])
-      const head = read.stdout.trim()
-      if (read.code !== 0 || head === '') {
+      const head = await commitAt(root, pullRef(number))
+      const baseHead = await commitAt(root, `refs/remotes/${baseRef}`)
+      if (head === null || baseHead === null) {
         return { refused: `The fetch left no commit for #${number}` }
       }
-      const at = { path, head, base: `${remote}/${base}` }
+      // The remote the clone fetches from may not be the repo gh reads the PR from (a fork's
+      // clone, say), and its PR of the same number would be somebody else's change.
+      if (head !== target.head) {
+        return {
+          refused: `${remote} holds ${head.slice(0, 7)} for #${number}, and GitHub names ${target.head.slice(0, 7)} as its head. If it was pushed to just now, start the review again; otherwise ${remote} isn't the repo this PR is on.`,
+        }
+      }
+      const stands = fork ? 'base' : 'head'
+      const commit = fork ? baseHead : head
       const short = head.slice(0, 7)
+      const where = fork
+        ? `at ${baseRef}, with #${number}'s head ${short} fetched to read from there (a fork's PR isn't checked out)`
+        : `at #${number}'s head, ${short}`
+      const at = { path, head, base: baseRef, stands } as const
 
       if (before !== null) {
         // A commit made here that no ref holds would be left to the reflog by the move.
@@ -195,7 +216,7 @@ export async function makeReviewWorktree(
               'merge-base',
               '--is-ancestor',
               'HEAD',
-              head,
+              commit,
             ])
           ).code === 0
         if (!kept) {
@@ -209,16 +230,12 @@ export async function makeReviewWorktree(
           'checkout',
           '--quiet',
           '--detach',
-          head,
+          commit,
         ])
         if (moved.code !== 0) {
           return { refused: `git checkout failed in ${path}: ${tail(moved)}` }
         }
-        return {
-          ...at,
-          message: `Moved ${path} to #${number}'s head, ${short}`,
-          log: null,
-        }
+        return { ...at, message: `Put ${path} ${where}`, log: null }
       }
 
       const index = await freeIndex(root, config)
@@ -231,24 +248,19 @@ export async function makeReviewWorktree(
         '--quiet',
         '--detach',
         path,
-        head,
+        commit,
       ])
       if (added.code !== 0) {
         return { refused: `git worktree add failed: ${tail(added)}` }
       }
-      const finished = await finishWorktree(root, path, null, config, index, {
-        setup: !fork,
-        install: !fork,
-      })
+      // Setup and install run what's checked out: the PR's own tree, or the base for a fork.
+      const finished = await finishWorktree(root, path, null, config, index)
       if ('refused' in finished) return finished
-      const { setup, install } = config.worktrees
-      const made = `Made ${path} at #${number}'s head, ${short}`
-      const skipped = fork && (setup !== undefined || install !== undefined)
+      const made = `Made ${path} ${where}`
       return {
         ...at,
-        message: skipped
-          ? `${made}. It's a fork's PR, so the repo's setup and install weren't run`
-          : finished.log === null
+        message:
+          finished.log === null
             ? made
             : `${made}. Installing in the background`,
         log: finished.log,

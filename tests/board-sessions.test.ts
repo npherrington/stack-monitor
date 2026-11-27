@@ -284,6 +284,13 @@ describe('sessions started from the board', () => {
       null,
       null,
     )
+    assert.match(
+      workTicketMessage({ key: 'BEANS-1', title: 'One' }, 'Beans', null, {
+        branch: 'beans-1',
+        installLog: '/state/installs/app-beans-1.log',
+      }),
+      /made this worktree on the branch beans-1 for this ticket\. The repo's install is running in it now, logging to \/state\/installs\/app-beans-1\.log: wait for it instead of starting another\./,
+    )
     assert.equal(
       message.split('\n')[0],
       'Work board ticket BEANS-1, "One Use the delete skill", in the stack monitor\'s Beans New instructions: project through to a PR.',

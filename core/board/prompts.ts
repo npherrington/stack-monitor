@@ -24,12 +24,13 @@ export const PRODUCT_TOOLS: readonly BoardTool[] = [
 
 const NAME_CHARS = 80
 
-// branch: the one the monitor made the worktree on; null for a checkout it left alone.
+// made: the worktree the monitor made for the ticket, with its branch and the log of the install
+// still running in it, if the repo has one; null for a checkout it left alone.
 export function workTicketMessage(
   ticket: Pick<TicketDetail, 'key' | 'title'>,
   project: string,
   skill: Pick<SkillInfo, 'name' | 'path'> | null,
-  branch: string | null,
+  made: { branch: string; installLog: string | null } | null,
 ): string {
   const named = `board ticket ${ticket.key}, "${oneLine(ticket.title, 200)}", in the stack monitor's ${oneLine(project, NAME_CHARS)} project`
   const first =
@@ -37,9 +38,9 @@ export function workTicketMessage(
       ? `Work ${named} through to a PR.`
       : `Use ${skillClause(skill)} on ${named}.`
   const where =
-    branch === null
+    made === null
       ? 'The monitor changed nothing in this checkout.'
-      : `The monitor made this worktree on the branch ${branch} for this ticket.`
+      : `The monitor made this worktree on the branch ${made.branch} for this ticket.${made.installLog === null ? '' : ` The repo's install is running in it now, logging to ${made.installLog}: wait for it instead of starting another.`}`
   return `${first}
 
 Read the ticket first with the stack monitor's board_get_ticket tool (key: "${ticket.key}"). When you start, move it to "In progress" with board_move_ticket (key, column) and say so with board_add_comment (key, body). When a PR is open, move it to "In review" and add a comment with the PR's link. If the project has no column of that name, the tool's refusal lists the ones it has: use the closest.

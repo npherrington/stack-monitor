@@ -122,15 +122,13 @@ async function takeBack(root: string, path: string, branch: string | null) {
 }
 
 // What follows git worktree add: the index written, setup run, install started in the background.
-// A step that fails takes the worktree back. {branch} is '' for a detached worktree. steps: a
-// review of a fork's PR runs neither command, since they would run its code.
+// A step that fails takes the worktree back. {branch} is '' for a detached worktree.
 export async function finishWorktree(
   root: string,
   path: string,
   branch: string | null,
   config: Config,
   index: number,
-  steps: { setup: boolean; install: boolean },
 ): Promise<{ log: string | null } | { refused: string }> {
   const { setup, install, index: kept } = config.worktrees
   try {
@@ -141,7 +139,7 @@ export async function finishWorktree(
   }
   const fill = (command: string) =>
     command.replaceAll(INDEX, String(index)).replaceAll(BRANCH, branch ?? '')
-  if (steps.setup && setup !== undefined) {
+  if (setup !== undefined) {
     const ran = await shell(fill(setup), path)
     if (ran.code !== 0) {
       await takeBack(root, path, branch)
@@ -150,7 +148,7 @@ export async function finishWorktree(
       }
     }
   }
-  if (!steps.install || install === undefined) return { log: null }
+  if (install === undefined) return { log: null }
   return { log: startInstall(fill(install), path, basename(path)) }
 }
 
@@ -177,10 +175,7 @@ async function addWithGit(
   if (added.code !== 0) {
     return failure(`git worktree add failed: ${tail(added)}`)
   }
-  const finished = await finishWorktree(root, path, branch, config, index, {
-    setup: true,
-    install: true,
-  })
+  const finished = await finishWorktree(root, path, branch, config, index)
   if ('refused' in finished) return failure(finished.refused)
   const made = `Made ${path} on ${branch}, from ${config.mainline}`
   return finished.log === null

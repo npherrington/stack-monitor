@@ -91,19 +91,25 @@ function boardOf(prefix: string, board: BoardContext): ProjectBoard | Refused {
   return 'problem' in found ? { refused: found.problem } : found
 }
 
-// The ticket a key names, and its project's board for the names of its columns and labels.
+// The ticket a key names, and its project's board for the names of its columns and labels. A
+// ticket in an archived project can be read, and is refused to a tool that would write it.
 function ticketOf(
   key: string,
   board: BoardContext,
+  use: 'read' | 'write',
 ): { ticket: TicketRef; board: ProjectBoard } | Refused {
   const ticket = findTicket(key, board)
   if (ticket === null) return { refused: `There's no ticket ${key}` }
   if ('problem' in ticket) return { refused: ticket.problem }
   const found = readProjectBoard(ticket.project, board)
   if (found === null) return { refused: `There's no ticket ${key}` }
-  return 'problem' in found
-    ? { refused: found.problem }
-    : { ticket, board: found }
+  if ('problem' in found) return { refused: found.problem }
+  if (use === 'write' && found.project.archived) {
+    return {
+      refused: `${found.project.prefix} is archived. Restore it on the board first.`,
+    }
+  }
+  return { ticket, board: found }
 }
 
 function columnNamed(found: ProjectBoard, name: string): number | Refused {
@@ -184,7 +190,7 @@ export function boardTools(board: BoardContext): Tool[] {
       'Read one ticket by its id (BEANS-3): its title, column, priority, due date, labels, markdown description and comments, oldest first.',
       z.strictObject({ key: TicketKey }),
       ({ key }) => {
-        const found = ticketOf(key, board)
+        const found = ticketOf(key, board, 'read')
         if ('refused' in found) return refuse(found.refused)
         const detail = readTicket(
           found.ticket.project,
@@ -255,7 +261,7 @@ export function boardTools(board: BoardContext): Tool[] {
             'Name a field to change: title, description, priority, dueOn or labels',
           )
         }
-        const found = ticketOf(key, board)
+        const found = ticketOf(key, board, 'write')
         if ('refused' in found) return refuse(found.refused)
         const ids =
           labels === undefined ? undefined : labelsNamed(found.board, labels)
@@ -269,7 +275,7 @@ export function boardTools(board: BoardContext): Tool[] {
       "Move a ticket to another column of its project, named by the column's name (In progress). It lands at the top of that column.",
       z.strictObject({ key: TicketKey, column: ShortName }),
       ({ key, column }) => {
-        const found = ticketOf(key, board)
+        const found = ticketOf(key, board, 'write')
         if ('refused' in found) return refuse(found.refused)
         const into = columnNamed(found.board, column)
         if (typeof into === 'object') return refuse(into.refused)
@@ -290,7 +296,7 @@ export function boardTools(board: BoardContext): Tool[] {
       'Add a markdown comment to a ticket. Comments are kept in order and this adds one at the end; it never edits or removes one.',
       z.strictObject({ key: TicketKey, body: CommentBody }),
       ({ key, body }) => {
-        const found = ticketOf(key, board)
+        const found = ticketOf(key, board, 'write')
         if ('refused' in found) return refuse(found.refused)
         const added = saveComment({ ticket: found.ticket.id, body }, board)
         return added.ok

@@ -62,7 +62,12 @@ export async function launchReview(
     const worktree = await makeReviewWorktree(
       tracking,
       root,
-      { number: pull.number, base: pull.base, fork: pull.crossRepository },
+      {
+        number: pull.number,
+        base: pull.base,
+        head: pull.head,
+        fork: pull.crossRepository,
+      },
       options,
     )
     if ('refused' in worktree) return refused(worktree.refused)

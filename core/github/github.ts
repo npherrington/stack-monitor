@@ -308,7 +308,7 @@ const DETAIL_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
       id number title body url isDraft isCrossRepository createdAt updatedAt reviewDecision
-      additions deletions changedFiles headRefName baseRefName
+      additions deletions changedFiles headRefName baseRefName headRefOid
       author { login }
       labels(first: 20) { nodes { name color } }
       reviews(states: PENDING, first: 1) { nodes { id comments { totalCount } } }
@@ -340,6 +340,7 @@ const GhDetail = z.object({
   repository: z.object({
     pullRequest: GhPull.extend({
       id: z.string(),
+      headRefOid: z.string(),
       body: z.string(),
       createdAt: z.string(),
       submitted: z.object({
@@ -483,6 +484,7 @@ export async function readPull(
   return {
     ...summary(pull),
     repo: repo.repo,
+    head: pull.headRefOid,
     body: pull.body,
     createdAt: pull.createdAt,
     viewer: repo.viewer,

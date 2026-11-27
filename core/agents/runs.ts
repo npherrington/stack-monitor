@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { z } from 'zod'
 
-import { Prompt } from '../fields.ts'
+import { Permissions, Prompt } from '../fields.ts'
 import { loadRepoConfig, PathText } from '../repos.ts'
 import { run } from '../run.ts'
 import { readRepoList, writeJsonFile, type Tracking } from '../settings.ts'
@@ -65,7 +65,7 @@ const LAUNCHER = join(import.meta.dirname, 'launcher.ts')
 export const RunIdText = z.string().regex(RUN_ID, 'must be a run id')
 const Title = z.string().trim().min(1).max(MAX_TITLE)
 export { Prompt }
-export const PermissionsSchema = z.enum(['read', 'edit', 'full'])
+export const PermissionsSchema = Permissions
 
 export const RunStepSchema = z.strictObject({
   agent: AgentIdSchema,

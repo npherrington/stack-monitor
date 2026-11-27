@@ -24,14 +24,14 @@ export interface ProductSessionStart {
   path: string
 }
 
-interface UseBoardSessionsResult {
+interface UseBoardSessionMutationsResult {
   workTicket: (request: WorkTicketStart) => Promise<TerminalSession>
   startProduct: (request: ProductSessionStart) => Promise<TerminalSession>
 }
 
 // The Claude Code sessions the board starts. Each opens a terminal session, and working a ticket
 // may make a worktree, so both lists are read again after it, whether or not it went through.
-export function useBoardSessions(): UseBoardSessionsResult {
+export function useBoardSessionMutations(): UseBoardSessionMutationsResult {
   const queryClient = useQueryClient()
   const refresh = () =>
     Promise.all([

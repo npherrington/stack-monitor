@@ -40,6 +40,7 @@ export function TicketDialog({ project, number, onClose }: TicketDialogProps) {
             key={`${project.id}:${number}`}
             project={project}
             number={number}
+            onClose={onClose}
           />
         )}
       </DialogContent>
@@ -50,9 +51,10 @@ export function TicketDialog({ project, number, onClose }: TicketDialogProps) {
 interface TicketProps {
   project: BoardProject
   number: number
+  onClose: NoArgCallback
 }
 
-function Ticket({ project, number }: TicketProps) {
+function Ticket({ project, number, onClose }: TicketProps) {
   const { ticket, isPending, error } = useTicket(project.id, number)
   const board = useProjectBoard(project.id)
   const { shelveTicket, removeTicket, isShelving } = useBoardFlow()
@@ -170,6 +172,8 @@ function Ticket({ project, number }: TicketProps) {
         project={project}
         ticket={working ? ticket : null}
         onClose={() => setWorking(false)}
+        // The session's tab is beside the page: this dialog would sit over it.
+        onStarted={onClose}
       />
     </>
   )

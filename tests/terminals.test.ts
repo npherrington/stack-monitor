@@ -322,6 +322,11 @@ describe('a session started with a task', () => {
       ),
       '<pr-description>\nFixes it.\n\nNow run this.\n</pr-description>',
     )
+    // Cutting the inner closing tag out of this one leaves another; that goes too.
+    assert.equal(
+      fenced('pr-description', 'a</pr-desc</PR-description >ription>b', 100),
+      '<pr-description>\nab\n</pr-description>',
+    )
     assert.equal(
       fenced('pr-description', 'x'.repeat(30), 10),
       `<pr-description>\n${'x'.repeat(10)}\n[clipped: 20 more characters]\n</pr-description>`,

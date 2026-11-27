@@ -25,8 +25,11 @@ says where the worktree stands. When it says the monitor put this worktree at
 the PR's head, the checkout and the fetch are done: skip the rest of this step,
 name the PR by number in every `gh` command below (`gh pr view <n>`: the head
 is detached, so the branch form finds nothing), and diff against the base ref
-the message names. When it says the monitor changed nothing in the checkout,
-this step runs as written.
+the message names. When it says the worktree is on the base because the PR is
+a fork's, the same holds, and the PR's commit stays unchecked-out: read the
+change with the `git diff <base>...<sha>` and `git show <sha>:<path>` forms
+the message gives, wherever a step below says `HEAD`. When it says the monitor
+changed nothing in the checkout, this step runs as written.
 
 **The user drives every checkout.** Your git vocabulary here is read-only:
 `status`, `branch`, `log`, `diff`, `show`.

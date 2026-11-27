@@ -139,7 +139,8 @@ Claude Code is the first adapter. A second proves the interface (see Open decisi
 
 A session can start with a task. The page's terminal sessions are interactive `claude` in a
 worktree; three buttons start one with its first message already written by the monitor, from ids
-and choices the page sends, never from prompt text:
+and choices the page sends. The one piece of the user's own text in a message is a review's
+focus:
 
 - **Work this ticket** (the board): in a new worktree or a checkout you pick, with the board's MCP
   tools. Reading a ticket, moving it and commenting on it run without asking.
@@ -147,13 +148,16 @@ and choices the page sends, never from prompt text:
   in a repo with no skills. Filing tickets and commenting run without asking; changing or moving
   one asks.
 - **Agentic review** (a PR on the GitHub page): in a review worktree the monitor puts at the PR's
-  head, detached, or a checkout you pick. Read-only `git` and `gh` commands run without asking.
-  The agent posts one review through `gh`; the monitor never pre-approves that, and posts nothing
-  itself.
+  head, detached, or a checkout you pick. Reading the PR through `gh` runs without asking. The
+  agent posts one review through `gh`; the monitor never pre-approves that, and posts nothing
+  itself. A fork's PR is never checked out: an agent loads the `CLAUDE.md`, skills, hooks and
+  settings of the checkout it starts in, so the worktree stays on the base branch and the PR's
+  head is fetched beside it to be read with `git diff` and `git show`.
 
 A worktree with `claude` already open refuses a task, since a first message can't be put into a
 session that has started. Text a stranger wrote (a PR's title and description) goes into a message
-on one line or fenced, and labelled as data.
+on one line or fenced, and labelled as data. A detached worktree is removed only while a ref holds
+its commit, so a commit made in a review worktree isn't lost with it.
 
 ### Feature map
 

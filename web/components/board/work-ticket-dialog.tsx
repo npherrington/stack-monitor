@@ -68,6 +68,7 @@ interface WorkTicketDialogProps {
   project: BoardProject
   ticket: WorkedTicket | null // open while set
   onClose: NoArgCallback
+  onStarted?: NoArgCallback // the session opened; onClose has run
 }
 
 // Starts a Claude Code session on one ticket: in a new worktree on a branch named for it, or a
@@ -77,6 +78,7 @@ export function WorkTicketDialog({
   project,
   ticket,
   onClose,
+  onStarted,
 }: WorkTicketDialogProps) {
   return (
     <Dialog open={ticket !== null} onOpenChange={(open) => !open && onClose()}>
@@ -95,6 +97,7 @@ export function WorkTicketDialog({
                   ticket={ticket}
                   repo={repo}
                   onDone={onClose}
+                  onStarted={onStarted}
                 />
               )}
             </SessionRepo>
@@ -110,6 +113,7 @@ interface WorkTicketSkillsProps {
   ticket: WorkedTicket
   repo: RepoCheckouts
   onDone: NoArgCallback
+  onStarted?: NoArgCallback
 }
 
 // Holds the form back until the repo's skills have answered, so its default skill is right from
@@ -119,6 +123,7 @@ function WorkTicketSkills({
   ticket,
   repo,
   onDone,
+  onStarted,
 }: WorkTicketSkillsProps) {
   const { skills, isPending, error } = useSkills(repo.root)
   if (isPending) return <Skeleton className="h-48" />
@@ -135,6 +140,7 @@ function WorkTicketSkills({
         repo={repo}
         skills={skills}
         onDone={onDone}
+        onStarted={onStarted}
       />
     </>
   )
@@ -150,6 +156,7 @@ function WorkTicketForm({
   repo,
   skills,
   onDone,
+  onStarted,
 }: WorkTicketFormProps) {
   const { workTicket } = useBoardFlow()
   const form = useForm<WorkTicketFormValues>({
@@ -183,6 +190,7 @@ function WorkTicketForm({
       return
     }
     onDone()
+    onStarted?.()
   }
 
   return (

@@ -22,6 +22,9 @@ export const Prompt = z
   .min(1, 'Say what it should do')
   .max(MAX_PROMPT, 'Keep it under 12,000 characters')
 
+// What a headless run may do without asking: look, edit files, or anything.
+export const Permissions = z.enum(['read', 'edit', 'full'])
+
 // What a review should look at hardest: a sentence or two, not a second prompt.
 export const MAX_FOCUS = 2000
 export const Focus = z

@@ -583,6 +583,7 @@ export type TimelineItem =
 // GET /api/github/pull?root=&number=
 export interface PullDetail extends PullSummary {
   repo: string // owner/name, as gh resolved it
+  head: string // the head commit's full sha
   body: string // markdown
   createdAt: string
   viewer: string

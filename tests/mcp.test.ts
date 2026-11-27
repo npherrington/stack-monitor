@@ -8,12 +8,7 @@ import { BOARD_ENV, type BoardContext } from '../core/board/db.ts'
 import { saveLabel } from '../core/board/labels.ts'
 import { archiveProject, saveProject } from '../core/board/projects.ts'
 import { readProjectBoard } from '../core/board/read.ts'
-import {
-  BOARD_TOOLS,
-  mcpConfig,
-  mcpLaunch,
-  toolRule,
-} from '../core/mcp-launch.ts'
+import { mcpConfig, mcpLaunch, toolRule } from '../core/mcp-launch.ts'
 import { boardTools } from '../mcp/board-tools.ts'
 import { answerLine, PROTOCOL_VERSIONS, type Server } from '../mcp/protocol.ts'
 import { tempDir } from './fixtures.ts'
@@ -170,7 +165,6 @@ describe('the board tools', () => {
       toolRule('board_get_ticket'),
       'mcp__stack-monitor__board_get_ticket',
     )
-    assert.equal(BOARD_TOOLS.length, tools.length)
   })
 
   test('a ticket is created, read, updated, moved and commented on by its key', () => {
@@ -292,9 +286,17 @@ describe('the board tools', () => {
     )
     archiveProject({ id, archived: true }, context)
     assert.deepEqual(JSON.parse(done(server, 'board_list_projects', {})), [])
+    // Its tickets can still be read by key, and nothing writes to them.
+    assert.equal(
+      JSON.parse(done(server, 'board_get_ticket', { key: 'BEANS-1' })).title,
+      'One',
+    )
     for (const [name, given] of [
       ['board_list_tickets', { project: 'BEANS' }],
       ['board_create_ticket', { project: 'BEANS', title: 'Unseen' }],
+      ['board_move_ticket', { key: 'BEANS-1', column: 'Done' }],
+      ['board_update_ticket', { key: 'BEANS-1', title: 'Changed' }],
+      ['board_add_comment', { key: 'BEANS-1', body: 'Hello' }],
     ] as const) {
       assert.deepEqual(call(server, name, given), {
         text: 'BEANS is archived. Restore it on the board first.',

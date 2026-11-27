@@ -1,14 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { AGENT_IDS } from '../../../core/config/schema.ts'
-import { Prompt } from '../../../core/fields.ts'
+import { Permissions, Prompt } from '../../../core/fields.ts'
 import type {
   AgentChoice,
   AgentsOverview,
   ClaudeWorkflow,
+  StartRunRequest,
 } from '../../../core/types.ts'
 import { AgentPicker } from '@/components/agents/agent-picker.tsx'
 import { PermissionsPicker } from '@/components/agents/permissions-picker.tsx'
@@ -31,7 +32,7 @@ import type { NoArgCallback } from '@/lib/callbacks.ts'
 const runPromptFormSchema = z.object({
   prompt: Prompt,
   agent: z.object({ agent: z.enum(AGENT_IDS), model: z.string().nullable() }),
-  permissions: z.enum(['read', 'edit', 'full']),
+  permissions: Permissions,
 })
 
 type RunPromptFormValues = z.infer<typeof runPromptFormSchema>
@@ -66,8 +67,12 @@ export function RunHereDialog({
   onRunClaude,
 }: RunHereDialogProps) {
   const checkout = target?.checkout ?? null
-  const { start, isStarting } = useStartRun()
+  const { start, isStarting: isStartingWorkflow } = useStartRun()
+  const { startTask, isStarting: isStartingTask } = useStartTask()
+  const isStarting = isStartingWorkflow || isStartingTask
   const [mode, setMode] = useState<Mode>('prompt')
+  // What the prompt form held when the dialog last closed: closing it loses nothing typed.
+  const [kept, setKept] = useState<RunPromptFormValues | null>(null)
   const fallback: AgentChoice | null =
     overview?.default === null || overview === null
       ? null
@@ -113,14 +118,18 @@ export function RunHereDialog({
             onRunClaude={onRunClaude}
           />
         )}
-        {checkout !== null && overview !== null && fallback !== null ? (
+        {overview !== null && fallback !== null ? (
           // Kept while the workflows show, so a prompt typed before switching is still there.
           <div hidden={mode !== 'prompt'}>
             <RunPromptForm
-              key={checkout}
               checkout={checkout}
               overview={overview}
-              fallback={fallback}
+              initial={
+                kept ?? { prompt: '', agent: fallback, permissions: 'edit' }
+              }
+              isStarting={isStarting}
+              startTask={startTask}
+              onKeep={setKept}
               onStarted={onStarted}
               onCancel={onClose}
             />
@@ -146,9 +155,12 @@ export function RunHereDialog({
 }
 
 interface RunPromptFormProps {
-  checkout: string
+  checkout: string | null // null while the dialog closes
   overview: AgentsOverview
-  fallback: AgentChoice // the default agent and its model
+  initial: RunPromptFormValues // what it held last time, or the default agent and an empty prompt
+  isStarting: boolean // a run is starting from either tab
+  startTask: (request: StartRunRequest) => Promise<string>
+  onKeep: (values: RunPromptFormValues) => void // handed what it holds as it goes
   onStarted: (runId: string) => void
   onCancel: NoArgCallback
 }
@@ -156,22 +168,27 @@ interface RunPromptFormProps {
 function RunPromptForm({
   checkout,
   overview,
-  fallback,
+  initial,
+  isStarting,
+  startTask,
+  onKeep,
   onStarted,
   onCancel,
 }: RunPromptFormProps) {
-  const { startTask } = useStartTask()
   const form = useForm<RunPromptFormValues>({
     resolver: zodResolver(runPromptFormSchema),
-    defaultValues: { prompt: '', agent: fallback, permissions: 'edit' },
+    defaultValues: initial,
   })
   const { isSubmitting } = form.formState
+  // The dialog unmounts its content when it closes, and this form with it.
+  useEffect(() => () => onKeep(form.getValues()), [form, onKeep])
 
   const onSubmit = async ({
     prompt,
     agent,
     permissions,
   }: RunPromptFormValues) => {
+    if (checkout === null) return
     let runId: string
     try {
       runId = await startTask({
@@ -184,7 +201,8 @@ function RunPromptForm({
       // The start's toast says why; the form stays as it was.
       return
     }
-    form.reset()
+    // The agent and the permissions stay as picked for the next run; the prompt is done with.
+    form.reset({ prompt: '', agent, permissions })
     onStarted(runId)
   }
 
@@ -233,8 +251,8 @@ function RunPromptForm({
         <Button type="button" variant="ghost" onClick={() => onCancel()}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Starting…' : 'Start run'}
+        <Button type="submit" disabled={isSubmitting || isStarting}>
+          {isSubmitting || isStarting ? 'Starting…' : 'Start run'}
         </Button>
       </DialogFooter>
     </form>

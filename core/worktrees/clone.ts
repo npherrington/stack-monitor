@@ -76,6 +76,21 @@ export async function listWorktrees(root: string): Promise<Worktree[]> {
   return parseWorktreeList(listed.stdout)
 }
 
+// Whether a ref holds the commit a checkout is at: a branch, a tag, a remote's branch, a PR head
+// the monitor fetched. A commit no ref holds is left to the reflog once its worktree goes or
+// moves, which is how work done on a detached head gets lost.
+export async function headIsHeld(path: string): Promise<boolean> {
+  const holding = await run('git', [
+    '-C',
+    path,
+    'for-each-ref',
+    '--contains',
+    'HEAD',
+    '--count=1',
+  ])
+  return holding.code === 0 && holding.stdout.trim() !== ''
+}
+
 // The primary checkout: the one that isn't linked, which git lists first.
 export async function primaryRoot(root: string): Promise<string> {
   const [first] = await listWorktrees(root)

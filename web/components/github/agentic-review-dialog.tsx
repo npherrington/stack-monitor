@@ -55,10 +55,6 @@ const WHERE: { value: AgenticReviewFormValues['where']; label: string }[] = [
 
 const REVIEW_SKILL = 'peer-code-review'
 
-function folder(path: string): string {
-  return path.split('/').filter(Boolean).pop() ?? path
-}
-
 interface AgenticReviewDialogProps {
   root: string
   pull: PullDetail
@@ -160,8 +156,6 @@ function AgenticReviewForm({
   })
   const { isSubmitting } = form.formState
   const where = useWatch({ control: form.control, name: 'where' })
-  const reviewPath = `${repo.root}-review-pr-${pull.number}`
-  const isMade = repo.checkouts.some((checkout) => checkout.path === reviewPath)
 
   const onSubmit = async (values: AgenticReviewFormValues) => {
     try {
@@ -196,11 +190,9 @@ function AgenticReviewForm({
             />
             {field.value === 'new' && (
               <p className="text-xs text-muted-foreground">
-                {isMade
-                  ? `Moves ${folder(reviewPath)} to the PR's latest commit.`
-                  : `Makes ${folder(reviewPath)} beside the primary, at the PR's head, on no branch.`}
-                {pull.crossRepository &&
-                  " It's a fork's PR, so the repo's setup and install won't run there."}
+                {pull.crossRepository
+                  ? "A worktree beside the primary, on no branch. It's a fork's PR, so the worktree stays on the base branch and the agent reads the PR's commits from there: the PR's own CLAUDE.md, skills and settings never load."
+                  : "A worktree beside the primary, on no branch, at the PR's head. One a past review left is moved to the PR's latest commit."}
               </p>
             )}
           </div>
@@ -264,9 +256,9 @@ function AgenticReviewForm({
         )}
       />
       <p className="text-xs text-muted-foreground">
-        Claude Code reviews in a terminal tab. Reading the PR runs without
-        asking. The monitor never approves the post for you: Claude Code asks
-        first, unless your own permission mode lets it through.
+        Claude Code reviews in a terminal tab. Reading the PR on GitHub runs
+        without asking. The monitor never approves the post for you: Claude Code
+        asks first, unless your own permission mode lets it through.
         {pull.pendingReview !== null &&
           ` You have a draft review on this PR with ${pull.pendingComments} ${pull.pendingComments === 1 ? 'comment' : 'comments'}. GitHub keeps one per person, so submit or discard it before the agent posts.`}
       </p>

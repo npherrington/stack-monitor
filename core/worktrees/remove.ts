@@ -1,6 +1,7 @@
 // Removing a linked worktree that's safe to remove: the repo's teardown first (its containers and
 // data), then `git worktree remove`, never --force, then `git branch -d` when asked, which git
-// itself refuses for a branch that hasn't reached mainline.
+// itself refuses for a branch that hasn't reached mainline. A detached one goes only when a ref
+// holds its commit.
 import { z } from 'zod'
 
 import { listRuns } from '../agents/runs.ts'
@@ -12,7 +13,7 @@ import { run } from '../run.ts'
 import type { Tracking } from '../settings.ts'
 import { envReader, readIndex } from '../stack/status.ts'
 import { failure, type ActionResult } from '../types.ts'
-import { canonical, listWorktrees } from './clone.ts'
+import { canonical, headIsHeld, listWorktrees } from './clone.ts'
 import { shell, tail } from './create.ts'
 
 export const RemoveWorktreeRequest = z.strictObject({
@@ -109,6 +110,12 @@ async function removeChecked(
     'HEAD',
   ])
   const branch = head.code === 0 ? head.stdout.trim() : null
+  // On a branch, the commits stay on it. On none, they stay only if some ref holds them.
+  if (branch === null && !(await headIsHeld(path))) {
+    return failure(
+      `${path} is on no branch, at a commit nothing else holds. Put it on a branch (git switch -c <name>) to keep the commit, then remove it.`,
+    )
+  }
 
   const loaded = loadRepoConfig(tracking, root)
   if (!loaded.ok) return failure(loaded.problem)

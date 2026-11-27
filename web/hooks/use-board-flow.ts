@@ -4,10 +4,10 @@ import type { SaveProject } from '../../core/board/schema.ts'
 import { useTerminalLayout } from '@/contexts/terminal-context.ts'
 import { useBoardRoute } from '@/hooks/use-board-route.ts'
 import {
-  useBoardSessions,
+  useBoardSessionMutations,
   type ProductSessionStart,
   type WorkTicketStart,
-} from '@/hooks/use-board-sessions.ts'
+} from '@/hooks/use-board-session-mutations.ts'
 import { useProjectMutations } from '@/hooks/use-project-mutations.ts'
 import { useTicketMutations } from '@/hooks/use-ticket-mutations.ts'
 import { storeLastRepo } from '@/lib/board-prefs.ts'
@@ -47,7 +47,8 @@ export function useBoardFlow(): UseBoardFlowResult {
     isArchiving: isShelvingTicket,
   } = useTicketMutations()
   const isShelving = isShelvingProject || isShelvingTicket
-  const { workTicket: openWork, startProduct: openProduct } = useBoardSessions()
+  const { workTicket: openWork, startProduct: openProduct } =
+    useBoardSessionMutations()
   const { showSession } = useTerminalLayout()
 
   const createProject = useCallback(
