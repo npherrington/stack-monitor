@@ -97,3 +97,32 @@ export function cloneWithOrigin(root: string) {
   writeFileSync(join(changed, 'new.txt'), 'new\n')
   return { origin, primary, behind, merged, ahead, changed }
 }
+
+// A PR as GitHub holds it on the remote: a commit on top of origin/main, pushed to
+// refs/pull/<number>/head on the clone's origin. Answers its sha. A second call for one number is
+// a forced update: the new head doesn't descend from the old one.
+export function pushPull(
+  primary: string,
+  number: number,
+  message: string,
+): string {
+  const tree = git(primary, 'rev-parse', 'origin/main^{tree}').trim()
+  const sha = git(
+    primary,
+    'commit-tree',
+    tree,
+    '-p',
+    'origin/main',
+    '-m',
+    message,
+  ).trim()
+  git(
+    primary,
+    'push',
+    '-q',
+    '--force',
+    'origin',
+    `${sha}:refs/pull/${number}/head`,
+  )
+  return sha
+}

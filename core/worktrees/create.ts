@@ -63,7 +63,7 @@ export function worktreePath(root: string, branch: string): string {
 }
 
 // The lowest index from 1 to max that no other worktree holds.
-async function freeIndex(
+export async function freeIndex(
   root: string,
   config: Config,
 ): Promise<number | string> {
@@ -114,10 +114,44 @@ function startInstall(command: string, cwd: string, name: string): string {
   return log
 }
 
-// Takes back a worktree whose setup failed: the directory git made and the branch it cut.
-async function takeBack(root: string, path: string, branch: string) {
+// Takes back a worktree whose setup failed: the directory git made and the branch it cut, when
+// it cut one.
+async function takeBack(root: string, path: string, branch: string | null) {
   await run('git', ['-C', root, 'worktree', 'remove', '--force', path])
-  await run('git', ['-C', root, 'branch', '-D', branch])
+  if (branch !== null) await run('git', ['-C', root, 'branch', '-D', branch])
+}
+
+// What follows git worktree add: the index written, setup run, install started in the background.
+// A step that fails takes the worktree back. {branch} is '' for a detached worktree. steps: a
+// review of a fork's PR runs neither command, since they would run its code.
+export async function finishWorktree(
+  root: string,
+  path: string,
+  branch: string | null,
+  config: Config,
+  index: number,
+  steps: { setup: boolean; install: boolean },
+): Promise<{ log: string | null } | { refused: string }> {
+  const { setup, install, index: kept } = config.worktrees
+  try {
+    if (kept !== undefined) writeIndex(path, kept.file, kept.key, index)
+  } catch (error) {
+    await takeBack(root, path, branch)
+    return { refused: `Couldn't write ${kept?.file}: ${errorMessage(error)}` }
+  }
+  const fill = (command: string) =>
+    command.replaceAll(INDEX, String(index)).replaceAll(BRANCH, branch ?? '')
+  if (steps.setup && setup !== undefined) {
+    const ran = await shell(fill(setup), path)
+    if (ran.code !== 0) {
+      await takeBack(root, path, branch)
+      return {
+        refused: `Setup failed, so the worktree was taken back: ${tail(ran)}`,
+      }
+    }
+  }
+  if (!steps.install || install === undefined) return { log: null }
+  return { log: startInstall(fill(install), path, basename(path)) }
 }
 
 async function addWithGit(
@@ -143,32 +177,42 @@ async function addWithGit(
   if (added.code !== 0) {
     return failure(`git worktree add failed: ${tail(added)}`)
   }
-  const { setup, install, index: kept } = config.worktrees
-  try {
-    if (kept !== undefined) writeIndex(path, kept.file, kept.key, index)
-  } catch (error) {
-    await takeBack(root, path, branch)
-    return failure(`Couldn't write ${kept?.file}: ${errorMessage(error)}`)
-  }
-  const fill = (command: string) =>
-    command.replaceAll(INDEX, String(index)).replaceAll(BRANCH, branch)
-  if (setup !== undefined) {
-    const ran = await shell(fill(setup), path)
-    if (ran.code !== 0) {
-      await takeBack(root, path, branch)
-      return failure(
-        `Setup failed, so the worktree was taken back: ${tail(ran)}`,
-      )
-    }
-  }
+  const finished = await finishWorktree(root, path, branch, config, index, {
+    setup: true,
+    install: true,
+  })
+  if ('refused' in finished) return failure(finished.refused)
   const made = `Made ${path} on ${branch}, from ${config.mainline}`
-  if (install === undefined) return { ok: true, message: made, log: null }
-  const log = startInstall(fill(install), path, basename(path))
-  return { ok: true, message: `${made}. Installing in the background`, log }
+  return finished.log === null
+    ? { ok: true, message: made, log: null }
+    : {
+        ok: true,
+        message: `${made}. Installing in the background`,
+        log: finished.log,
+      }
 }
 
-// One make at a time per repo, so a double click can't race two into one index or path.
 const making = new Set<string>()
+
+export function alreadyMaking(root: string): string {
+  return `A worktree is already being made for ${root}`
+}
+
+// One make at a time per repo, so two can't race into one index or path. busy: what to answer
+// when one is already under way.
+export async function makingIn<Made>(
+  root: string,
+  busy: Made,
+  make: () => Promise<Made>,
+): Promise<Made> {
+  if (making.has(root)) return busy
+  making.add(root)
+  try {
+    return await make()
+  } finally {
+    making.delete(root)
+  }
+}
 
 export async function createWorktree(
   tracking: Tracking,
@@ -192,19 +236,14 @@ export async function createWorktree(
     `refs/heads/${branch}`,
   ])
   if (exists.code === 0) return failure(`${branch} is already a branch`)
-  if (making.has(root))
-    return failure(`A worktree is already being made for ${root}`)
-  making.add(root)
-  try {
+  return makingIn(root, failure(alreadyMaking(root)), async () => {
     const { config } = loaded
     const create = config.worktrees.create
-    if (create === undefined) return await addWithGit(root, branch, config)
+    if (create === undefined) return addWithGit(root, branch, config)
     const command = create.replaceAll(BRANCH, branch)
     const ran = await shell(command, root)
     return ran.code === 0
       ? { ok: true, message: `Ran ${command}`, log: null }
       : failure(`${command} failed: ${tail(ran)}`)
-  } finally {
-    making.delete(root)
-  }
+  })
 }
