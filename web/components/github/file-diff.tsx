@@ -12,10 +12,8 @@ import { ReviewThread } from '@/components/github/review-thread.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
 import { useReviewMutations } from '@/hooks/use-review-mutations.ts'
+import type { NoArgCallback } from '@/lib/callbacks.ts'
 import { cn } from '@/lib/utils.ts'
-
-// Past this many changed lines a file starts folded, so one generated file can't bury the rest.
-const FOLD_OVER = 400
 
 const LINE_TONE: Record<DiffLine['kind'], string> = {
   context: '',
@@ -43,6 +41,8 @@ interface FileDiffProps {
   file: PullFile
   threads: Thread[] // this file's
   hasPendingReview: boolean
+  open: boolean
+  onToggle: NoArgCallback
 }
 
 export function FileDiff({
@@ -51,10 +51,11 @@ export function FileDiff({
   file,
   threads,
   hasPendingReview,
+  open,
+  onToggle,
 }: FileDiffProps) {
   const { comment, reply, resolve, deleteComment, isResolving, isDeleting } =
     useReviewMutations(root, number)
-  const [open, setOpen] = useState(file.additions + file.deletions <= FOLD_OVER)
   const [commenting, setCommenting] = useState<string | null>(null)
 
   const onLine = new Map<string, Thread[]>()
@@ -99,7 +100,7 @@ export function FileDiff({
           size="icon-xs"
           aria-label={open ? `Fold ${file.path}` : `Show ${file.path}`}
           aria-expanded={open}
-          onClick={() => setOpen(!open)}
+          onClick={() => onToggle()}
         >
           {open ? <ChevronDown /> : <ChevronRight />}
         </Button>

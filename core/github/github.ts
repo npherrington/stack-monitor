@@ -16,6 +16,7 @@ import {
   type PullList,
   type PullSummary,
   type ReviewThread,
+  type TimelineItem,
 } from '../types.ts'
 import { parsePatch } from './patch.ts'
 
@@ -158,7 +159,7 @@ const Decision = z
   .transform((value) => (value === '' ? null : value))
 
 const SUMMARY_FIELDS =
-  'number,title,author,headRefName,baseRefName,isCrossRepository,isDraft,url,reviewDecision,updatedAt,additions,deletions,changedFiles'
+  'number,title,author,headRefName,baseRefName,isCrossRepository,isDraft,url,reviewDecision,labels,updatedAt,additions,deletions,changedFiles'
 
 const GhPull = z.object({
   number: z.number(),
@@ -170,6 +171,9 @@ const GhPull = z.object({
   isDraft: z.boolean(),
   url: z.string(),
   reviewDecision: Decision,
+  labels: z
+    .array(z.object({ name: z.string() }))
+    .or(z.object({ nodes: z.array(z.object({ name: z.string() })) })),
   updatedAt: z.string(),
   additions: z.number(),
   deletions: z.number(),
@@ -187,6 +191,9 @@ function summary(pull: z.infer<typeof GhPull>): PullSummary {
     draft: pull.isDraft,
     url: pull.url,
     reviewDecision: pull.reviewDecision,
+    labels: ('nodes' in pull.labels ? pull.labels.nodes : pull.labels).map(
+      (label) => label.name,
+    ),
     updatedAt: pull.updatedAt,
     additions: pull.additions,
     deletions: pull.deletions,
@@ -267,7 +274,12 @@ const DETAIL_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
       id number title body url isDraft isCrossRepository updatedAt reviewDecision
       additions deletions changedFiles headRefName baseRefName
       author { login }
+      labels(first: 20) { nodes { name } }
       reviews(states: PENDING, first: 1) { nodes { id comments { totalCount } } }
+      submitted: reviews(states: [APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED], last: 100) {
+        nodes { id state body submittedAt url author { login } }
+      }
+      comments(last: 100) { nodes { id body createdAt url author { login } } }
       reviewThreads(first: 100) {
         nodes {
           id path line diffSide isResolved isOutdated
@@ -285,6 +297,34 @@ const GhDetail = z.object({
     pullRequest: GhPull.extend({
       id: z.string(),
       body: z.string(),
+      submitted: z.object({
+        nodes: z.array(
+          z.object({
+            id: z.string(),
+            state: z.enum([
+              'APPROVED',
+              'CHANGES_REQUESTED',
+              'COMMENTED',
+              'DISMISSED',
+            ]),
+            body: z.string(),
+            submittedAt: z.string().nullable(),
+            url: z.string(),
+            author: Author,
+          }),
+        ),
+      }),
+      comments: z.object({
+        nodes: z.array(
+          z.object({
+            id: z.string(),
+            body: z.string(),
+            createdAt: z.string(),
+            url: z.string(),
+            author: Author,
+          }),
+        ),
+      }),
       reviews: z.object({
         nodes: z.array(
           z.object({
@@ -359,12 +399,32 @@ export async function readPull(
     })),
   }))
   const [pending] = pull.reviews.nodes
+  const timeline: TimelineItem[] = [
+    ...pull.comments.nodes.map((comment): TimelineItem => ({
+      kind: 'comment',
+      id: comment.id,
+      author: login(comment.author),
+      body: comment.body,
+      at: comment.createdAt,
+      url: comment.url,
+    })),
+    ...pull.submitted.nodes.map((review): TimelineItem => ({
+      kind: 'review',
+      id: review.id,
+      author: login(review.author),
+      state: review.state,
+      body: review.body,
+      at: review.submittedAt ?? '',
+      url: review.url,
+    })),
+  ].toSorted((a, b) => a.at.localeCompare(b.at))
   return {
     ...summary(pull),
     body: pull.body,
     viewer: repo.viewer,
     files,
     threads,
+    timeline,
     pendingReview: pending?.id ?? null,
     pendingComments: pending?.comments.totalCount ?? 0,
   }

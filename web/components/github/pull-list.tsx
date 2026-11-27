@@ -78,6 +78,9 @@ export function PullList({ root, list }: PullListProps) {
                       {pull.title}
                     </span>
                     {pull.draft && <Pill>Draft</Pill>}
+                    {pull.labels.map((label) => (
+                      <Pill key={label}>{label}</Pill>
+                    ))}
                     {pull.reviewDecision !== null && (
                       <Pill tone={DECISION[pull.reviewDecision].tone}>
                         {DECISION[pull.reviewDecision].label}

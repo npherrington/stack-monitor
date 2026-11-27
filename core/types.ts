@@ -414,6 +414,7 @@ export interface PullSummary {
   draft: boolean
   url: string
   reviewDecision: ReviewDecision
+  labels: string[] // label names
   updatedAt: string // ISO
   additions: number
   deletions: number
@@ -471,12 +472,37 @@ export interface ReviewThread {
   comments: ReviewComment[] // oldest first
 }
 
+export type ReviewState =
+  'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
+
+// The Conversation tab, oldest first: comments on the PR itself, and each submitted review's
+// verdict and summary. Line comments are in threads.
+export type TimelineItem =
+  | {
+      kind: 'comment'
+      id: string
+      author: string
+      body: string
+      at: string
+      url: string
+    }
+  | {
+      kind: 'review'
+      id: string
+      author: string
+      state: ReviewState
+      body: string // '' when the review was only line comments
+      at: string
+      url: string
+    }
+
 // GET /api/github/pull?root=&number=
 export interface PullDetail extends PullSummary {
   body: string // markdown
   viewer: string
   files: PullFile[]
   threads: ReviewThread[]
+  timeline: TimelineItem[]
   pendingReview: string | null // the viewer's unsubmitted review's node id
   pendingComments: number
 }

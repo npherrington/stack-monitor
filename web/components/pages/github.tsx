@@ -6,7 +6,12 @@ import { Segmented } from '@/components/stack/segmented.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useCheckouts } from '@/hooks/use-checkouts.ts'
 import { usePulls } from '@/hooks/use-pulls.ts'
-import { readPullNumber, repoPath } from '@/lib/github-links.ts'
+import {
+  pullPath,
+  readPullNumber,
+  readPullTab,
+  repoPath,
+} from '@/lib/github-links.ts'
 
 // A repo's open PRs on GitHub, one repo at a time, and one PR to read and review. Everything goes
 // through gh as its login.
@@ -63,7 +68,12 @@ export function Github() {
           .
         </p>
       ) : number !== null ? (
-        <PullView root={current.root} number={number} />
+        <PullView
+          root={current.root}
+          number={number}
+          tab={readPullTab(params.get('tab'))}
+          onTabChange={(tab) => navigate(pullPath(current.root, number, tab))}
+        />
       ) : isPending ? (
         <Skeleton className="h-64" />
       ) : list === null ? (
