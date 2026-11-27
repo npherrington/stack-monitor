@@ -32,6 +32,7 @@ sources = [
   "web/**/*",
   "core/types.ts",
   "core/config/schema.ts",
+  "core/board/schema.ts",
   "index.html",
   "public/**/*",
   "vite.config.ts",

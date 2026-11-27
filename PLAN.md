@@ -5,7 +5,7 @@
 A local page and an MCP server for working across a repo's git worktrees: each checkout's git
 state, the dev stack it runs, and the coding agents working in it. From one page you start and stop
 a checkout's services, create and remove worktrees, start headless agent runs, put runs on a
-schedule, and sketch how a feature moves through the stack.
+schedule, sketch how a feature moves through the stack, and keep a board of tickets.
 
 It started inside one private product repo, built around that repo's stack and conventions, where
 it still runs. This repo is the generic version. What's particular to a repo is declared in a config
@@ -19,7 +19,8 @@ launchd.
 ## Principles
 
 - **Reads, doesn't remember.** Every status read looks at the machine again: git, `ps`, `lsof`,
-  `docker ps`. The only things kept are schedules (in the clone's git dir) and run logs.
+  `docker ps`. What's kept is what a person wrote and the machine can't be asked for again: the
+  tracked repos, schedules, run logs and the ticket board (`docs/decisions/board-sqlite.md`).
 - **Refuses what it can't check.** A service whose state can't be read can't be started or
   stopped. A worktree with commits that aren't on mainline, changed files, a session open in it or
   a dev server running isn't offered for removal. A port held by a process outside the checkout is
@@ -35,12 +36,13 @@ launchd.
 
 ## Modules
 
-| Module      | On when                 | What it does                                                   |
-| ----------- | ----------------------- | -------------------------------------------------------------- |
-| Worktrees   | always                  | every checkout with its git state; create and remove worktrees |
-| Stack       | the config has `stack`  | each checkout's services: status, start, stop                  |
-| Agents      | the config has `agents` | headless runs in a worktree, their logs and reports; schedules |
-| Feature map | always                  | a canvas for sketching a feature across the stack              |
+| Module       | On when                 | What it does                                                                                  |
+| ------------ | ----------------------- | --------------------------------------------------------------------------------------------- |
+| Worktrees    | always                  | every checkout with its git state; create and remove worktrees                                |
+| Stack        | the config has `stack`  | each checkout's services: status, start, stop                                                 |
+| Agents       | the config has `agents` | headless runs in a worktree, their logs and reports; schedules                                |
+| Feature map  | always                  | a canvas for sketching a feature across the stack                                             |
+| Ticket board | always                  | projects, each a board of tickets in columns, with labels, priorities, due dates and comments |
 
 ### Worktrees
 
@@ -143,6 +145,27 @@ scheduler) and a few starter maps. A repo's `featureMap.blocks` file adds its ow
 its code lives and the docs to read first. An id that matches a built-in replaces it. A `draw`
 command lays a map out from a list of pieces and arrows, for an agent to hand a user.
 
+### Ticket board
+
+A board of tickets per project, for planning the work the other modules then do. It belongs to the
+person, not to a repo: it reads no checkout, has no section in the config, and is always on.
+
+- A **project** is a board of its own: a name, a colour and a prefix for its tickets' ids. It can
+  be archived and restored, or deleted with everything in it.
+- A **column** is a status. A new project starts with Backlog, Todo, In progress, In review, Done
+  and Cancelled; they can be added, renamed, recoloured, reordered and deleted. Deleting one that
+  has tickets asks which column takes them, and a project keeps at least one.
+- A **ticket** has a title, a markdown description, a column, labels, a priority, an optional due
+  date and comments. Its id is the project's prefix and a number (`BEANS-12`). Numbers count up
+  per project and are never given out twice; renaming the prefix renames every id and keeps the
+  numbers. The order within a column is the user's: a card stays where it was dropped.
+- A **label** is shared by every project or belongs to one. No two labels a project can see share
+  a name.
+
+It is kept in one SQLite file, `~/.local/state/stack-monitor/board.db` (`$STACK_MONITOR_BOARD`),
+through Node's own `node:sqlite` (`docs/decisions/board-sqlite.md`). There is no MCP tool for it
+yet.
+
 ## Config
 
 One JSON file, parsed with zod, with a JSON Schema exported from it for editor autocompletion. It's
@@ -220,6 +243,7 @@ core/
   agents/       the adapter interface, adapters/claude, runs, run logs
   schedules/    launchd jobs, fires, locks
   feature-map/  blocks, sketch layout, the file format
+  board/        the ticket board's SQLite file, projects, columns, labels, tickets
 server/         node:http, the route table, the built page
 mcp/            stdio MCP server over core/
 web/            the page: components/{ui,layouts,pages,<feature>}, hooks, providers, lib
@@ -260,6 +284,9 @@ with their module, their fixtures rewritten to a generic repo.
 8. **Themes.** The original's light, dark and pastel themes, chosen in the header and remembered
    per browser.
 
+9. **Ticket board.** Projects, columns, labels, tickets and comments in a SQLite file of the
+   monitor's own, and the board page: drag a card between columns, filter and search, archive.
+
 Keep the clone out of `~/Desktop`, `~/Documents` and `~/Downloads`: macOS keeps launchd jobs out of
 those folders, so schedules would fail there.
 
@@ -273,6 +300,9 @@ those folders, so schedules would fail there.
 - **Create a skill / Create a workflow.** The original has pages that start a run to write a new
   agent skill or saved workflow, following that repo's own authoring skills. They're out for now;
   they could come back as an extra of the Claude adapter.
+- **Starting a workflow from a ticket.** The board stands alone for now. A ticket's id already
+  matches the `agents.arguments.ticket` pattern a repo can declare, so a ticket could offer the
+  repo's workflows and hand them its id, and show the branch or PR that comes of it.
 - **Shipping the app to others.** A download that macOS opens without a warning has to be signed
   with an Apple Developer ID and notarised. Until then it's built from source.
 - **Linux.** `lsof` and `ps` work there; schedules and the login job would need systemd user units

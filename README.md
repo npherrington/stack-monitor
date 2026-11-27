@@ -5,8 +5,8 @@
 A local page and MCP server for working across a repo's git worktrees: each checkout's git state,
 the dev stack it runs, and the coding agents working in it.
 
-**Status: early, and in daily use.** Worktrees, the stack, agent runs, schedules and a Claude Code
-terminal per worktree are in; the feature map comes next ([PLAN.md](PLAN.md)). It runs as a Mac
+**Status: early, and in daily use.** Worktrees, the stack, agent runs, schedules, a Claude Code
+terminal per worktree and a ticket board are in; the feature map comes next ([PLAN.md](PLAN.md)). It runs as a Mac
 app (`mise run app`) or a local server you open in a browser.
 
 ![Every worktree across your repos, one row each, with its git state, stack and last run](docs/screenshots/worktrees.png)
@@ -84,6 +84,14 @@ checks that launchd can read the checkout: macOS keeps LaunchAgents out of `~/De
 `~/Documents` and `~/Downloads` unless node has Full Disk Access, and the page says so and offers
 the monitor instead. A fire while a run is going in the checkout starts nothing and is logged as
 skipped. Schedules and their fire log live in `~/.local/state/stack-monitor/schedules/`.
+
+**Ticket board.** Under Product management, a board of tickets per project: columns you name,
+colour and reorder, cards you drag between and within them, and a prefix you choose for each
+project's ids (`BEANS-12`). A ticket has a markdown description, labels (shared by every project
+or one project's own), a priority, a due date and comments; the board filters by label and
+priority and searches titles and ids. Tickets and projects can be archived and restored, or
+deleted for good. It's all in one SQLite file, `~/.local/state/stack-monitor/board.db`, or the
+file `STACK_MONITOR_BOARD` names: copy it to back the board up or move it to another machine.
 
 Pins, names and colours you give worktrees, the filters, and the pastel theme (picked in the
 sidebar) are kept per browser.

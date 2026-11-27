@@ -6,6 +6,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  SquareKanban,
 } from 'lucide-react'
 import type { ReactElement, RefObject } from 'react'
 import { NavLink } from 'react-router'
@@ -40,6 +41,12 @@ const GROUPS = [
     links: [
       { to: '/agents', label: 'Agents', icon: Bot, end: false },
       { to: '/schedules', label: 'Schedules', icon: CalendarClock, end: false },
+    ],
+  },
+  {
+    heading: 'Product management',
+    links: [
+      { to: '/board', label: 'Ticket board', icon: SquareKanban, end: false },
     ],
   },
 ] as const

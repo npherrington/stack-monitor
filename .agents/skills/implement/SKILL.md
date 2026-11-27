@@ -111,7 +111,7 @@ change against PLAN.md § Principles itself.
 ### `core`: `core/**`, the modules
 
 The principles that live here: **Reads, doesn't remember** (each status read
-looks at the machine again; only schedules and run logs are kept) and
+looks at the machine again; PLAN.md § Principles lists the few things kept) and
 **Refuses what it can't check** (a service whose state can't be read isn't
 started or stopped; SIGTERM, never SIGKILL; `git worktree remove`, never
 `--force`; a process outside the checkout is never signalled). A repo's
