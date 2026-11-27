@@ -426,11 +426,69 @@ export interface PullSummary {
   changedFiles: number
 }
 
+export type CheckState = 'pass' | 'fail' | 'pending' | 'skipped' | 'cancelled'
+
+// The head commit's checks in one word; none: no check or status reported on it.
+export type ChecksSummary = 'passing' | 'failing' | 'pending' | 'none'
+
+export interface ListedPull extends PullSummary {
+  checks: ChecksSummary
+}
+
 // GET /api/github/pulls?root=: every open PR, most recently updated first.
 export interface PullList {
   repo: string
   viewer: string
-  pulls: PullSummary[]
+  pulls: ListedPull[]
+}
+
+export interface PullCheck {
+  name: string // the job's name, or a commit status's context
+  state: CheckState
+  description: string | null // a check run's title, or a commit status's description
+  url: string | null // its page; only http(s)
+  startedAt: string | null // null while queued, and for a commit status
+  seconds: number | null // from started to completed, once it has completed
+  job: number | null // the Actions job id, for GET /api/github/checks/log
+}
+
+export interface ActionsRun {
+  id: number
+  workflow: string
+  number: number // the run number GitHub shows: CI #68
+  url: string | null // only http(s)
+  state: CheckState // the run as a whole, from its check suite
+  rerunnable: boolean // completed and failed: POST /api/github/checks/rerun takes it
+}
+
+export interface CheckGroup {
+  run: ActionsRun | null // null: commit statuses and checks from apps other than Actions
+  checks: PullCheck[] // failing first, then pending, cancelled, passing, skipped
+}
+
+// GET /api/github/checks?root=&number=: the checks on the PR's head commit, as GitHub has them
+// now. A check a later run or attempt superseded is left out, as gh pr checks does.
+export interface PullChecks {
+  sha: string
+  summary: ChecksSummary
+  failing: number // checks that failed or were cancelled
+  running: boolean // a check is queued or in progress
+  cut: boolean // GitHub has more than the first 100 checks on the commit
+  groups: CheckGroup[] // Actions runs, failing first; the null group last
+}
+
+export interface JobLogLine {
+  number: number // its line in the job's log, from 1
+  text: string // without its timestamp or colour codes
+  error: boolean // a ##[error] line
+}
+
+// GET /api/github/checks/log?root=&job=: the failing step of an Actions job's log.
+export interface JobLog {
+  failed: boolean // the log has a ##[error] line
+  step: string | null // the step the last error is in; null before any step, or without an error
+  lines: JobLogLine[] // the last 300 of that step, or of the log
+  cut: boolean // earlier lines were left out
 }
 
 export type DiffSide = 'LEFT' | 'RIGHT' // LEFT: the base's line, RIGHT: the head's

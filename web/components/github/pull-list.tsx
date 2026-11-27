@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 
 import type { PullList as List, ReviewDecision } from '../../../core/types.ts'
+import { ChecksPill } from '@/components/github/checks-pill.tsx'
 import { Segmented } from '@/components/stack/segmented.tsx'
 import { Card } from '@/components/ui/card.tsx'
 import { Input } from '@/components/ui/input.tsx'
@@ -87,6 +88,7 @@ export function PullList({ root, list }: PullListProps) {
                         {DECISION[pull.reviewDecision].label}
                       </Pill>
                     )}
+                    <ChecksPill summary={pull.checks} />
                   </span>
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span>#{pull.number}</span>

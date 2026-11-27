@@ -1,5 +1,5 @@
-// A tracked repo's open PRs, their diffs and review threads, and reviewing them, through `gh` as
-// its login. Every read asks GitHub again; nothing is kept. A line comment goes into the viewer's
+// A tracked repo's open PRs, their diffs, review threads and CI checks, and reviewing them, through
+// `gh` as its login. Every read asks GitHub again; nothing is kept. A line comment goes into the viewer's
 // pending review on GitHub, so a draft survives a reload and can be finished on github.com.
 import { z } from 'zod'
 
@@ -11,6 +11,9 @@ import {
   failure,
   type ActionResult,
   type GithubStatus,
+  type JobLog,
+  type ListedPull,
+  type PullChecks,
   type PullDetail,
   type PullFile,
   type PullList,
@@ -18,6 +21,15 @@ import {
   type ReviewThread,
   type TimelineItem,
 } from '../types.ts'
+import {
+  CHECKS_QUERY,
+  failedStep,
+  HeadChecks,
+  ListRollup,
+  listSummary,
+  pullChecks,
+  rerunTarget,
+} from './checks.ts'
 import { parsePatch } from './patch.ts'
 
 const GH_TIMEOUT_MS = 30_000
@@ -28,10 +40,22 @@ const NodeId = z
   .min(1)
   .max(200)
   .regex(/^[\w=-]+$/)
+// An Actions run or job id: past 2^32 already, so a plain positive integer.
+const ActionsId = z.coerce
+  .number()
+  .int()
+  .positive()
+  .max(Number.MAX_SAFE_INTEGER)
 const Body = z.string().trim().min(1, 'Write something first').max(60_000)
 
 export const PullListRequest = z.object({ root: PathText })
 export const PullRequest = z.object({ root: PathText, number: PullNumber })
+export const JobLogRequest = z.object({ root: PathText, job: ActionsId })
+export const RerunRequest = z.strictObject({
+  root: PathText,
+  number: PullNumber,
+  run: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+})
 export const LineCommentRequest = z.strictObject({
   root: PathText,
   number: PullNumber,
@@ -164,7 +188,7 @@ const Decision = z
 const GhLabel = z.object({ name: z.string(), color: z.string() })
 
 const SUMMARY_FIELDS =
-  'number,title,author,headRefName,baseRefName,isCrossRepository,isDraft,url,reviewDecision,labels,updatedAt,additions,deletions,changedFiles'
+  'number,title,author,headRefName,baseRefName,isCrossRepository,isDraft,url,reviewDecision,labels,updatedAt,additions,deletions,changedFiles,statusCheckRollup'
 
 const GhPull = z.object({
   number: z.number(),
@@ -182,6 +206,8 @@ const GhPull = z.object({
   deletions: z.number(),
   changedFiles: z.number(),
 })
+
+const GhListedPull = GhPull.extend({ statusCheckRollup: ListRollup })
 
 function summary(pull: z.infer<typeof GhPull>): PullSummary {
   return {
@@ -225,13 +251,16 @@ export async function listPulls(
     SUMMARY_FIELDS,
   ])
   if (!answer.ok) return { refused: answer.problem }
-  const pulls = parsed(z.array(GhPull), answer.stdout)
+  const pulls = parsed(z.array(GhListedPull), answer.stdout)
   if (pulls === null) return { problem: "gh pr list didn't answer a list" }
   return {
     repo: repo.repo,
     viewer: repo.viewer,
     pulls: pulls
-      .map(summary)
+      .map((pull): ListedPull => ({
+        ...summary(pull),
+        checks: listSummary(pull.statusCheckRollup),
+      }))
       .toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
   }
 }
@@ -471,6 +500,53 @@ export async function readPull(
   }
 }
 
+async function headChecks(
+  repo: Repo,
+  number: number,
+): Promise<PullChecks | { problem: string }> {
+  const answer = await graphql(
+    repo.root,
+    HeadChecks,
+    CHECKS_QUERY,
+    ownerName(repo),
+    { number },
+  )
+  return 'problem' in answer ? answer : pullChecks(answer)
+}
+
+export async function readChecks(
+  tracking: Tracking,
+  given: string,
+  number: number,
+): Promise<PullChecks | { problem: string } | { refused: string }> {
+  const repo = await githubRepo(tracking, given)
+  if (!('root' in repo)) return repo
+  const checks = await headChecks(repo, number)
+  return 'problem' in checks ? { refused: checks.problem } : checks
+}
+
+// One job's plain-text log. gh refuses to print a response with terminal escapes unless told to;
+// failedStep strips them.
+export async function readJobLog(
+  tracking: Tracking,
+  given: string,
+  job: number,
+): Promise<JobLog | { problem: string } | { refused: string }> {
+  const repo = await githubRepo(tracking, given)
+  if (!('root' in repo)) return repo
+  const answer = await gh(repo.root, [
+    'api',
+    '--allow-escape-sequences',
+    `repos/${repo.repo}/actions/jobs/${job}/logs`,
+  ])
+  if (answer.ok) return failedStep(answer.stdout)
+  return {
+    refused: /maxBuffer/.test(answer.problem)
+      ? 'The log is too long to read here; open it on GitHub'
+      : answer.problem,
+  }
+}
+
 const REVIEW_TARGET_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
@@ -703,6 +779,36 @@ export function submitReview(
       answer,
       `${SUBMITTED[event]} #${request.number}`,
       "Couldn't submit the review",
+    )
+  })
+}
+
+// Re-runs the failed jobs of one of the PR's Actions runs, which spends CI minutes. The run id the
+// page sends isn't taken on trust: the PR's checks are read again, and only a run on the head
+// commit that GitHub reports completed and failed goes through.
+export function rerunFailedJobs(
+  tracking: Tracking,
+  request: z.output<typeof RerunRequest>,
+): Promise<ActionResult> {
+  return action(tracking, request.root, async (repo) => {
+    const checks = await headChecks(repo, request.number)
+    if ('problem' in checks) {
+      return failure(
+        `Couldn't read #${request.number}'s checks: ${checks.problem}`,
+      )
+    }
+    const target = rerunTarget(checks, request.number, request.run)
+    if ('refused' in target) return failure(target.refused)
+    const answer = await gh(repo.root, [
+      'api',
+      '--method',
+      'POST',
+      `repos/${repo.repo}/actions/runs/${target.id}/rerun-failed-jobs`,
+    ])
+    return done(
+      answer,
+      `Re-running the failed jobs of ${target.workflow} #${target.number}`,
+      "Couldn't re-run the failed jobs",
     )
   })
 }
