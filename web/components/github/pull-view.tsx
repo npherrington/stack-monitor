@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowLeft, ExternalLink } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 import { Conversation } from '@/components/github/conversation.tsx'
@@ -27,6 +27,20 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
   const { pull, isPending, error, isStale } = usePull(root, number)
   const review = useRef<HTMLDivElement>(null)
   const [openFiles, setOpenFiles] = useState<ReadonlySet<string>>(new Set())
+  // The file a Conversation link opened, scrolled to once Files changed has rendered it.
+  const focus = useRef<string | null>(null)
+  useEffect(() => {
+    if (tab !== 'files' || focus.current === null) return
+    document
+      .querySelector(`[data-path="${CSS.escape(focus.current)}"]`)
+      ?.scrollIntoView({ behavior: 'smooth' })
+    focus.current = null
+  }, [tab])
+  const openFile = (path: string) => {
+    setOpenFiles(new Set(openFiles).add(path))
+    focus.current = path
+    onTabChange('files')
+  }
   const toggle = (path: string) => {
     const next = new Set(openFiles)
     if (!next.delete(path)) next.add(path)
@@ -133,7 +147,7 @@ export function PullView({ root, number, tab, onTabChange }: PullViewProps) {
         </a>
       </div>
       {tab === 'conversation' ? (
-        <Conversation root={root} pull={pull} />
+        <Conversation root={root} pull={pull} onOpenFile={openFile} />
       ) : (
         <>
           <div className="flex justify-end gap-2">

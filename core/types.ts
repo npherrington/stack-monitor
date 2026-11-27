@@ -480,17 +480,17 @@ export interface ReviewThread {
 export type ReviewState =
   'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
 
-// The Conversation tab, oldest first: comments on the PR itself, its commits, and each submitted
-// review's verdict and summary. Line comments are in threads.
+export interface PullCommit {
+  sha: string
+  author: string // their GitHub login, else the commit's author name
+  headline: string // the message's first line
+  at: string
+  url: string
+}
+
+// The Conversation tab, oldest first: comments on the PR itself, and each submitted review's
+// verdict and summary. Line comments are in threads.
 export type TimelineItem =
-  | {
-      kind: 'commit'
-      id: string // the sha
-      author: string // their GitHub login, else the commit's author name
-      headline: string // the message's first line
-      at: string
-      url: string
-    }
   | {
       kind: 'comment'
       id: string
@@ -516,6 +516,7 @@ export interface PullDetail extends PullSummary {
   files: PullFile[]
   threads: ReviewThread[]
   timeline: TimelineItem[]
+  commits: PullCommit[] // oldest first, the last 100
   pendingReview: string | null // the viewer's unsubmitted review's node id
   pendingComments: number
 }

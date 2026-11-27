@@ -435,14 +435,6 @@ export async function readPull(
       at: comment.createdAt,
       url: comment.url,
     })),
-    ...pull.commits.nodes.map(({ commit }): TimelineItem => ({
-      kind: 'commit',
-      id: commit.oid,
-      author: commit.author?.user?.login ?? commit.author?.name ?? 'unknown',
-      headline: commit.messageHeadline,
-      at: commit.committedDate,
-      url: commit.url,
-    })),
     ...pull.submitted.nodes.map((review): TimelineItem => ({
       kind: 'review',
       id: review.id,
@@ -460,6 +452,13 @@ export async function readPull(
     files,
     threads,
     timeline,
+    commits: pull.commits.nodes.map(({ commit }) => ({
+      sha: commit.oid,
+      author: commit.author?.user?.login ?? commit.author?.name ?? 'unknown',
+      headline: commit.messageHeadline,
+      at: commit.committedDate,
+      url: commit.url,
+    })),
     pendingReview: pending?.id ?? null,
     pendingComments: pending?.comments.totalCount ?? 0,
   }
