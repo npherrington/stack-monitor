@@ -3,7 +3,7 @@
 # checkout is a clean main behind origin/main. Waits for the app to quit, fast-forwards main to
 # <commit>, installs and builds, reinstalls the launcher when its inputs changed, then reopens the
 # app. Nothing runs while the app does: `npm ci` replaces the Electron the app runs from.
-# Usage: update-app.sh <commit> <pid>...   (the app, and its vite watcher)
+# Usage: update-app.sh <commit> <pid>...   (the app, its vite watcher and its launcher)
 set -euo pipefail
 
 name="Stack monitor"
@@ -77,7 +77,7 @@ main() {
     while kill -0 "$pid" 2>/dev/null; do
       if [ "$tries" -ge "$wait_tries" ]; then
         echo "process $pid is still running after 30 s"
-        alert "$name wasn't updated" "It didn't quit within 30 s (process $pid is still running), so nothing changed." >/dev/null || true
+        alert "$name wasn't updated" "Process $pid was still running 30 s after $name quit, so nothing changed. Open $name again once it has gone." >/dev/null || true
         exit 1
       fi
       sleep 0.2
@@ -119,9 +119,11 @@ main() {
   if [ -n "${STACK_MONITOR_APP:-}" ]; then
     reopen
   else
-    alert "$name updated" "It's on $(git rev-parse --short HEAD). Start it again with mise run app in $root." >/dev/null || true
+    # Also what a launcher installed before STACK_MONITOR_APP existed gets.
+    alert "$name updated" "It's on $(git rev-parse --short HEAD). Start it again with mise run app in $root. If you open it from the Dock or Spotlight, run mise run install-app there once, so the next update reopens it." >/dev/null || true
   fi
 }
 
-# One line, so bash has read all of it before the merge rewrites this file, and reads no further.
+# The merge writes a new file and bash keeps reading the old one, but exit on the same line means
+# nothing after main is read either way.
 main "$@"; exit

@@ -108,15 +108,26 @@ async function updateFromMain(): Promise<void> {
     const { target, behind, commits } = decision
     const more =
       behind > commits.length ? `\n…and ${behind - commits.length} more` : ''
+    // Set by the installed launcher (scripts/install-app.sh), which is what the script reopens.
+    const after =
+      process.env.STACK_MONITOR_APP === undefined
+        ? "An alert says when it's done; start it again with mise run app then, not before."
+        : "Then it opens again: don't open it until it does."
     const { response } = await dialog.showMessageBox({
       message: `Update to ${behind} new commit${behind === 1 ? '' : 's'} on main?`,
-      detail: `${commits.join('\n')}${more}\n\nStack monitor quits as Quit does, installs and builds, then opens again. Don't open it until it does. If a step fails, an alert says which and where its log is.`,
+      detail: `${commits.join('\n')}${more}\n\nStack monitor quits as Quit does, then installs and builds. ${after} If a step fails, an alert says which and where its log is.`,
       buttons: ['Update and Restart', 'Cancel'],
       defaultId: 0,
       cancelId: 1,
     })
     if (response !== 0) return
-    const pids = [process.pid, watcher?.pid].filter((pid) => pid !== undefined)
+    // The launcher too, so the script doesn't reopen the app while the old one is still exiting.
+    const launcher = Number(process.env.STACK_MONITOR_LAUNCHER_PID)
+    const pids = [
+      process.pid,
+      watcher?.pid,
+      Number.isInteger(launcher) && launcher > 0 ? launcher : undefined,
+    ].filter((pid) => pid !== undefined)
     spawn(
       '/bin/bash',
       [join(ROOT, 'scripts', 'update-app.sh'), target, ...pids.map(String)],
@@ -154,6 +165,18 @@ function setMenu(): void {
     { role: 'editMenu' },
     { role: 'viewMenu' },
     { role: 'windowMenu' },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'Stack monitor on GitHub',
+          click: () =>
+            void shell.openExternal(
+              'https://github.com/npherrington/stack-monitor',
+            ),
+        },
+      ],
+    },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
