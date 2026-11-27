@@ -284,6 +284,14 @@ const DETAIL_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
         nodes { id state body submittedAt url author { login } }
       }
       comments(last: 100) { nodes { id body createdAt url author { login } } }
+      commits(last: 100) {
+        nodes {
+          commit {
+            oid messageHeadline committedDate url
+            author { name user { login } }
+          }
+        }
+      }
       reviewThreads(first: 100) {
         nodes {
           id path line diffSide isResolved isOutdated
@@ -326,6 +334,21 @@ const GhDetail = z.object({
             createdAt: z.string(),
             url: z.string(),
             author: Author,
+          }),
+        ),
+      }),
+      commits: z.object({
+        nodes: z.array(
+          z.object({
+            commit: z.object({
+              oid: z.string(),
+              messageHeadline: z.string(),
+              committedDate: z.string(),
+              url: z.string(),
+              author: z
+                .object({ name: z.string().nullable(), user: Author })
+                .nullable(),
+            }),
           }),
         ),
       }),
@@ -411,6 +434,14 @@ export async function readPull(
       body: comment.body,
       at: comment.createdAt,
       url: comment.url,
+    })),
+    ...pull.commits.nodes.map(({ commit }): TimelineItem => ({
+      kind: 'commit',
+      id: commit.oid,
+      author: commit.author?.user?.login ?? commit.author?.name ?? 'unknown',
+      headline: commit.messageHeadline,
+      at: commit.committedDate,
+      url: commit.url,
     })),
     ...pull.submitted.nodes.map((review): TimelineItem => ({
       kind: 'review',

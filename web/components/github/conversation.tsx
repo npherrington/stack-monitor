@@ -1,3 +1,5 @@
+import { GitCommitHorizontal } from 'lucide-react'
+
 import type {
   PullDetail,
   ReviewState,
@@ -24,6 +26,25 @@ interface EntryProps {
 }
 
 function Entry({ item }: EntryProps) {
+  if (item.kind === 'commit') {
+    return (
+      <div className="flex min-w-0 items-center gap-2 px-4 text-xs text-muted-foreground">
+        <GitCommitHorizontal className="size-3.5 shrink-0" aria-hidden="true" />
+        <span className="shrink-0">{item.author}</span>
+        <span className="min-w-0 truncate text-foreground">
+          {item.headline}
+        </span>
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 font-mono hover:underline"
+        >
+          {item.id.slice(0, 7)}
+        </a>
+      </div>
+    )
+  }
   return (
     <Card className="gap-2 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -52,8 +73,8 @@ interface ConversationProps {
   pull: PullDetail
 }
 
-// The PR as a discussion: what it says, the comments and reviews on it in order, then every line
-// thread with where it sits.
+// The PR as a discussion: what it says, the comments, commits and reviews on it in order, then
+// every line thread with where it sits.
 export function Conversation({ root, pull }: ConversationProps) {
   const { reply, resolve, deleteComment, isResolving, isDeleting } =
     useReviewMutations(root, pull.number)
