@@ -119,14 +119,14 @@ export function WorktreeRow({
 
   return (
     <li
-      data-path={checkout.path}
+      data-row={checkout.path}
       className={cn(
         'group relative flex items-center gap-4 py-2.5 pr-3 pl-4 transition-colors',
         swatchTint({ colour: pref.colour ?? 'none' }),
       )}
     >
-      {/* Dragged by RepoSection, which listens on the list. The menu's Move items do the same
-          from the keyboard. */}
+      {/* Dragged by RepoSection, which listens on the list (useRowDrag reads data-row). The
+          menu's Move items do the same from the keyboard. */}
       <span
         draggable
         aria-hidden="true"
