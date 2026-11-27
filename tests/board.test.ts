@@ -21,6 +21,8 @@ import {
   saveProject,
 } from '../core/board/projects.ts'
 import {
+  findProject,
+  findTicket,
   readArchivedTickets,
   readBoard,
   readProjectBoard,
@@ -33,6 +35,7 @@ import {
   MAX_TITLE,
   SaveColumnRequest,
   SaveProjectRequest,
+  TicketKey,
   UpdateTicketRequest,
 } from '../core/board/schema.ts'
 import {
@@ -607,6 +610,26 @@ describe('tickets', () => {
     assert.equal(detail(context, id, 1).key, 'BEAN-1')
     // The old prefix is free again.
     assert.equal(project(context, 'Other beans', 'BEANS') > id, true)
+  })
+
+  test('a ticket is found by its key, whatever its case, and a renamed prefix moves the key', () => {
+    const context = board()
+    const id = project(context, 'Beans')
+    ticket(context, id, 'One')
+    const two = ticket(context, id, 'Two')
+    assert.deepEqual(findTicket(TicketKey.parse(' beans-2 '), context), {
+      id: two,
+      project: id,
+      number: 2,
+    })
+    assert.equal(findTicket('BEANS-9', context), null)
+    assert.equal(TicketKey.safeParse('BEANS-0').success, false)
+    assert.equal(TicketKey.safeParse('3-BEANS').success, false)
+    saveProject({ id, name: 'Beans', prefix: 'BEAN', colour: null }, context)
+    assert.equal(findTicket('BEANS-2', context), null)
+    assert.equal(findProject('BEANS', context), null)
+    archiveProject({ id, archived: true }, context)
+    assert.deepEqual(findProject('BEAN', context), { id, archived: true })
   })
 
   test('a new ticket lands at the top of its column', () => {
