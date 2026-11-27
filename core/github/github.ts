@@ -34,7 +34,7 @@ import { parsePatch } from './patch.ts'
 
 const GH_TIMEOUT_MS = 30_000
 
-const PullNumber = z.coerce.number().int().positive()
+export const PullNumber = z.coerce.number().int().positive()
 const NodeId = z
   .string()
   .min(1)
@@ -482,6 +482,7 @@ export async function readPull(
   ].toSorted((a, b) => a.at.localeCompare(b.at))
   return {
     ...summary(pull),
+    repo: repo.repo,
     body: pull.body,
     createdAt: pull.createdAt,
     viewer: repo.viewer,
