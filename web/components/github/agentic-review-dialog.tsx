@@ -264,8 +264,9 @@ function AgenticReviewForm({
         )}
       />
       <p className="text-xs text-muted-foreground">
-        Claude Code reviews in a terminal tab and asks before it posts the
-        review, so you read it first.
+        Claude Code reviews in a terminal tab. Reading the PR runs without
+        asking. The monitor never approves the post for you: Claude Code asks
+        first, unless your own permission mode lets it through.
         {pull.pendingReview !== null &&
           ` You have a draft review on this PR with ${pull.pendingComments} ${pull.pendingComments === 1 ? 'comment' : 'comments'}. GitHub keeps one per person, so submit or discard it before the agent posts.`}
       </p>

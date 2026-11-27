@@ -2,8 +2,8 @@
 // how to post the review. Pure, so the text is tested without a session or GitHub. A PR's title,
 // branches and description were written by its author, who may be a stranger: the short ones go
 // in on one line, and the description is fenced and labelled as data.
-import { fenced, oneLine } from '../terminals/task-text.ts'
-import type { PullDetail } from '../types.ts'
+import { fenced, oneLine, skillClause } from '../terminals/task-text.ts'
+import type { PullDetail, SkillInfo } from '../types.ts'
 import type { ReviewWorktree } from '../worktrees/review.ts'
 
 // What a review session runs without Claude Code asking first: reads of git and of GitHub. The
@@ -43,14 +43,14 @@ const TAG = 'pr-description'
 export function reviewMessage(
   pull: ReviewedPull,
   at: Pick<ReviewWorktree, 'head' | 'base'> | null,
-  skill: string | null,
+  skill: Pick<SkillInfo, 'name' | 'path'> | null,
   focus: string,
 ): string {
   const { repo, number } = pull
   const first =
     skill === null
       ? `Review pull request #${number} of ${repo} as a peer reviewer.`
-      : `Use the ${skill} skill to review pull request #${number} of ${repo}.`
+      : `Use ${skillClause(skill)} to review pull request #${number} of ${repo}.`
   const where =
     at === null
       ? `- The stack monitor changed nothing in this checkout. Follow the skill's own step for getting onto the PR's branch.`

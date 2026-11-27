@@ -79,12 +79,13 @@ export async function workTicket(
   if (ticket.archived) {
     return refused(`${ticket.key} is archived. Restore it to work it.`)
   }
-  const { skill, where } = request
-  if (
-    skill !== null &&
-    !listSkills(repo.root).some((each) => each.name === skill)
-  ) {
-    return refused(`${repo.root} has no skill named ${skill}`)
+  const { where } = request
+  const skill =
+    request.skill === null
+      ? null
+      : listSkills(repo.root).find((each) => each.name === request.skill)
+  if (skill === undefined) {
+    return refused(`${repo.root} has no skill named ${request.skill}`)
   }
 
   // Everything that can be refused without touching the repo is above: a new worktree is only

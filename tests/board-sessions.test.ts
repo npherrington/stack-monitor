@@ -108,12 +108,14 @@ describe('sessions started from the board', () => {
     assert.equal(args.at(-2), '--')
     assert.match(
       message,
-      /^Use the work-ticket skill on board ticket BEANS-1, "Add a dark theme", in the stack monitor's Beans project\.\n/,
+      /^Use the work-ticket skill \(\.agents\/skills\/work-ticket\/SKILL\.md in this repo; read that file if your skill list doesn't have it\) on board ticket BEANS-1, "Add a dark theme", in the stack monitor's Beans project\.\n/,
     )
     assert.match(
       message,
       /The monitor made this worktree on the branch beans-1-add-a-dark-theme for this ticket\./,
     )
+    // The tools' argument names are spelled out, so the first call is right.
+    assert.match(message, /board_get_ticket tool \(key: "BEANS-1"\)/)
     // The description is the tool's to hand over, never the message's.
     assert.doesNotMatch(message, /delete the repo/)
     closeTerminal(session.id)

@@ -9,6 +9,12 @@ export function oneLine(text: string, max: number): string {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
 }
 
+// The skill a session is told to use. Claude Code lists the skills under .claude/skills; one a repo
+// keeps only under .agents/skills isn't in that list, so the file is named too.
+export function skillClause(skill: { name: string; path: string }): string {
+  return `the ${skill.name} skill (${oneLine(skill.path, 200)} in this repo; read that file if your skill list doesn't have it)`
+}
+
 // A longer text, clipped and wrapped in <tag>…</tag>, so the message can say whose words are
 // inside. The tag's own closing form is taken out of the text, which then can't end its fence.
 export function fenced(tag: string, text: string, max: number): string {

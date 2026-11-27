@@ -13,7 +13,7 @@ import {
   claudeOpenIn,
   openTerminal,
 } from '../terminals/sessions.ts'
-import { failure, type StartedSession } from '../types.ts'
+import { failure, type SkillInfo, type StartedSession } from '../types.ts'
 import { canonical, listWorktrees } from '../worktrees/clone.ts'
 import {
   makeReviewWorktree,
@@ -40,12 +40,14 @@ function refused(message: string): StartedSession {
   return { ...failure(message), session: null }
 }
 
-// Everything after the PR was read: no gh from here on. root: a tracked repo's, already checked.
+// Everything after the PR was read: no gh from here on. root: a tracked repo's, already checked;
+// skill: the repo's skill the request names, already found.
 export async function launchReview(
   tracking: Tracking,
   root: string,
   pull: ReviewedPull,
   request: z.output<typeof AgenticReviewRequest>,
+  skill: SkillInfo | null,
   options: { runs?: string } = {},
 ): Promise<StartedSession> {
   if (!REPO_NAME.test(pull.repo)) {
@@ -73,7 +75,7 @@ export async function launchReview(
     {
       kind: 'review',
       title: `Review #${pull.number}`,
-      message: reviewMessage(pull, made, request.skill, request.focus),
+      message: reviewMessage(pull, made, skill, request.focus),
       allowedTools: REVIEW_TOOLS,
     },
   )
@@ -100,12 +102,13 @@ export async function startAgenticReview(
   const repo = trackedRepo(tracking, request.root)
   if ('problem' in repo) return refused(repo.problem)
   if ('refused' in repo) return refused(repo.refused)
-  const { skill, path } = request
-  if (
-    skill !== null &&
-    !listSkills(repo.root).some((each) => each.name === skill)
-  ) {
-    return refused(`${repo.root} has no skill named ${skill}`)
+  const { path } = request
+  const skill =
+    request.skill === null
+      ? null
+      : listSkills(repo.root).find((each) => each.name === request.skill)
+  if (skill === undefined) {
+    return refused(`${repo.root} has no skill named ${request.skill}`)
   }
   // What can be refused without asking GitHub is refused first.
   if (path !== null) {
@@ -123,5 +126,5 @@ export async function startAgenticReview(
   const pull = await readPull(tracking, repo.root, request.number)
   if ('problem' in pull) return refused(pull.problem)
   if ('refused' in pull) return refused(pull.refused)
-  return launchReview(tracking, repo.root, pull, request)
+  return launchReview(tracking, repo.root, pull, request, skill)
 }
