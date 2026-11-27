@@ -149,7 +149,10 @@ async function githubRepo(
     : { refused: status.problem }
 }
 
-const Author = z.object({ login: z.string() }).nullable()
+const Author = z
+  .object({ login: z.string(), kind: z.string().optional() })
+  .nullable()
+const isBot = (author: z.infer<typeof Author>) => author?.kind === 'Bot'
 const login = (author: z.infer<typeof Author>) => author?.login ?? 'ghost'
 
 const Decision = z
@@ -275,15 +278,15 @@ async function readFiles(
 const DETAIL_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
-      id number title body url isDraft isCrossRepository updatedAt reviewDecision
+      id number title body url isDraft isCrossRepository createdAt updatedAt reviewDecision
       additions deletions changedFiles headRefName baseRefName
       author { login }
       labels(first: 20) { nodes { name color } }
       reviews(states: PENDING, first: 1) { nodes { id comments { totalCount } } }
       submitted: reviews(states: [APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED], last: 100) {
-        nodes { id state body submittedAt url author { login } }
+        nodes { id state body submittedAt url author { login kind: __typename } }
       }
-      comments(last: 100) { nodes { id body createdAt url author { login } } }
+      comments(last: 100) { nodes { id body createdAt url author { login kind: __typename } } }
       commits(last: 100) {
         nodes {
           commit {
@@ -309,6 +312,7 @@ const GhDetail = z.object({
     pullRequest: GhPull.extend({
       id: z.string(),
       body: z.string(),
+      createdAt: z.string(),
       submitted: z.object({
         nodes: z.array(
           z.object({
@@ -431,6 +435,7 @@ export async function readPull(
       kind: 'comment',
       id: comment.id,
       author: login(comment.author),
+      bot: isBot(comment.author),
       body: comment.body,
       at: comment.createdAt,
       url: comment.url,
@@ -439,6 +444,7 @@ export async function readPull(
       kind: 'review',
       id: review.id,
       author: login(review.author),
+      bot: isBot(review.author),
       state: review.state,
       body: review.body,
       at: review.submittedAt ?? '',
@@ -448,6 +454,7 @@ export async function readPull(
   return {
     ...summary(pull),
     body: pull.body,
+    createdAt: pull.createdAt,
     viewer: repo.viewer,
     files,
     threads,

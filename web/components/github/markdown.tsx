@@ -3,7 +3,8 @@ import remarkGfm from 'remark-gfm'
 
 const SAFE_LINK = /^(https?:|mailto:)/i
 
-// Other people's markdown, built as React elements: raw HTML in it is dropped, not rendered.
+// Other people's markdown, built as React elements. Raw HTML in it (an HTML comment, a bot's
+// <details>) is skipped, so neither runs nor shows as text; what's between the tags still shows.
 const COMPONENTS: Components = {
   a: ({ href, children }) =>
     href !== undefined && SAFE_LINK.test(href) ? (
@@ -78,7 +79,11 @@ interface MarkdownProps {
 export function Markdown({ text }: MarkdownProps) {
   return (
     <div className="flex min-w-0 flex-col gap-2 text-sm leading-relaxed break-words">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={COMPONENTS}
+        skipHtml
+      >
         {text}
       </ReactMarkdown>
     </div>

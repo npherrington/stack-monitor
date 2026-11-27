@@ -495,6 +495,7 @@ export type TimelineItem =
       kind: 'comment'
       id: string
       author: string
+      bot: boolean // a GitHub App or Actions, whose comments are usually status reports
       body: string
       at: string
       url: string
@@ -503,6 +504,7 @@ export type TimelineItem =
       kind: 'review'
       id: string
       author: string
+      bot: boolean
       state: ReviewState
       body: string // '' when the review was only line comments
       at: string
@@ -512,6 +514,7 @@ export type TimelineItem =
 // GET /api/github/pull?root=&number=
 export interface PullDetail extends PullSummary {
   body: string // markdown
+  createdAt: string
   viewer: string
   files: PullFile[]
   threads: ReviewThread[]
