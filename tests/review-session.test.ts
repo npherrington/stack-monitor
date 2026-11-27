@@ -276,6 +276,24 @@ describe('a review session', () => {
     )
     closeTerminal(started.session!.id)
 
+    // A fork's PR in a checkout that is already on the PR's commit: the session would load the
+    // PR's own agent config, so it is refused; on any other commit it is told not to check out.
+    const fork = { ...pull, crossRepository: true }
+    const onIt = await launchReview(
+      tracking,
+      primary,
+      { ...fork, head: before.trim() },
+      request(primary),
+      null,
+      { runs },
+    )
+    assert.equal(onIt.session, null)
+    assert.match(onIt.message, /is on this fork PR's own commit/)
+    assert.match(
+      reviewMessage(fork, null, null, ''),
+      /\n- The stack monitor changed nothing in this checkout\. This is a fork's PR: do not check it out here or anywhere, .* read the change with gh pr diff 21 and gh pr view 21\.\n/,
+    )
+
     const odd = await launchReview(
       tracking,
       primary,

@@ -59,7 +59,9 @@ export function reviewMessage(
       : `Use ${skillClause(skill)} to review pull request #${number} of ${repo}.`
   const where =
     at === null
-      ? `- The stack monitor changed nothing in this checkout. Follow the skill's own step for getting onto the PR's branch.`
+      ? pull.crossRepository
+        ? `- The stack monitor changed nothing in this checkout. This is a fork's PR: do not check it out here or anywhere, since a session picks up the CLAUDE.md, skills and settings of what is checked out. Skip the skill's checkout step and read the change with gh pr diff ${number} and gh pr view ${number}.`
+        : `- The stack monitor changed nothing in this checkout. Follow the skill's own step for getting onto the PR's branch.`
       : at.stands === 'head'
         ? `- The stack monitor put this worktree at the PR's head, ${at.head} (detached), and fetched ${at.base} just now. Skip any step that asks for a checkout or a fetch. Name the PR by number (gh pr view ${number}): the branch form doesn't work on a detached head. Diff against ${at.base} with three dots.`
         : `- This is a fork's PR, so the stack monitor left this worktree on the base, ${at.base} (detached, fetched just now), and fetched the PR's head beside it: ${at.head}. Nothing the PR's author wrote is checked out here, their CLAUDE.md, skills and settings included. Read the change with git diff ${at.base}...${at.head}, and a file as the PR has it with git show ${at.head}:<path>. Do not check that commit out. Skip any step that asks for a checkout or a fetch, and name the PR by number (gh pr view ${number}).`

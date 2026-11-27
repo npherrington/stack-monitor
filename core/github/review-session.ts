@@ -7,6 +7,7 @@ import { listSkills, SkillName } from '../agents/skills.ts'
 import { trackedRepo } from '../config/sections.ts'
 import { Focus } from '../fields.ts'
 import { PathText } from '../repos.ts'
+import { run } from '../run.ts'
 import type { Tracking } from '../settings.ts'
 import {
   alreadyOpen,
@@ -55,6 +56,15 @@ export async function launchReview(
   }
   let path = request.path
   let made: ReviewWorktree | null = null
+  if (path !== null && pull.crossRepository) {
+    // A session loads the CLAUDE.md, skills, hooks and settings of the checkout it starts in.
+    const at = await run('git', ['-C', path, 'rev-parse', 'HEAD'])
+    if (at.code === 0 && at.stdout.trim() === pull.head) {
+      return refused(
+        `${path} is on this fork PR's own commit, so a session there would load the PR's CLAUDE.md, skills and settings. Pick New review worktree, which reads the PR from the base branch.`,
+      )
+    }
+  }
   if (path === null) {
     // Asked before anything is fetched or moved: the session couldn't open there anyway.
     const target = reviewWorktreePath(root, pull.number)

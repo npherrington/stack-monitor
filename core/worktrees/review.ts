@@ -188,7 +188,9 @@ export async function makeReviewWorktree(
       const head = await commitAt(root, pullRef(number))
       const baseHead = await commitAt(root, `refs/remotes/${baseRef}`)
       if (head === null || baseHead === null) {
-        return { refused: `The fetch left no commit for #${number}` }
+        return {
+          refused: `The fetch left no commit for ${head === null ? `#${number}` : baseRef}`,
+        }
       }
       // The remote the clone fetches from may not be the repo gh reads the PR from (a fork's
       // clone, say), and its PR of the same number would be somebody else's change.

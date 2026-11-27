@@ -21,6 +21,37 @@ Weight: Full (new routes, the first MCP tools, new commands the monitor runs, a 
 work across `core/`, `server/`, `mcp/` and `web/`). No change to `stack-monitor.json`, no new npm
 dependency.
 
+## Changed in review
+
+The code review reversed five things this plan first settled. The sections below keep the plan as
+it was built from, corrected where a sentence would now mislead; where a signature, a test name or
+a browser step further down still shows the first design, this list is what was built.
+
+- **A fork's PR is never checked out by the monitor.** Claude Code trusts a worktree by its main
+  checkout, so a review worktree gets no folder-trust prompt, and a session started in a fork's
+  tree would run that fork's hooks, settings and skills. A fork's review worktree now stands on
+  the base branch (`ReviewWorktree.stands: 'base'`) with the PR's head fetched beside it, read
+  with `git diff <base>...<sha>` and `git show <sha>:<path>`. Setup and install run for every
+  review worktree again, since for a fork they run the repo's own base; `finishWorktree` has no
+  `steps` flag. A checkout the user picks that sits on a fork PR's commit is refused.
+- **The fetched head lives in `refs/stack-monitor/pr/<n>`** (`pullRef`), not under
+  `refs/remotes`, so a pruning fetch leaves it. It must equal the head GitHub names
+  (`PullDetail.head`, from `headRefOid`; `ReviewTarget.head`), which catches a clone whose remote
+  is another repo with a PR of the same number.
+- **Removing a detached worktree is refused when no ref holds its commit** (`headIsHeld`, shared
+  with the review worktree's move). This changes an existing action: a detached worktree whose
+  branch is gone, with commits nothing else holds, now says to put it on a branch first.
+- **No `git` command is pre-allowed.** Claude Code runs read-only git unasked by itself, and a
+  rule for `git diff` would also let `git diff --output=<file>` write. `REVIEW_TOOLS` is the four
+  `gh` reads.
+- **The fence can't be closed by nesting its closing tag**, and the review's focus text, the one
+  part of a message the user types, has its control characters taken out.
+
+Smaller: the review dialog's hint names no path; `use-board-sessions.ts` became
+`use-board-session-mutations.ts`; Run here keeps a typed prompt when the dialog closes; the MCP
+write tools refuse a ticket in an archived project; a work session's first message names the
+background install's log.
+
 ## Requirements
 
 - **Agentic review**
@@ -28,9 +59,9 @@ dependency.
     PR (number, title, branch → base) with three fields: Where (a new review worktree, or one of
     the repo's checkouts as the Worktrees page lists them), Skill (the repo's skills, default
     `peer-code-review` when the repo has it, else none) and Focus (optional).
-  - A new review worktree is detached at the PR's head, beside the primary, named
-    `<repo>-review-pr-<n>`. One that already exists and is clean is moved to the PR's latest head.
-    A checkout the user picks is left exactly as it is.
+  - A new review worktree is detached at the PR's head (on the base branch for a fork's PR),
+    beside the primary, named `<repo>-review-pr-<n>`. One that already exists and is clean is
+    moved to the PR's latest head. A checkout the user picks is left exactly as it is.
   - The session's first message, written by the monitor, carries the PR's facts, the skill, the
     focus, where the worktree stands, and how to post.
   - The agent posts, through `gh`, one review with event `COMMENT`, a body starting
@@ -58,7 +89,8 @@ dependency.
     or archives, and none starts a run, a schedule or a session.
   - It reads the same board file as the monitor that launched the session.
 - **Sessions**
-  - The page never sends prompt text. It sends ids and choices; the monitor writes the message.
+  - The page sends ids and choices, and the monitor writes the message. The one piece of typed
+    text in a message is a review's focus.
   - A worktree with a live `claude` session refuses a task: a first message can't be put into a
     session that has already started.
   - On success the page shows the new session's terminal tab, named for its task (`BEANS-3`,
@@ -119,12 +151,12 @@ approve it.
 
 **The review worktree** (`core/worktrees/review.ts`):
 
-1. Fetch into tracking refs:
-   `git fetch --no-tags <remote> +refs/pull/<n>/head:refs/remotes/<remote>/pr/<n> +refs/heads/<base>:refs/remotes/<remote>/<base>`.
+1. Fetch the PR's head and its base:
+   `git fetch --no-tags <remote> +refs/pull/<n>/head:refs/stack-monitor/pr/<n> +refs/heads/<base>:refs/remotes/<remote>/<base>`.
    The remote is the one `config.mainline` names when it is a remote of the clone, else `origin`.
-2. The head is what the fetch brought (`git rev-parse refs/remotes/<remote>/pr/<n>`), not a sha
-   GitHub answered: what is checked out is what the message names. `DETAIL_QUERY` doesn't change.
-3. New: `git worktree add --detach <path> <sha>`, then the steps `createWorktree` runs after its
+2. The head is what the fetch brought (`git rev-parse refs/stack-monitor/pr/<n>`), and it must
+   equal the head GitHub names (`headRefOid`): what is reviewed is what the message names.
+3. New: `git worktree add --detach <path> <sha>` (the base's commit for a fork), then the steps `createWorktree` runs after its
    own add (index, setup, background install), pulled out of `addWithGit` so both share them.
    Detached, so there's no branch to clean up, and the existing remove flow takes it (it reads as
    "detached at 1a2b3c4" on the Worktrees page; Section 5 has a test for both).
@@ -134,10 +166,9 @@ approve it.
 These were tried in a throwaway clone with a bare origin holding `refs/pull/7/head`, a forced
 update included.
 
-**A fork's PR gets no setup and no install.** Those commands run in the worktree, so on a fork's
-PR they would run a stranger's `postinstall` or setup script on a click. The index is still
-written (the monitor writes it itself), so teardown can find it on removal. The toast says they
-were skipped.
+**A fork's PR is not checked out.** Its worktree stands on the base branch, so setup, install
+and the session all run the repo's own tree, and the PR's commits are read with `git diff` and
+`git show` (see Changed in review).
 
 **What the code disagreed with in the brief**, and what the plan does:
 
@@ -1272,9 +1303,11 @@ document needs it, what to do rather than what to avoid.
   - A repo's `setup` and `install`, as for any worktree, but not for a fork's PR.
   - `claude` with a first message. It answers to "Runs that spend money start from the page":
     each launch is a POST from the page on a click, and no MCP tool opens a session or a run.
+- **A changed action**: removing a detached worktree is refused when no ref holds its commit
+  (Changed in review).
 - **What it keeps**: nothing new on the server. The session list stays in memory, as today. A
-  review leaves a ref (`refs/remotes/<remote>/pr/<n>`) in the clone, which a pruning fetch
-  removes. The browser keeps `stack-monitor:board-repos`.
+  review leaves a ref (`refs/stack-monitor/pr/<n>`) in the clone, which nothing removes yet. The
+  browser keeps `stack-monitor:board-repos`.
 - **Processes signalled, directories deleted**: none new. `mcp/main.ts` is started by Claude Code
   and ends when its stdin does.
 - **Local only**: the new routes sit behind the same Host, Origin, content-type and body-cap
@@ -1291,14 +1324,14 @@ document needs it, what to do rather than what to avoid.
 - **A PR's text is a stranger's**. Its title, author and branches are single-lined and clipped;
   its body is clipped, fenced and labelled as data; the session is told that an instruction found
   there is a finding. What stops a successful injection from doing harm is the permission prompt:
-  only read-only commands are pre-allowed, and the post is always asked.
-- **Pre-allowed read commands can write a file**. `git diff`, `git log` and `git show` take
-  `--output=<file>`, and `gh pr view --web` opens a browser. A prefix rule can't exclude an option.
-  Accepted, and recorded under Open questions.
-- **A review worktree holds the PR's own `CLAUDE.md`, skills and `.claude/settings.json`**, so
-  the session loads a fork author's instructions and hooks. Claude Code asks before trusting a
-  new folder, the message tells the agent to report such changes first, and the monitor runs no
-  setup or install for a fork.
+  only `gh` reads are pre-allowed, and the monitor never pre-approves the post.
+- **A pre-allowed command can do more than read**. `gh pr view --web` opens a browser, and a
+  prefix rule can't exclude an option. No `git` rule is pre-allowed for that reason: `git diff`,
+  `git log` and `git show` take `--output=<file>`.
+- **A PR's own `CLAUDE.md`, skills and `.claude/settings.json` steer a session started in its
+  tree**, and Claude Code gives a worktree of a trusted repo no trust prompt. So the monitor
+  never checks a fork's PR out (Changed in review). A PR from the repo itself is checked out as
+  any colleague's branch would be.
 - **A ticket's text reaches a session**. Its title is one line by schema and sits quoted in the
   message; its description is read through a tool and the message says it doesn't change what the
   agent may do. In product mode an agent misled by something it read could file junk tickets
@@ -1357,17 +1390,17 @@ Each takes the recommended answer, which the plan assumes.
   creates and removes worktrees"**, none of which exists, and doesn't mention the board. Taken:
   leave the principle as it is, since what it forbids still holds, and say what exists in
   § Modules. Worth a sentence from the user later.
-- **Setup and install in a fork's review worktree.** As briefed they would run for every review
+- **Setup and install in a fork's review worktree.** (Reversed in review: a fork's worktree is on the base, so both run.) As briefed they would run for every review
   worktree. Taken: skipped for a fork's PR, because they'd run its code unread; the index is
   still written.
-- **Should a fork's PR open a session in its own checkout at all?** The session loads the PR's
+- **Should a fork's PR open a session in its own checkout at all?** (Reversed in review: it doesn't.) The session loads the PR's
   `CLAUDE.md`, skills and hooks. Lightest: allow it and rely on Claude Code's folder-trust prompt
   and the message's warning. Heavier: review a fork from the primary with `gh pr diff` only.
   Taken: allow it.
-- **The pre-allowed read commands.** Lightest: allow none and let the user pick "don't ask again"
+- **The pre-allowed read commands.** (Reversed in review: the four `gh` reads only.) Lightest: allow none and let the user pick "don't ask again"
   in the session. It falls short on the first minutes of every review being a run of prompts.
   Taken: the eight rules as briefed, with the `--output` gap written down under Risks.
-- **Which remote holds the PR's refs?** Taken: the mainline's remote, else `origin`. In a fork's
+- **Which remote holds the PR's refs?** (Since review, a fetched head that isn't GitHub's is refused.) Taken: the mainline's remote, else `origin`. In a fork's
   clone whose PRs live on `upstream` while `mainline` is `origin/main`, the fetch is refused with
   git's "couldn't find remote ref". Matching the remote to the repo `gh` resolved is a follow-up.
 - **A repo with its own `worktrees.create` command** gets its review worktree from
@@ -1375,7 +1408,7 @@ Each takes the recommended answer, which the plan assumes.
   none.
 - **`{branch}` in a detached worktree's setup and install** is filled with an empty string, as
   teardown already does. Taken.
-- **The "commit nothing else holds" refusal can misfire** when a fork's PR was force-pushed and a
+- **The "commit nothing else holds" refusal can misfire** (No longer, since review: the head is kept outside `refs/remotes`.) when a fork's PR was force-pushed and a
   pruning fetch removed the tracking ref in between. Taken: accept; removing the worktree and
   starting again is one click, and the check otherwise keeps a commit made there out of the
   reflog's hands.

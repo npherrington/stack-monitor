@@ -212,8 +212,9 @@ function AgenticReviewForm({
                 onChange={field.onChange}
               />
               <p className="text-xs text-muted-foreground">
-                The monitor changes nothing in it: the skill's own step gets it
-                onto the PR's branch.
+                {pull.crossRepository
+                  ? "The monitor changes nothing in it. It's a fork's PR, so the agent is told to read it from GitHub and not check it out, and a checkout already on the PR's commit is refused: a session loads the CLAUDE.md, skills and settings of what is checked out."
+                  : "The monitor changes nothing in it: the skill's own step gets it onto the PR's branch."}
               </p>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </div>

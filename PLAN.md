@@ -150,9 +150,10 @@ focus:
 - **Agentic review** (a PR on the GitHub page): in a review worktree the monitor puts at the PR's
   head, detached, or a checkout you pick. Reading the PR through `gh` runs without asking. The
   agent posts one review through `gh`; the monitor never pre-approves that, and posts nothing
-  itself. A fork's PR is never checked out: an agent loads the `CLAUDE.md`, skills, hooks and
-  settings of the checkout it starts in, so the worktree stays on the base branch and the PR's
-  head is fetched beside it to be read with `git diff` and `git show`.
+  itself. The monitor never checks a fork's PR out: an agent loads the `CLAUDE.md`, skills, hooks
+  and settings of the checkout it starts in, so the review worktree stays on the base branch and
+  the PR's head is fetched beside it to be read with `git diff` and `git show`. A checkout you
+  pick that already sits on a fork PR's commit is refused.
 
 A worktree with `claude` already open refuses a task, since a first message can't be put into a
 session that has started. Text a stranger wrote (a PR's title and description) goes into a message

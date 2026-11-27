@@ -108,9 +108,10 @@ which skill to use (`peer-code-review` when the repo has it) and what to look at
 opens Claude Code there with the PR's details in its first message. Reading the PR on GitHub runs
 without asking. The agent finishes by posting one review, headed "Agentic review", with its
 findings as line comments; the monitor never approves that post for you, so Claude Code asks first
-unless your own permission mode lets it through. A fork's PR is never checked out: its review
-worktree stays on the base branch and the agent reads the PR's commits from there, so the PR's own
-`CLAUDE.md`, skills, hooks and settings never load.
+unless your own permission mode lets it through. The monitor never checks a fork's PR out: its
+review worktree stays on the base branch and the agent reads the PR's commits from there, so the
+PR's own `CLAUDE.md`, skills, hooks and settings don't load. In a checkout you pick, the agent is
+told to read a fork's PR from GitHub, and one already on the PR's commit is refused.
 
 **MCP.** `mcp/main.ts` is a stdio MCP server with the board's tools: `board_list_projects`,
 `board_list_tickets`, `board_get_ticket`, `board_create_ticket`, `board_update_ticket`,
