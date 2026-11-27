@@ -6,10 +6,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
 import type { TerminalKind } from '../../../core/types.ts'
-import { useTerminalPanel } from '@/contexts/terminal-context.ts'
+import { useTerminalLayout } from '@/contexts/terminal-context.ts'
 import { terminalsKey } from '@/hooks/use-terminals.ts'
+import { paneCommand } from '@/lib/pane-shortcuts.ts'
 import { readTerminalTheme } from '@/lib/terminal-theme.ts'
-import { cn } from '@/lib/utils.ts'
 
 // server/terminal-socket.ts's close codes.
 const EXITED = 4000
@@ -18,7 +18,7 @@ const NO_SESSION = 4004
 interface TerminalViewProps {
   id: string // the session it shows
   kind: TerminalKind
-  visible: boolean // the active tab of an open panel
+  focused: boolean // the active tab of the focused pane, on screen
 }
 
 function socketUrl(id: string): string {
@@ -26,13 +26,13 @@ function socketUrl(id: string): string {
   return `${scheme}://${location.host}/api/terminals/socket?id=${encodeURIComponent(id)}`
 }
 
-// One session's terminal. It stays mounted while its tab is hidden, so what's on screen and the
-// socket survive switching tabs.
-export function TerminalView({ id, kind, visible }: TerminalViewProps) {
+// One session's terminal. It stays mounted while its tab is out of sight (its element detached), so
+// what's on screen and the socket survive switching tabs and moving panes.
+export function TerminalView({ id, kind, focused }: TerminalViewProps) {
   const host = useRef<HTMLDivElement>(null)
   const terminal = useRef<Terminal | null>(null)
   const queryClient = useQueryClient()
-  const { setBusy } = useTerminalPanel()
+  const { setBusy } = useTerminalLayout()
 
   useEffect(() => {
     const element = host.current
@@ -52,6 +52,8 @@ export function TerminalView({ id, kind, visible }: TerminalViewProps) {
     term.loadAddon(fit)
     term.open(element)
     terminal.current = term
+    // The pane shortcuts go on to the page rather than into the program.
+    term.attachCustomKeyEventHandler((event) => paneCommand(event) === null)
 
     const socket = new WebSocket(socketUrl(id))
     // Removed before the unmount closes the socket, which isn't a session ending.
@@ -63,7 +65,7 @@ export function TerminalView({ id, kind, visible }: TerminalViewProps) {
     }
     const sendSize = () =>
       send({ type: 'resize', cols: term.cols, rows: term.rows })
-    // A hidden tab has no size to fit to; it fits when it's shown.
+    // A detached tab has no size to fit to; it fits when it's shown again.
     const refit = () => {
       if (element.clientWidth > 0) fit.fit()
     }
@@ -132,18 +134,13 @@ export function TerminalView({ id, kind, visible }: TerminalViewProps) {
   }, [id, kind, queryClient, setBusy])
 
   useEffect(() => {
-    if (visible) terminal.current?.focus()
-  }, [visible])
+    if (focused) terminal.current?.focus()
+  }, [focused])
 
   return (
     // The padding sits outside the element the terminal is fitted to, which counts its own padding
     // as room for rows.
-    <div
-      className={cn(
-        'flex min-h-0 flex-1 flex-col bg-muted py-2 pl-3',
-        !visible && 'hidden',
-      )}
-    >
+    <div className="flex min-h-0 flex-1 flex-col bg-muted py-2 pl-3">
       <div ref={host} className="min-h-0 flex-1" />
     </div>
   )

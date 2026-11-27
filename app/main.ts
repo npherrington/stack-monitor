@@ -5,7 +5,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { app, BrowserWindow, dialog, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, dialog, Menu, nativeImage, shell } from 'electron'
 
 import { launchMonitor } from '../server/launch.ts'
 
@@ -73,8 +73,34 @@ function watchPage(): void {
   })
 }
 
+// Electron's default menu, but with Close Window on ⌘⇧W: ⌘W reaches the page, which closes the
+// terminal tab in the focused pane with it.
+function setMenu(): void {
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      { role: 'appMenu' },
+      {
+        label: 'File',
+        submenu: [{ role: 'close', accelerator: 'CommandOrControl+Shift+W' }],
+      },
+      { role: 'editMenu' },
+      { role: 'viewMenu' },
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          { type: 'separator' },
+          { role: 'front' },
+        ],
+      },
+    ]),
+  )
+}
+
 async function start(): Promise<void> {
   app.dock?.setIcon(nativeImage.createFromPath(ICON))
+  setMenu()
   const launched = await launchMonitor(
     { dist: DIST, unbuilt: "The page isn't built. Run mise run build." },
     process.cwd(),

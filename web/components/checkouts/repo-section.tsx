@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button.tsx'
 import { Tip } from '@/components/ui/tooltip.tsx'
 import { usePulls } from '@/hooks/use-pulls.ts'
 import {
-  useTerminalPanel,
+  useTerminalLayout,
   type TerminalContextValue,
 } from '@/contexts/terminal-context.ts'
 import {
@@ -120,7 +120,7 @@ export function RepoSection({
     (checkout) => matches(checkout, prefs[checkout.path] ?? {}, query),
   )
   const hidden = repo.checkouts.length - shown.length
-  const terminals = useTerminalPanel()
+  const terminals = useTerminalLayout()
   const list = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [drop, setDrop] = useState<Drop | null>(null)

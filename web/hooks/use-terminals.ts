@@ -18,6 +18,7 @@ export interface TerminalTarget {
 
 interface UseTerminalsResult {
   sessions: TerminalSession[]
+  loaded: boolean // the first read has answered
   open: (target: TerminalTarget) => Promise<TerminalSession>
   close: (id: string) => Promise<unknown>
 }
@@ -42,7 +43,12 @@ export function useTerminals(): UseTerminalsResult {
     onSettled: refresh,
   })
   return useMemo(
-    () => ({ sessions: data?.sessions ?? [], open, close }),
+    () => ({
+      sessions: data?.sessions ?? [],
+      loaded: data !== undefined,
+      open,
+      close,
+    }),
     [data, open, close],
   )
 }

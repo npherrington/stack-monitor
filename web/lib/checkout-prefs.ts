@@ -2,24 +2,7 @@
 // nickname, a colour, a place in the list, and the filters. Not the server's: the MCP server and other browsers don't
 // see them.
 
-export const SWATCHES = [
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'teal',
-  'blue',
-  'purple',
-  'pink',
-  'coral',
-  'lime',
-  'sky',
-  'indigo',
-  'sand',
-  'slate',
-] as const
-
-export type Swatch = (typeof SWATCHES)[number]
+import { isSwatch, type Swatch } from './swatches.ts'
 
 export interface CheckoutPref {
   colour?: Swatch
@@ -46,10 +29,6 @@ export const NO_FILTERS: CheckoutFilters = {
 
 const PREFS_KEY = 'stack-monitor-checkouts'
 const FILTERS_KEY = 'stack-monitor-checkout-filters'
-
-function isSwatch(value: unknown): value is Swatch {
-  return SWATCHES.includes(value as Swatch)
-}
 
 function parsePref(value: unknown): CheckoutPref {
   if (typeof value !== 'object' || value === null) return {}
