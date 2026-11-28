@@ -97,6 +97,9 @@ describe('the config schema', () => {
     assert.deepEqual(problems({ featureMap: { blocks: '/etc/blocks.json' } }), [
       'featureMap.blocks: must be a path inside the checkout, without ..',
     ])
+    assert.deepEqual(problems({ featureMap: { maps: '../maps' } }), [
+      'featureMap.maps: must be a path inside the checkout, without ..',
+    ])
     assert.deepEqual(problems({ agents: { workflows: 'a/../../b' } }), [
       'agents.workflows: must be a path inside the checkout, without ..',
     ])

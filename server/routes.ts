@@ -54,6 +54,16 @@ import {
   submitReview,
   SubmitReviewRequest,
 } from '../core/github/github.ts'
+import {
+  deleteStackMap,
+  DeleteStackMapRequest,
+  featureMapRepo,
+  readFeatureMap,
+  readStackMap,
+  saveStackMap,
+  SaveStackMapRequest,
+  StackMapQuery,
+} from '../core/feature-map/maps.ts'
 import { boardContext, boardFile, type BoardContext } from '../core/board/db.ts'
 import {
   ProductSessionRequest,
@@ -417,6 +427,45 @@ export function makeRoutes(
       RunClaudeWorkflowSchema,
       '{ checkout, name, testRun?, notes?, argument?, permissions? }',
       async (body) => settled(await runClaudeWorkflow(tracking, body)),
+    ),
+    'GET /api/feature-map': route(
+      RepoRootRequest,
+      '?root=',
+      async ({ root }) => {
+        const repo = featureMapRepo(tracking, root)
+        return 'maps' in repo ? [200, readFeatureMap(repo)] : notRead(repo)
+      },
+    ),
+    'GET /api/feature-map/map': route(
+      StackMapQuery,
+      '?root=&name=',
+      async ({ root, name }) => {
+        const repo = featureMapRepo(tracking, root)
+        if (!('maps' in repo)) return notRead(repo)
+        const map = readStackMap(repo, name)
+        if (map === null) return [404, failure(`There's no map ${name}`)]
+        return 'version' in map ? [200, map] : notRead(map)
+      },
+    ),
+    'POST /api/feature-map/save': route(
+      SaveStackMapRequest,
+      '{ root, name, map, replacing? }',
+      async ({ root, name, map, replacing }) => {
+        const repo = featureMapRepo(tracking, root)
+        return 'maps' in repo
+          ? settled(await saveStackMap(repo, name, map, replacing))
+          : notRead(repo)
+      },
+    ),
+    'POST /api/feature-map/delete': route(
+      DeleteStackMapRequest,
+      '{ root, name }',
+      async ({ root, name }) => {
+        const repo = featureMapRepo(tracking, root)
+        return 'maps' in repo
+          ? settled(await deleteStackMap(repo, name))
+          : notRead(repo)
+      },
     ),
     'GET /api/github/pulls': route(
       PullListRequest,

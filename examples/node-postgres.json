@@ -50,5 +50,8 @@
     "arguments": { "ticket": "^[A-Z]+-\\d+$" },
     "workflows": ".claude/workflows"
   },
-  "featureMap": { "blocks": "docs/stack-map/blocks.json" }
+  "featureMap": {
+    "blocks": "docs/stack-map/blocks.json",
+    "maps": "docs/stack-map/maps"
+  }
 }

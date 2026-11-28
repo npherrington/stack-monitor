@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
-import { rmSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 
@@ -486,6 +486,88 @@ describe('the routes', () => {
     const unskilled = await review({ skill: 'peer-code-review' })
     assert.equal(unskilled.status, 409)
     assert.match(unskilled.body.message, /has no skill named peer-code-review$/)
+  })
+
+  test('the stack map: maps go to the folder the config names, a map not there is a 404, a root not tracked is a 409', async () => {
+    // The personal file wins over the repo's own, and earlier tests left one.
+    const config = personalConfigPath(settings, primary)
+    const personalBefore = readFileSync(config, 'utf8')
+    writeJson(config, { featureMap: { maps: 'sketches' } })
+    const map = {
+      version: 1,
+      title: 'Guest checkout',
+      starter: false,
+      nodes: [{ id: 'n1', block: 'web-app', label: '', x: 0, y: 0 }],
+      edges: [],
+    }
+    const query = (name: string) =>
+      `?root=${encodeURIComponent(primary)}&name=${name}`
+
+    const savedMap = await post('/api/feature-map/save', {
+      root: primary,
+      name: 'guest-checkout',
+      map,
+    })
+    assert.deepEqual(savedMap, {
+      status: 200,
+      body: {
+        ok: true,
+        message: 'Saved sketches/guest-checkout.json',
+        log: null,
+      },
+    })
+    assert.deepEqual(
+      JSON.parse(
+        readFileSync(join(primary, 'sketches', 'guest-checkout.json'), 'utf8'),
+      ),
+      map,
+    )
+
+    const overview = await get(
+      `/api/feature-map?root=${encodeURIComponent(primary)}`,
+    )
+    assert.equal(overview.status, 200)
+    assert.equal(overview.body.folder, 'sketches')
+    assert.deepEqual(overview.body.maps, [
+      { name: 'guest-checkout', title: 'Guest checkout', starter: false },
+    ])
+    assert.deepEqual(
+      await get(`/api/feature-map/map${query('guest-checkout')}`),
+      {
+        status: 200,
+        body: map,
+      },
+    )
+
+    const missing = await get(`/api/feature-map/map${query('nope')}`)
+    assert.equal(missing.status, 404)
+    assert.equal(missing.body.message, "There's no map nope")
+    const stranger = await get(
+      `/api/feature-map?root=${encodeURIComponent(join(root, 'nowhere'))}`,
+    )
+    assert.equal(stranger.status, 409)
+    assert.match(stranger.body.message, /isn't in the list$/)
+    const badName = await get(`/api/feature-map/map${query('..%2Fx')}`)
+    assert.equal(badName.status, 400)
+
+    writeFileSync(join(primary, 'sketches', 'torn.json'), '{ nope')
+    const torn = await get(`/api/feature-map/map${query('torn')}`)
+    assert.equal(torn.status, 409)
+    assert.match(torn.body.message, /^sketches\/torn\.json isn't readable JSON/)
+
+    writeJson(config, { featureMap: { maps: '../out' } })
+    const refused = await get(
+      `/api/feature-map?root=${encodeURIComponent(primary)}`,
+    )
+    assert.equal(refused.status, 409)
+    assert.match(refused.body.message, /Fix it to use the stack map\.$/)
+    const unwritten = await post('/api/feature-map/save', {
+      root: primary,
+      name: 'x',
+      map,
+    })
+    assert.equal(unwritten.status, 409)
+    writeFileSync(config, personalBefore)
   })
 
   // Last: it breaks the settings file for the tests after it.
