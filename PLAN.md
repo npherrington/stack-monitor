@@ -180,9 +180,9 @@ person, not to a repo: it reads no checkout, has no section in the config, and i
   and Cancelled; they can be added, renamed, recoloured, reordered and deleted. Deleting one that
   has tickets asks which column takes them, and a project keeps at least one.
 - A **ticket** has a title, a markdown description, a column, labels, a priority, an optional due
-  date and comments. Its id is the project's prefix and a number (`BEANS-12`). Numbers count up
-  per project and are never given out twice; renaming the prefix renames every id and keeps the
-  numbers. The order within a column is the user's: a card stays where it was dropped.
+  date and colour, and comments. Its id is the project's prefix and a number (`BEANS-12`). Numbers
+  count up per project and are never given out twice; renaming the prefix renames every id and keeps
+  the numbers. The order within a column is the user's: a card stays where it was dropped.
 - A **label** is shared by every project or belongs to one. No two labels a project can see share
   a name.
 
