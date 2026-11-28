@@ -39,7 +39,8 @@
   --color-game-trim: var(--game-trim);
   --color-game-bullet: var(--game-bullet);
   --color-game-star: var(--game-star);
-  /* A checkout's colour (web/lib/checkout-prefs.ts): set below, deeper on the dark varieties */
+  /* What a swatch colours (web/lib/swatches.ts): a checkout, a tab, a project, a column, a label.
+     Set below, deeper on the dark varieties */
   --color-swatch-red: var(--swatch-red);
   --color-swatch-orange: var(--swatch-orange);
   --color-swatch-yellow: var(--swatch-yellow);
@@ -54,6 +55,77 @@
   --color-swatch-indigo: var(--swatch-indigo);
   --color-swatch-sand: var(--swatch-sand);
   --color-swatch-slate: var(--swatch-slate);
+  /* A swatch mixed into the card colour, opaque, for a surface cards and text sit on */
+  --color-swatch-red-surface: color-mix(
+    in oklab,
+    var(--swatch-red) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-orange-surface: color-mix(
+    in oklab,
+    var(--swatch-orange) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-yellow-surface: color-mix(
+    in oklab,
+    var(--swatch-yellow) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-green-surface: color-mix(
+    in oklab,
+    var(--swatch-green) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-teal-surface: color-mix(
+    in oklab,
+    var(--swatch-teal) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-blue-surface: color-mix(
+    in oklab,
+    var(--swatch-blue) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-purple-surface: color-mix(
+    in oklab,
+    var(--swatch-purple) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-pink-surface: color-mix(
+    in oklab,
+    var(--swatch-pink) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-coral-surface: color-mix(
+    in oklab,
+    var(--swatch-coral) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-lime-surface: color-mix(
+    in oklab,
+    var(--swatch-lime) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-sky-surface: color-mix(
+    in oklab,
+    var(--swatch-sky) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-indigo-surface: color-mix(
+    in oklab,
+    var(--swatch-indigo) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-sand-surface: color-mix(
+    in oklab,
+    var(--swatch-sand) var(--swatch-surface-mix),
+    var(--card)
+  );
+  --color-swatch-slate-surface: color-mix(
+    in oklab,
+    var(--swatch-slate) var(--swatch-surface-mix),
+    var(--card)
+  );
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -64,6 +136,7 @@
 :root {
   color-scheme: light;
   --radius: 0.5rem;
+  --swatch-surface-mix: 20%;
   --swatch-red: #f4a3a8;
   --swatch-orange: #f8c08f;
   --swatch-yellow: #f2dc7d;
@@ -81,6 +154,7 @@
 }
 
 :root[data-mode='dark'] {
+  --swatch-surface-mix: 12%;
   --swatch-red: #c75b6a;
   --swatch-orange: #c98545;
   --swatch-yellow: #c2a43c;

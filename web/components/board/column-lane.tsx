@@ -9,8 +9,10 @@ import { ColourDot } from '@/components/board/colour-dot.tsx'
 import { ColumnMenu } from '@/components/board/column-menu.tsx'
 import { TicketCard } from '@/components/board/ticket-card.tsx'
 import { Button } from '@/components/ui/button.tsx'
+import { swatchSurface } from '@/components/ui/swatch-variants.ts'
 import { Tip } from '@/components/ui/tooltip.tsx'
 import type { Drop } from '@/lib/board-order.ts'
+import { cn } from '@/lib/utils.ts'
 
 interface ColumnLaneProps {
   project: number
@@ -38,7 +40,13 @@ export function ColumnLane({
     <section
       data-column={column.id}
       aria-label={column.name}
-      className="flex w-64 shrink-0 flex-col gap-2 rounded-xl bg-muted/50 p-2"
+      className={cn(
+        'flex w-64 shrink-0 flex-col gap-2 rounded-xl p-2',
+        column.colour === null
+          ? 'bg-muted/50'
+          : // the 3px edge comes out of the top padding, so headers line up across lanes
+            [swatchSurface({ colour: column.colour }), 'border-t-3 pt-1.25'],
+      )}
     >
       <header className="flex items-center gap-1.5 px-1">
         <ColourDot colour={column.colour} />
