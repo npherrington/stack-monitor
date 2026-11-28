@@ -568,12 +568,12 @@ export function makeRoutes(
     ),
     'POST /api/board/tickets/create': route(
       CreateTicketRequest,
-      '{ project, column?, title, description?, priority?, dueOn?, labels? }',
+      '{ project, column?, title, description?, priority?, dueOn?, colour?, labels? }',
       async (body) => settled(createTicket(body, board)),
     ),
     'POST /api/board/tickets/update': route(
       UpdateTicketRequest,
-      '{ id, title?, description?, priority?, dueOn?, labels? }',
+      '{ id, title?, description?, priority?, dueOn?, colour?, labels? }',
       async (body) => settled(updateTicket(body, board)),
     ),
     'POST /api/board/tickets/move': route(

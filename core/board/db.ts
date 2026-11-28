@@ -91,6 +91,7 @@ export const MIGRATIONS: readonly string[] = [
   ) STRICT;
   CREATE INDEX comment_ticket ON comment (ticket_id);
   `,
+  'ALTER TABLE ticket ADD COLUMN colour TEXT;',
 ]
 
 type Param = string | number | null

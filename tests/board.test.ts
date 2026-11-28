@@ -50,6 +50,7 @@ import {
 import {
   failure,
   type ArchivedTickets,
+  type BoardColour,
   type ProjectBoard,
   type TicketDetail,
 } from '../core/types.ts'
@@ -76,7 +77,12 @@ function ticket(
   context: BoardContext,
   projectId: number,
   title: string,
-  more: { column?: number; labels?: number[]; dueOn?: string | null } = {},
+  more: {
+    column?: number
+    labels?: number[]
+    dueOn?: string | null
+    colour?: BoardColour | null
+  } = {},
 ): number {
   const made = createTicket(
     {
@@ -85,6 +91,7 @@ function ticket(
       description: '',
       priority: 'none',
       dueOn: null,
+      colour: null,
       labels: [],
       ...more,
     },
@@ -191,6 +198,24 @@ describe('the board file', () => {
     again.close()
   })
 
+  test('a board from before ticket colours opens with every ticket, each with no colour', () => {
+    const file = join(tempDir(), 'board.db')
+    const old = openBoard(file, MIGRATIONS.slice(0, 1))
+    assert.ok(old instanceof DatabaseSync)
+    old.exec(`
+      INSERT INTO project (name, prefix, next_number) VALUES ('Beans', 'BEANS', 2);
+      INSERT INTO board_column (project_id, name, position) VALUES (1, 'Backlog', 0);
+      INSERT INTO ticket (project_id, number, column_id, position, title, created_at)
+        VALUES (1, 1, 1, 0, 'Made before colours', '2026-01-01T00:00:00.000Z');
+    `)
+    old.close()
+    const context: BoardContext = { file }
+    const found = readTicket(1, 1, context)
+    assert.ok(found !== null && !('problem' in found))
+    assert.equal(found.title, 'Made before colours')
+    assert.equal(found.colour, null)
+  })
+
   test('a write that refuses or throws changes nothing', () => {
     const context = board()
     project(context, 'Beans')
@@ -285,6 +310,7 @@ describe('board requests', () => {
       description: '',
       priority: 'none',
       dueOn: null,
+      colour: null,
       labels: [],
     })
     assert.equal(
@@ -508,6 +534,7 @@ describe('labels', () => {
         description: '',
         priority: 'none',
         dueOn: null,
+        colour: null,
         labels: [own],
       },
       context,
@@ -715,6 +742,7 @@ describe('tickets', () => {
     const made = ticket(context, id, 'Old title', {
       labels: [bug],
       dueOn: '2026-12-01',
+      colour: 'pink',
     })
     updateTicket({ id: made, title: 'New title', priority: 'high' }, context)
     let found = detail(context, id, 1)
@@ -723,12 +751,19 @@ describe('tickets', () => {
         found.title,
         found.priority,
         found.dueOn,
+        found.colour,
         found.labels.map((each) => each.name),
       ],
-      ['New title', 'high', '2026-12-01', ['bug']],
+      ['New title', 'high', '2026-12-01', 'pink', ['bug']],
     )
     updateTicket(
-      { id: made, dueOn: null, labels: [api], description: '# Why' },
+      {
+        id: made,
+        dueOn: null,
+        colour: null,
+        labels: [api],
+        description: '# Why',
+      },
       context,
     )
     found = detail(context, id, 1)
@@ -736,10 +771,11 @@ describe('tickets', () => {
       [
         found.title,
         found.dueOn,
+        found.colour,
         found.description,
         found.labels.map((each) => each.name),
       ],
-      ['New title', null, '# Why', ['api']],
+      ['New title', null, null, '# Why', ['api']],
     )
     const web = project(context, 'Web')
     const foreign = label(context, web, 'web only')

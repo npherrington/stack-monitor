@@ -19,6 +19,7 @@ function card(
     title: `Ticket ${id}`,
     column,
     priority: 'none',
+    colour: null,
     dueOn: null,
     overdue: false,
     labels: [],

@@ -110,6 +110,7 @@ describe('the board routes', () => {
         title: 'Roast them',
         column: backlog.id,
         priority: 'high',
+        colour: null,
         dueOn: null,
         overdue: false,
         labels: [],
@@ -136,6 +137,13 @@ describe('the board routes', () => {
       ).status,
       200,
     )
+    assert.deepEqual(
+      await post('/api/board/tickets/update', { id: 1, colour: 'yellow' }),
+      {
+        status: 200,
+        body: { ok: true, message: 'Saved BEANS-1', log: null },
+      },
+    )
     const ticket = await get('/api/board/ticket?project=1&number=1')
     assert.equal(ticket.status, 200)
     assert.deepEqual(
@@ -143,9 +151,10 @@ describe('the board routes', () => {
         ticket.body.column,
         ticket.body.description,
         ticket.body.archived,
+        ticket.body.colour,
         ticket.body.comments.map((each: { body: string }) => each.body),
       ],
-      [todo.id, '', false, ['Dark roast']],
+      [todo.id, '', false, 'yellow', ['Dark roast']],
     )
     assert.deepEqual(await get('/api/board/archived?project=1'), {
       status: 200,

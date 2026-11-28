@@ -14,6 +14,7 @@ import {
   type TicketRef,
 } from '../core/board/read.ts'
 import {
+  Colour,
   CommentBody,
   Description,
   DueOn,
@@ -148,6 +149,7 @@ function card(ticket: TicketSummary) {
     key: ticket.key,
     title: ticket.title,
     priority: ticket.priority,
+    colour: ticket.colour,
     dueOn: ticket.dueOn,
     overdue: ticket.overdue,
     labels: ticket.labels.map((label) => label.name),
@@ -187,7 +189,7 @@ export function boardTools(board: BoardContext): Tool[] {
       },
     ),
     board_get_ticket: tool(
-      'Read one ticket by its id (BEANS-3): its title, column, priority, due date, labels, markdown description and comments, oldest first.',
+      'Read one ticket by its id (BEANS-3): its title, column, priority, colour, due date, labels, markdown description and comments, oldest first.',
       z.strictObject({ key: TicketKey }),
       ({ key }) => {
         const found = ticketOf(key, board, 'read')
@@ -216,7 +218,7 @@ export function boardTools(board: BoardContext): Tool[] {
       },
     ),
     board_create_ticket: tool(
-      "Create a ticket in a project, named by its prefix. It lands at the top of the column named, or of the project's first column when none is. Labels are named, and must be ones the project already has. Answers the new ticket's id.",
+      "Create a ticket in a project, named by its prefix. It lands at the top of the column named, or of the project's first column when none is. Labels are named, and must be ones the project already has. A colour, when given, tints its card on the board. Answers the new ticket's id.",
       z.strictObject({
         project: Prefix,
         title: Title,
@@ -224,6 +226,7 @@ export function boardTools(board: BoardContext): Tool[] {
         column: ShortName.optional(),
         priority: PriorityName.default('none'),
         dueOn: DueOn.default(null),
+        colour: Colour.default(null),
         labels: LabelNames.default([]),
       }),
       ({ project, column, labels, ...ticket }) => {
@@ -243,13 +246,14 @@ export function boardTools(board: BoardContext): Tool[] {
       },
     ),
     board_update_ticket: tool(
-      "Change a ticket's title, description, priority, due date or labels. Only the fields named change; labels replace the ticket's whole set, and dueOn: null clears the date. It doesn't move the ticket: board_move_ticket does.",
+      "Change a ticket's title, description, priority, due date, colour or labels. Only the fields named change; labels replace the ticket's whole set, and dueOn: null or colour: null clears it. It doesn't move the ticket: board_move_ticket does.",
       z.strictObject({
         key: TicketKey,
         title: Title.optional(),
         description: Description.optional(),
         priority: PriorityName.optional(),
         dueOn: DueOn.optional(),
+        colour: Colour.optional(),
         labels: LabelNames.optional(),
       }),
       ({ key, labels, ...changes }) => {
@@ -258,7 +262,7 @@ export function boardTools(board: BoardContext): Tool[] {
           Object.values(changes).every((value) => value === undefined)
         ) {
           return refuse(
-            'Name a field to change: title, description, priority, dueOn or labels',
+            'Name a field to change: title, description, priority, dueOn, colour or labels',
           )
         }
         const found = ticketOf(key, board, 'write')

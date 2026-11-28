@@ -185,6 +185,7 @@ describe('the board tools', () => {
         title: 'Roast darker',
         description: 'The **espresso** roast.',
         column: 'todo',
+        colour: 'yellow',
         labels: ['bug'],
       }),
       'Created BEANS-1',
@@ -203,6 +204,10 @@ describe('the board tools', () => {
         dueOn: '2026-12-24',
       }),
       'Saved BEANS-1',
+    )
+    assert.equal(
+      done(server, 'board_update_ticket', { key: 'BEANS-2', colour: 'green' }),
+      'Saved BEANS-2',
     )
     assert.equal(
       done(server, 'board_move_ticket', {
@@ -225,6 +230,7 @@ describe('the board tools', () => {
         title: ticket.title,
         column: ticket.column,
         priority: ticket.priority,
+        colour: ticket.colour,
         dueOn: ticket.dueOn,
         labels: ticket.labels,
         description: ticket.description,
@@ -235,6 +241,7 @@ describe('the board tools', () => {
         title: 'Roast darker',
         column: 'In progress',
         priority: 'high',
+        colour: 'yellow',
         dueOn: '2026-12-24',
         labels: ['Bug'],
         description: 'The **espresso** roast.',
@@ -258,6 +265,16 @@ describe('the board tools', () => {
         ['In review', []],
         ['Done', []],
         ['Cancelled', []],
+      ],
+    )
+    assert.deepEqual(
+      listed.columns.flatMap(
+        (column: { tickets: { key: string; colour: string | null }[] }) =>
+          column.tickets.map((each) => [each.key, each.colour]),
+      ),
+      [
+        ['BEANS-2', 'green'],
+        ['BEANS-1', 'yellow'],
       ],
     )
     assert.deepEqual(listed.labels, ['Bug'])
@@ -342,7 +359,7 @@ describe('the board tools', () => {
       [
         'board_update_ticket',
         { key: 'BEANS-1' },
-        'Name a field to change: title, description, priority, dueOn or labels',
+        'Name a field to change: title, description, priority, dueOn, colour or labels',
       ],
       [
         'board_add_comment',

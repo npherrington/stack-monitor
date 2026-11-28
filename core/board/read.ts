@@ -90,6 +90,7 @@ interface TicketRow {
   title: string
   column_id: number
   priority: string
+  colour: string | null
   due_on: string | null
   archived_at: string | null
   created_at: string
@@ -97,7 +98,7 @@ interface TicketRow {
 }
 
 const TICKET_COLUMNS = `
-  t.id, t.number, t.title, t.column_id, t.priority, t.due_on,
+  t.id, t.number, t.title, t.column_id, t.priority, t.colour, t.due_on,
   t.archived_at, t.created_at,
   (SELECT count(*) FROM comment c WHERE c.ticket_id = t.id) AS comments`
 
@@ -143,6 +144,7 @@ function toSummary(
     title: row.title,
     column: row.column_id,
     priority: asPriority(row.priority),
+    colour: asColour(row.colour),
     dueOn: row.due_on,
     // Both are YYYY-MM-DD, which sorts as text. Due today isn't overdue.
     overdue: row.due_on !== null && row.due_on < now,

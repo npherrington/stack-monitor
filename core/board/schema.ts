@@ -92,6 +92,7 @@ export const CreateTicketRequest = z.strictObject({
   description: Description.default(''),
   priority: PriorityName.default('none'),
   dueOn: DueOn.default(null),
+  colour: Colour.default(null),
   labels: LabelIds.default([]),
 })
 export const UpdateTicketRequest = z
@@ -101,6 +102,7 @@ export const UpdateTicketRequest = z
     description: Description.optional(),
     priority: PriorityName.optional(),
     dueOn: DueOn.optional(),
+    colour: Colour.optional(),
     labels: LabelIds.optional(),
   })
   .refine((ticket) => Object.keys(ticket).length > 1, 'Name a field to change')
