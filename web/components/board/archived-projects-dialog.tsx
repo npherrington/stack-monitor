@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { countOf } from '../../../core/board/schema.ts'
 import type { BoardProject } from '../../../core/types.ts'
 import { ColourDot } from '@/components/board/colour-dot.tsx'
-import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog.tsx'
 import { deleteProjectQuestion } from '@/components/board/delete-project.ts'
 import { Button } from '@/components/ui/button.tsx'
 import {

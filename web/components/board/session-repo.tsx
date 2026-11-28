@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import type { RepoCheckouts } from '../../../core/types.ts'
-import { RepoSelect } from '@/components/board/repo-select.tsx'
+import { RepoSelect } from '@/components/ui/repo-select.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useBoardRepo } from '@/hooks/use-board-repo.ts'
 

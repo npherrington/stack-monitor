@@ -14,7 +14,7 @@ import type {
 import { BoardLanes } from '@/components/board/board-lanes.tsx'
 import { BoardToolbar } from '@/components/board/board-toolbar.tsx'
 import { ColumnDialog } from '@/components/board/column-dialog.tsx'
-import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog.tsx'
 import { DeleteColumnDialog } from '@/components/board/delete-column-dialog.tsx'
 import { deleteProjectQuestion } from '@/components/board/delete-project.ts'
 import { LabelsDialog } from '@/components/board/labels-dialog.tsx'

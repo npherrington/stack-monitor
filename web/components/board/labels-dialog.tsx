@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { countOf } from '../../../core/board/schema.ts'
 import type { BoardLabel, BoardProject } from '../../../core/types.ts'
 import { BoardLabelPill } from '@/components/board/board-label-pill.tsx'
-import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog.tsx'
 import { LabelForm } from '@/components/board/label-form.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {

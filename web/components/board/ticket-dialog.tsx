@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import type { BoardProject } from '../../../core/types.ts'
 import { CommentThread } from '@/components/board/comment-thread.tsx'
-import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog.tsx'
 import { TicketEditForm } from '@/components/board/ticket-edit-form.tsx'
 import { TicketProperties } from '@/components/board/ticket-properties.tsx'
 import { WorkTicketDialog } from '@/components/board/work-ticket-dialog.tsx'

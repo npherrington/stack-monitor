@@ -7,6 +7,7 @@ import {
   PanelLeftOpen,
   Settings,
   SquareKanban,
+  Workflow,
 } from 'lucide-react'
 import type { ReactElement, RefObject } from 'react'
 import { NavLink } from 'react-router'
@@ -47,6 +48,7 @@ const GROUPS = [
     heading: 'Product management',
     links: [
       { to: '/board', label: 'Ticket board', icon: SquareKanban, end: false },
+      { to: '/stack-map', label: 'Stack map', icon: Workflow, end: false },
     ],
   },
 ] as const

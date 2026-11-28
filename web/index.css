@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@xyflow/react/style.css';
 
 /* Each variety is a block of tokens on <html data-theme>, set before first paint by
    public/theme.js and kept by ThemeProvider. A dark variety also sets data-mode='dark', which
@@ -599,6 +600,33 @@
   ::selection {
     @apply bg-accent text-strong;
   }
+}
+
+/* The stack map's canvas (React Flow) takes its colours from the theme's tokens, so a variety
+   re-colours it with no script. Its own light and dark selectors look for data-theme="dark", which
+   no variety is, so the canvas's mode comes from forceColorMode. */
+.react-flow {
+  --xy-background-color: var(--background);
+  --xy-background-pattern-color: var(--border);
+  --xy-edge-stroke: var(--muted-foreground);
+  --xy-edge-stroke-selected: var(--primary);
+  --xy-connectionline-stroke: var(--primary);
+  --xy-handle-background-color: var(--primary);
+  --xy-handle-border-color: var(--background);
+  --xy-edge-label-background-color: var(--card);
+  --xy-edge-label-color: var(--foreground);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--muted);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--strong);
+  --xy-controls-button-border-color: var(--border);
+  --xy-selection-background-color: color-mix(
+    in oklab,
+    var(--primary) 10%,
+    transparent
+  );
+  --xy-selection-border: 1px dotted var(--primary);
+  --xy-attribution-background-color: transparent;
 }
 
 /* The intro's beaver, bobbing until it's clicked. */
