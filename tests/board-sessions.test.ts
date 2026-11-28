@@ -167,7 +167,7 @@ describe('sessions started from the board', () => {
     closeTerminal(started.session!.id)
   })
 
-  test('a product session gets the mode as its system prompt, and may create but not move or update unasked', async () => {
+  test('a product session gets the mode as its system prompt, and may create and update but not move unasked', async () => {
     const { primary, tracking, board, project } = fixture()
     const started = await startProductSession(
       tracking,
@@ -184,6 +184,7 @@ describe('sessions started from the board', () => {
       rule('board_list_tickets'),
       rule('board_get_ticket'),
       rule('board_create_ticket'),
+      rule('board_update_ticket'),
       rule('board_add_comment'),
     ])
     assert.equal(

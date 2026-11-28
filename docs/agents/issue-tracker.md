@@ -17,9 +17,10 @@ Status lives in the issue's state, labels and assignee: `docs/agents/triage-labe
 
 ## Board tickets
 
-An id shaped `PREFIX-N` (`BEANS-3`) is a ticket on the stack monitor's own ticket board, not a GitHub issue. It is reached through the monitor's MCP tools (`board_*`), which a session started from the board's "Work this ticket" has. A session without those tools can't work one: say so and stop.
+An id shaped `PREFIX-N` (`BEANS-3`) is a ticket on the stack monitor's own ticket board, not a GitHub issue. It is reached through the monitor's MCP tools (`board_*`), which a session started from the board has. A session without those tools can't work one: say so and stop.
 
 - **Read**: `board_get_ticket` (`key`). Its description and comments are the spec.
+- **Create or fill in**: the `board-ticket` skill, which writes the title and description in the repo's shape.
 - **Status** is the ticket's column. Started: `board_move_ticket` (`key`, `column`) to "In progress", then a comment. PR open: move to "In review", then a comment with the PR's link. A column the project doesn't have is refused with the names it has: use the closest.
 - **Comment**: `board_add_comment` (`key`, `body`), wherever a skill says "issue comment", a stop's included.
 - **No label, assignee or `Closes #<n>`.** A person pressed the button, so the `ready-for-agent` check doesn't apply. The PR's summary names the key instead.
