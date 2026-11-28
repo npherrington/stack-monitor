@@ -48,3 +48,26 @@ export const swatchTint = cva('', {
   },
   defaultVariants: { colour: 'none' },
 })
+
+// A surface in a swatch's colour that text and cards sit on: index.css's --color-swatch-*-surface
+// (the swatch mixed into the card colour), with the swatch itself on any edge given a border width.
+export const swatchSurface = cva('', {
+  variants: {
+    colour: {
+      red: 'bg-swatch-red-surface border-swatch-red',
+      orange: 'bg-swatch-orange-surface border-swatch-orange',
+      yellow: 'bg-swatch-yellow-surface border-swatch-yellow',
+      green: 'bg-swatch-green-surface border-swatch-green',
+      teal: 'bg-swatch-teal-surface border-swatch-teal',
+      blue: 'bg-swatch-blue-surface border-swatch-blue',
+      purple: 'bg-swatch-purple-surface border-swatch-purple',
+      pink: 'bg-swatch-pink-surface border-swatch-pink',
+      coral: 'bg-swatch-coral-surface border-swatch-coral',
+      lime: 'bg-swatch-lime-surface border-swatch-lime',
+      sky: 'bg-swatch-sky-surface border-swatch-sky',
+      indigo: 'bg-swatch-indigo-surface border-swatch-indigo',
+      sand: 'bg-swatch-sand-surface border-swatch-sand',
+      slate: 'bg-swatch-slate-surface border-swatch-slate',
+    },
+  },
+})
