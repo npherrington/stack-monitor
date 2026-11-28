@@ -1,4 +1,3 @@
-import type { RepoCheckouts } from '../../../core/types.ts'
 import { Field, FieldLabel } from '@/components/ui/field.tsx'
 import {
   Select,
@@ -10,12 +9,12 @@ import {
 
 interface RepoSelectProps {
   id: string
-  repos: RepoCheckouts[]
+  repos: { root: string; name: string }[]
   value: string // the picked repo's root
   onChange: (root: string) => void
 }
 
-// Which tracked repo a session started from the board runs in.
+// A labelled picker over a list of repos, by root.
 export function RepoSelect({ id, repos, value, onChange }: RepoSelectProps) {
   const items = repos.map((repo) => ({ value: repo.root, label: repo.name }))
   return (

@@ -42,7 +42,7 @@ launchd.
 | Worktrees    | always                  | every checkout with its git state; create and remove worktrees                                |
 | Stack        | the config has `stack`  | each checkout's services: status, start, stop                                                 |
 | Agents       | the config has `agents` | headless runs in a worktree, their logs and reports; schedules                                |
-| Feature map  | always                  | a canvas for sketching a feature across the stack                                             |
+| Feature map  | always                  | a canvas for sketching a feature across the stack (the Stack map page)                        |
 | Ticket board | always                  | projects, each a board of tickets in columns, with labels, priorities, due dates and comments |
 
 ### Worktrees
@@ -162,12 +162,26 @@ its commit, so a commit made in a review worktree isn't lost with it.
 
 ### Feature map
 
-A canvas of blocks and arrows, for sketching a feature before anyone writes it, saved as a markdown
-file with a Mermaid diagram in it, as a PNG, or as a link. The tool ships generic blocks (web app,
-API route, background job, database, cache, queue, external API, auth, LLM, email, file storage,
-scheduler) and a few starter maps. A repo's `featureMap.blocks` file adds its own, each with where
-its code lives and the docs to read first. An id that matches a built-in replaces it. A `draw`
-command lays a map out from a list of pieces and arrows, for an agent to hand a user.
+The Stack map page: a canvas of blocks and arrows, for sketching how a feature moves through the
+stack before anyone writes it, drawn with React Flow (`docs/decisions/canvas-react-flow.md`). The
+page is called Stack map; the config key stays `featureMap` and the scope `feature-map`, since both
+shipped first.
+
+- **Maps are JSON files in the repo**, in the folder `featureMap.maps` names (default
+  `docs/stack-map/maps`), one `<name>.json` each, in the primary checkout. They are the repo's to
+  commit, and the monitor keeps nothing: every request reads the folder again. A file that doesn't
+  parse is listed with its problem and the rest still open. The file format is ours (nodes as
+  block, label, note and position; arrows as from, to and label), so the canvas library can change
+  under it.
+- **Blocks.** The tool ships generic ones (web app, API route, module, background job, scheduler,
+  auth, database, cache, queue, file storage, external API, LLM, email) in four kinds (client,
+  server, data, external), and two starter maps, New endpoint and New DB method. A repo's
+  `featureMap.blocks` file (`{ "version": 1, "blocks": [...] }`) adds its own, each with where its
+  code lives and the docs to read first. An id that matches a built-in replaces it. A map saved
+  with `starter: true` is offered under New from starter too.
+- **Still to come**: export as markdown with a Mermaid diagram, as a PNG or as a link, suggesting
+  blocks from the code, a map attached to a ticket, and a `draw` command that lays a map out from a
+  list of pieces and arrows, for an agent to hand a user.
 
 ### Ticket board
 
@@ -259,7 +273,10 @@ A module whose section is left out is off.
     "arguments": { "ticket": "^[A-Z]+-\\d+$" },
     "workflows": ".claude/workflows",
   },
-  "featureMap": { "blocks": "docs/stack-map/blocks.json" },
+  "featureMap": {
+    "blocks": "docs/stack-map/blocks.json",
+    "maps": "docs/stack-map/maps",
+  },
 }
 ```
 
@@ -272,7 +289,7 @@ core/
   stack/        services, status checks, start, stop
   agents/       the adapter interface, adapters/claude, runs, run logs
   schedules/    launchd jobs, fires, locks
-  feature-map/  blocks, sketch layout, the file format
+  feature-map/  the map and blocks file formats, built-in blocks and starters, a repo's maps
   board/        the ticket board's SQLite file, projects, columns, labels, tickets, its sessions
   terminals/    claude and shell sessions in a worktree, and the task a session starts with
   github/       a repo's PRs, checks and reviews through gh; the agentic review session
@@ -303,8 +320,9 @@ with their module, their fixtures rewritten to a generic repo.
    common events; Run here, View log, Report and Stop run.
 4. **Schedules.** launchd jobs that fire from the tool's own folder rather than from inside the
    worktree, fire locks, fire history and notifications. Steps as agent, model and prompt.
-5. **Feature map.** Built-in blocks and starters, a repo's blocks merged in, the editor, the file
-   format and `draw`.
+5. **Feature map.** The Stack map page: built-in blocks and starters, a repo's blocks merged in,
+   the editor and the file format, maps saved as JSON in the repo. Still to come: export as
+   markdown with a Mermaid diagram, as a PNG or as a link, and `draw`.
 6. **A second adapter.**
 7. **Desktop app (Electron).** The main process starts the server in-process with `startMonitor`,
    which already takes a port and the page's folder from its host, and opens the page in a window.

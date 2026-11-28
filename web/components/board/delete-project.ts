@@ -1,6 +1,6 @@
 import { countOf } from '../../../core/board/schema.ts'
 import type { BoardProject } from '../../../core/types.ts'
-import type { DeleteQuestion } from '@/components/board/confirm-delete-dialog.tsx'
+import type { DeleteQuestion } from '@/components/ui/confirm-delete-dialog.tsx'
 
 // What deleting a project takes with it, said before it's done.
 export function deleteProjectQuestion(project: BoardProject): DeleteQuestion {

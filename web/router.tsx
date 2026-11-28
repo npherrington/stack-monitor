@@ -6,6 +6,7 @@ import { Checkouts } from '@/components/pages/checkouts.tsx'
 import { Github } from '@/components/pages/github.tsx'
 import { Schedules } from '@/components/pages/schedules.tsx'
 import { Settings } from '@/components/pages/settings.tsx'
+import { StackMap } from '@/components/pages/stack-map.tsx'
 import { StackSettings } from '@/components/pages/stack-settings.tsx'
 import { TicketBoard } from '@/components/pages/ticket-board.tsx'
 import { WorktreeSettings } from '@/components/pages/worktree-settings.tsx'
@@ -21,6 +22,7 @@ export const router = createHashRouter([
       { path: 'schedules', element: <Schedules /> },
       { path: 'github', element: <Github /> },
       { path: 'board', element: <TicketBoard /> },
+      { path: 'stack-map', element: <StackMap /> },
       { path: 'settings', element: <Settings /> },
       { path: 'settings/stack/:root', element: <StackSettings /> },
       { path: 'settings/worktrees/:root', element: <WorktreeSettings /> },

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import type { TicketComment, TicketDetail } from '../../../core/types.ts'
 import { CommentEditor } from '@/components/board/comment-editor.tsx'
-import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import { Markdown } from '@/components/ui/markdown.tsx'
 import { useTicketMutations } from '@/hooks/use-ticket-mutations.ts'

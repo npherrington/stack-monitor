@@ -292,6 +292,12 @@
           "description": "The repo's own blocks, added to the built-in ones",
           "type": "string",
           "minLength": 1
+        },
+        "maps": {
+          "default": "docs/stack-map/maps",
+          "description": "The folder saved maps are written to",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

@@ -6,8 +6,8 @@ A local page and MCP server for working across a repo's git worktrees: each chec
 the dev stack it runs, and the coding agents working in it.
 
 **Status: early, and in daily use.** Worktrees, the stack, agent runs, schedules, a Claude Code
-terminal per worktree, a ticket board, and sessions that start on a ticket or a PR review are in;
-the feature map comes next ([PLAN.md](PLAN.md)). It runs as a Mac
+terminal per worktree, a ticket board, sessions that start on a ticket or a PR review, and a Stack
+map for sketching a feature across the stack are in ([PLAN.md](PLAN.md)). It runs as a Mac
 app (`mise run app`) or a local server you open in a browser.
 
 ![Every worktree across your repos, one row each, with its git state, stack and last run](docs/screenshots/worktrees.png)

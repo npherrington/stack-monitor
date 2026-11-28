@@ -17,7 +17,7 @@ export const Ref = z
 const Command = z.string().min(1).max(2000)
 
 // Read in each checkout, so relative to its root and inside it.
-const RepoPath = z
+export const RepoPath = z
   .string()
   .min(1)
   .refine(
@@ -217,6 +217,9 @@ const Agents = z.strictObject({
 const FeatureMap = z.strictObject({
   blocks: RepoPath.optional().describe(
     "The repo's own blocks, added to the built-in ones",
+  ),
+  maps: RepoPath.default('docs/stack-map/maps').describe(
+    'The folder saved maps are written to',
   ),
 })
 

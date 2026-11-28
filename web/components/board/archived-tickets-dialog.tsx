@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 
 import type { ArchivedTicket, BoardProject } from '../../../core/types.ts'
-import { ConfirmDeleteDialog } from '@/components/board/confirm-delete-dialog.tsx'
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
   Dialog,

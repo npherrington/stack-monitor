@@ -707,3 +707,66 @@ export interface SaveProjectResult extends ActionResult {
 export interface CreateTicketResult extends ActionResult {
   number: number | null
 }
+
+export const BLOCK_KINDS = ['client', 'server', 'data', 'external'] as const
+export type BlockKind = (typeof BLOCK_KINDS)[number]
+
+// A piece a stack map is drawn with: one of the tool's own, or one from the repo's
+// featureMap.blocks file.
+export interface Block {
+  id: string
+  name: string
+  kind: BlockKind
+  paths: string[] // where its code lives, relative to the repo root
+  docs: string[] // what to read before changing it
+}
+
+export interface BlockInfo extends Block {
+  source: 'built-in' | 'repo' // repo: the repo's file added it, or replaced the built-in
+}
+
+export interface StackMapNode {
+  id: string
+  block: string // a block's id
+  label: string // '' shows the block's name
+  note?: string
+  x: number
+  y: number
+}
+
+export interface StackMapEdge {
+  id: string
+  from: string // a node's id
+  to: string
+  label?: string
+}
+
+// <featureMap.maps>/<name>.json in a repo. GET /api/feature-map/map?root=&name=
+export interface StackMap {
+  version: 1
+  title: string
+  starter: boolean // offered under New from starter
+  nodes: StackMapNode[]
+  edges: StackMapEdge[]
+}
+
+export interface StackMapSummary {
+  name: string // the file's name without .json
+  title: string
+  starter: boolean
+}
+
+export interface StackMapStarter {
+  name: string
+  source: 'built-in' | 'repo'
+  map: StackMap
+}
+
+// GET /api/feature-map?root=
+export interface FeatureMapOverview {
+  folder: string // featureMap.maps, relative to the repo root
+  blocks: BlockInfo[] // the built-ins in their order, the repo's replacing any it names, then its own
+  maps: StackMapSummary[] // by name
+  starters: StackMapStarter[] // the built-in ones, then the repo's maps saved as starters
+  problems: { file: string; problem: string }[] // a blocks or map file that didn't parse
+}
