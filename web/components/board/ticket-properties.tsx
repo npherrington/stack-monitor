@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.tsx'
+import { SwatchPicker } from '@/components/ui/swatch-picker.tsx'
 import { useTicketMutations } from '@/hooks/use-ticket-mutations.ts'
 
 const PRIORITY_ITEMS = PRIORITIES.map((priority) => ({
@@ -27,7 +28,7 @@ interface TicketPropertiesProps {
   board: ProjectBoard
 }
 
-// A ticket's column, priority, due date and labels. Each change is sent as it's made, and the
+// A ticket's column, priority, colour, due date and labels. Each change is sent as it's made, and the
 // control shows what the server has once it answers.
 export function TicketProperties({ ticket, board }: TicketPropertiesProps) {
   const { updateTicket, moveTicket } = useTicketMutations()
@@ -89,6 +90,16 @@ export function TicketProperties({ ticket, board }: TicketPropertiesProps) {
             ))}
           </SelectContent>
         </Select>
+      </Field>
+      <Field>
+        <FieldLabel>Colour</FieldLabel>
+        <SwatchPicker
+          label="Colour"
+          value={ticket.colour}
+          onChange={(colour) =>
+            colour !== ticket.colour && updateTicket({ id: ticket.id, colour })
+          }
+        />
       </Field>
       <Field>
         <FieldLabel htmlFor="ticket-due">

@@ -11,6 +11,7 @@ import type { Drop } from '@/lib/board-order.ts'
 export interface TicketActions {
   move: (ticket: number, drop: Drop) => void
   setPriority: (ticket: number, priority: Priority) => void
+  setColour: (ticket: number, colour: BoardColour | null) => void
   archive: (ticket: TicketSummary) => void
   remove: (ticket: TicketSummary) => void // asks first
   work: (ticket: TicketSummary) => void // asks where, then starts a session on it

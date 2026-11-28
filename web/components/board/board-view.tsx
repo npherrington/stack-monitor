@@ -77,6 +77,7 @@ export function BoardView({ project }: BoardViewProps) {
   const ticketActions: TicketActions = {
     move: (ticket, drop) => moveTicket({ id: ticket, ...drop }),
     setPriority: (ticket, priority) => updateTicket({ id: ticket, priority }),
+    setColour: (ticket, colour) => updateTicket({ id: ticket, colour }),
     archive: (ticket) => quietly(archiveTicket(ticket.id, true)),
     remove: setDeletingTicket,
     work: setWorking,
