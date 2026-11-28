@@ -145,8 +145,8 @@ focus:
 - **Work this ticket** (the board): in a new worktree or a checkout you pick, with the board's MCP
   tools. Reading a ticket, moving it and commenting on it run without asking.
 - **Product management** (the board): a mode whose system prompt the monitor writes, so it works
-  in a repo with no skills. Filing tickets and commenting run without asking; changing or moving
-  one asks.
+  in a repo with no skills; a repo with a `board-ticket` skill has its tickets written that skill's
+  way. Filing, changing and commenting on tickets run without asking; moving one asks.
 - **Agentic review** (a PR on the GitHub page): in a review worktree the monitor puts at the PR's
   head, detached, or a checkout you pick. Reading the PR through `gh` runs without asking. The
   agent posts one review through `gh`; the monitor never pre-approves that, and posts nothing

@@ -98,8 +98,9 @@ Two buttons on the board open Claude Code with the board's tools. **Work this ti
 menu, or the ticket) asks which repo, a new worktree or one you have, and which of the repo's
 skills to use (`work-ticket` when it has one), then starts the session on the ticket: the agent
 reads it, moves it to In progress and comments as it goes. **Product management** starts a session
-that interviews you, reads the code and files tickets into the project. Filing and commenting
-don't ask first; changing or moving a ticket does. The board refreshes while such a session is
+that interviews you, reads the code and files tickets into the project, written the way the repo's `board-ticket` skill
+says when it has one. Filing, changing and commenting don't ask first; moving a
+ticket does. The board refreshes while such a session is
 open.
 
 **Agentic review.** On a PR in the GitHub page, **Agentic review** asks where to review (a new

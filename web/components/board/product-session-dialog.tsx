@@ -44,7 +44,7 @@ export function ProductSessionDialog({
           <DialogTitle>Product management</DialogTitle>
           <DialogDescription>
             It interviews you, reads the code and files tickets into{' '}
-            {project.name}. Creating tickets doesn't ask first; changing or
+            {project.name}. Creating and changing tickets don't ask first;
             moving one does.
           </DialogDescription>
         </DialogHeader>
