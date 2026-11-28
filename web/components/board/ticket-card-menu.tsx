@@ -18,6 +18,7 @@ import {
 import type { TicketActions } from '@/components/board/board-actions.ts'
 import { PRIORITY_LABELS } from '@/components/board/priority.ts'
 import { Button } from '@/components/ui/button.tsx'
+import { ColourMenu } from '@/components/ui/colour-menu.tsx'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,6 +132,10 @@ export function TicketCardMenu({
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        <ColourMenu
+          colour={ticket.colour ?? undefined}
+          onPick={(colour) => actions.setColour(ticket.id, colour ?? null)}
+        />
         <DropdownMenuSeparator className="my-1" />
         <DropdownMenuItem onClick={() => actions.archive(ticket)}>
           <Archive />

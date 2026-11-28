@@ -25,6 +25,7 @@ interface TicketRow {
   title: string
   description: string
   priority: string
+  colour: string | null
   due_on: string | null
   archived_at: string | null
   prefix: string
@@ -34,7 +35,7 @@ function ticketRow(db: DatabaseSync, id: number): TicketRow | undefined {
   return get<TicketRow>(
     db,
     `SELECT t.id, t.project_id, t.number, t.column_id, t.title, t.description,
-        t.priority, t.due_on, t.archived_at, p.prefix
+        t.priority, t.colour, t.due_on, t.archived_at, p.prefix
       FROM ticket t JOIN project p ON p.id = t.project_id
       WHERE t.id = ?`,
     id,
@@ -140,8 +141,8 @@ export function createTicket(
     const id = run(
       db,
       `INSERT INTO ticket (project_id, number, column_id, position, title,
-          description, priority, due_on, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          description, priority, due_on, colour, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       request.project,
       number,
       column.id,
@@ -150,6 +151,7 @@ export function createTicket(
       request.description,
       request.priority,
       request.dueOn,
+      request.colour,
       now,
     )
     setLabels(db, id, request.labels)
@@ -171,15 +173,16 @@ export function updateTicket(
       return failure(WRONG_LABEL)
     }
     // Every column is written from the stored row with the named fields over it, so one fixed
-    // statement serves any mix of fields. dueOn: null clears the date; left out keeps it.
+    // statement serves any mix of fields. dueOn or colour: null clears it; left out keeps it.
     run(
       db,
-      `UPDATE ticket SET title = ?, description = ?, priority = ?, due_on = ?
-        WHERE id = ?`,
+      `UPDATE ticket SET title = ?, description = ?, priority = ?, due_on = ?,
+        colour = ? WHERE id = ?`,
       request.title ?? ticket.title,
       request.description ?? ticket.description,
       request.priority ?? ticket.priority,
       request.dueOn === undefined ? ticket.due_on : request.dueOn,
+      request.colour === undefined ? ticket.colour : request.colour,
       ticket.id,
     )
     if (request.labels !== undefined) setLabels(db, ticket.id, request.labels)

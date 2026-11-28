@@ -7,8 +7,10 @@ import { BoardLabelPill } from '@/components/board/board-label-pill.tsx'
 import { PriorityIcon } from '@/components/board/priority-icon.tsx'
 import { TicketCardMenu } from '@/components/board/ticket-card-menu.tsx'
 import { Pill } from '@/components/ui/pill.tsx'
+import { swatchSurface } from '@/components/ui/swatch-variants.ts'
 import { formatDay } from '@/lib/board-dates.ts'
 import { boardPath } from '@/lib/board-links.ts'
+import { cn } from '@/lib/utils.ts'
 
 interface TicketCardProps {
   project: number
@@ -19,7 +21,8 @@ interface TicketCardProps {
   actions: TicketActions
 }
 
-// One ticket on the board. The whole card drags; its title opens it.
+// One ticket on the board, a sticky note in its colour when it has one. The whole card drags;
+// its title opens it.
 export function TicketCard({
   project,
   ticket,
@@ -34,7 +37,12 @@ export function TicketCard({
     <li
       data-ticket={ticket.id}
       draggable
-      className="relative flex cursor-grab flex-col gap-1.5 rounded-lg bg-card p-2.5 ring-1 ring-foreground/10 active:cursor-grabbing"
+      className={cn(
+        'relative flex cursor-grab flex-col gap-1.5 rounded-lg p-2.5 ring-1 active:cursor-grabbing',
+        ticket.colour === null
+          ? 'bg-card ring-foreground/10'
+          : swatchSurface({ colour: ticket.colour }),
+      )}
     >
       {dropMark !== null && (
         <span

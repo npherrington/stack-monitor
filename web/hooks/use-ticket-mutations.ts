@@ -29,7 +29,7 @@ const success = (result: ActionResult) =>
   toast.add({ title: result.message, type: 'success' })
 
 // Everything done to a ticket and its comments. A move, and a change made straight on the ticket
-// (its priority, date or labels), only speaks up when it fails: the card showing it is the answer.
+// (its priority, colour, date or labels), only speaks up when it fails: the card showing it is the answer.
 export function useTicketMutations(): UseTicketMutationsResult {
   const queryClient = useQueryClient()
   const refresh = () => queryClient.invalidateQueries({ queryKey: boardKey })

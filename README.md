@@ -89,8 +89,8 @@ skipped. Schedules and their fire log live in `~/.local/state/stack-monitor/sche
 **Ticket board.** Under Product management, a board of tickets per project: columns you name,
 colour and reorder, cards you drag between and within them, and a prefix you choose for each
 project's ids (`BEANS-12`). A ticket has a markdown description, labels (shared by every project
-or one project's own), a priority, a due date and comments; the board filters by label and
-priority and searches titles and ids. Tickets and projects can be archived and restored, or
+or one project's own), a priority, a due date, a colour that tints its card and comments; the board
+filters by label and priority and searches titles and ids. Tickets and projects can be archived and restored, or
 deleted for good. It's all in one SQLite file, `~/.local/state/stack-monitor/board.db`, or the
 file `STACK_MONITOR_BOARD` names: copy it to back the board up or move it to another machine.
 

@@ -599,7 +599,7 @@ export type ReviewEvent = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
 
 // ---- Ticket board ----
 
-// The colours a project, a column or a label can take: the page's swatches (web/lib/swatches.ts).
+// The colours a project, a column, a label or a ticket can take: the page's swatches (web/lib/swatches.ts).
 export const BOARD_COLOURS = [
   'red',
   'orange',
@@ -653,6 +653,7 @@ export interface TicketSummary {
   title: string
   column: number
   priority: Priority
+  colour: BoardColour | null // null: a plain card
   dueOn: string | null // YYYY-MM-DD
   overdue: boolean // dueOn is before today on this machine
   labels: TicketLabel[] // by name
